@@ -66,7 +66,7 @@ export default function Login() {
             transition={{ duration: 0.3 }}
             className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center"
           >
-            <Loading onClose={() => setShowForgotPassword(false)} />
+            <Loading />
           </motion.div>
         )}
       </AnimatePresence>
