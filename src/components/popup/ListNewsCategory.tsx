@@ -47,22 +47,19 @@ export default function ListNewsCategory({
 
   const maxSelect = 5;
 
-  // Function to handle category selection
   const handleToggleCategory = (category: Category) => {
     if (selected.find((item) => item.value === category.value)) {
-      // Remove category from selected if already selected
       setSelected(selected.filter((item) => item.value !== category.value));
     } else {
-      // If not selected and the limit is not reached, add it to selected
       if (selected.length < maxSelect) {
-        setSelected([category, ...selected]); // Place it at the beginning
+        setSelected([category, ...selected]);
       }
     }
   };
 
   const handleSave = () => {
     console.log("Selected categories:", selected);
-    onSave(selected); // passing array of { label, value, icon }
+    onSave(selected);
     onClose();
   };
 
@@ -141,7 +138,7 @@ export default function ListNewsCategory({
         </div>
 
         <div className="flex flex-col items-center mt-4 gap-2.5 w-full">
-          <div className="text-base text-blue-500 font-medium bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] bg-clip-text text-transparent rounded-xl px-5 py-2.5 mt-4 border border-[#367AF2] w-full">
+          <div className="text-base font-medium bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] bg-clip-text text-transparent rounded-xl px-5 py-2.5 mt-4 border border-[#367AF2] w-full">
             {selected.length} kategori dipilih dari {maxSelect}
           </div>
 

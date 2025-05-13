@@ -70,21 +70,28 @@ export default function NavbarDashboard() {
       </Link>
       <div className="flex items-center gap-4">
         <ul className="flex space-x-2">
-          {listMenu.map((menu) => (
-            <li key={menu.label}>
-              <Link
-                href={menu.href}
-                className={`flex items-center gap-2 text-white px-5 py-3 rounded-full ${
-                  pathname === menu.href
-                    ? "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] font-bold"
-                    : "bg-[#2C2C2C]"
-                }`}
-              >
-                <Icon icon={menu.icon} fontSize={20} />
-                <p className="text-sm">{menu.label}</p>
-              </Link>
-            </li>
-          ))}
+          {listMenu.map((menu) => {
+            const isDashboard = menu.href === basePath;
+            const isActive = isDashboard
+              ? pathname === basePath
+              : pathname.startsWith(menu.href);
+
+            return (
+              <li key={menu.href}>
+                <Link
+                  href={menu.href}
+                  className={`flex items-center gap-2 text-white px-5 py-3 rounded-full ${
+                    isActive
+                      ? "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] font-bold"
+                      : "bg-[#2C2C2C] hover:bg-[#3A3A3A] transition duration-300 ease-in-out"
+                  }`}
+                >
+                  <Icon icon={menu.icon} fontSize={20} />
+                  <p className="text-sm">{menu.label}</p>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </div>
       <div className="relative" ref={dropdownRef}>
@@ -108,6 +115,11 @@ export default function NavbarDashboard() {
             icon="majesticons:chevron-down-line"
             fontSize={16}
             color="white"
+            className={
+              showDropdown
+                ? "-rotate-180 transition-transform"
+                : "transition-transform"
+            }
           />
         </div>
 

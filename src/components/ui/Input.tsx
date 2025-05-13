@@ -1,4 +1,4 @@
-import React, { InputHTMLAttributes, useState } from "react";
+import React, { InputHTMLAttributes, useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Icon } from "@iconify/react";
 import { SingleValue } from "react-select";
@@ -29,6 +29,11 @@ interface InputProps
   value?: string | Date | SingleValue<OptionType> | OptionType[] | null;
   onChangeValue?: (value: string) => void;
   onDateChange?: (date: Date | null) => void;
+
+  onFileChange?: (files: FileList | null) => void;
+  accept?: string;
+  multiple?: boolean;
+
   isLoading?: boolean;
   isClearable?: boolean;
   isMulti?: boolean;
@@ -48,17 +53,63 @@ const Input: React.FC<InputProps> = ({
   value,
   onChangeValue,
   onDateChange,
+  onFileChange,
+  accept,
+  multiple = false,
   isLoading = false,
   isClearable = true,
   isMulti = false,
   ...props
 }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const toggleShowPassword = () => setShowPassword(!showPassword);
 
   const isDateType = type === "date";
+  const isFileType = type === "file";
+  const isSelectType = type === "select";
   const inputType =
     type === "password" ? (showPassword ? "text" : "password") : type;
+
+  useEffect(() => {
+    if (type === "file" && value == null) {
+      setSelectedFiles(null);
+    }
+  }, [value, type]);
+
+  const fileExtension =
+    selectedFiles && selectedFiles.length > 0
+      ? selectedFiles[0].name.split(".").pop()?.toUpperCase() ?? ""
+      : "";
+
+  const fileBadge = (extension: string) => {
+    const fileIcon = extension
+      ? `bxs:file-${extension.toLowerCase()}`
+      : "mdi:camera-outline";
+
+    const fileColor = extension
+      ? extension === "PDF"
+        ? "bg-red-500"
+        : extension === "DOCX" || extension === "DOC"
+        ? "bg-blue-500"
+        : extension === "XLSX" || extension === "XLS"
+        ? "bg-green-500"
+        : extension === "PNG" || extension === "JPG" || extension === "JPEG"
+        ? "bg-yellow-500"
+        : "bg-gray-600"
+      : "bg-gray-200";
+
+    return (
+      <div
+        className={`flex items-center ${fileColor} px-4 py-2 ${
+          extension ? "text-white" : "text-gray-500"
+        }`}
+      >
+        <Icon icon={fileIcon} width={20} height={20} />
+        <span className="ml-2">{extension || "Unggah File"}</span>
+      </div>
+    );
+  };
 
   return (
     <div className="w-full">
@@ -74,7 +125,44 @@ const Input: React.FC<InputProps> = ({
         )}
 
         {/* SELECT */}
-        {type === "select" && selectOptions ? (
+        {isFileType ? (
+          <div
+            className={`w-full border rounded-xl overflow-hidden transition-all focus-within:ring-2 ${
+              disabled
+                ? "border-gray-200 bg-gray-100"
+                : error
+                ? "border-red-500 focus-within:ring-red-300"
+                : "border-gray-300 focus-within:ring-blue-300"
+            }`}
+          >
+            <div className="flex items-center">
+              {selectedFiles && selectedFiles.length > 0
+                ? fileBadge(fileExtension)
+                : fileBadge("")}
+              <div className="flex-1 px-4 py-2 text-gray-700 truncate">
+                {selectedFiles && selectedFiles.length > 0
+                  ? Array.from(selectedFiles)
+                      .map((f) => f.name)
+                      .join(", ")
+                  : placeholder || "Tidak ada file dipilih"}
+              </div>
+
+              <input
+                type="file"
+                accept={accept}
+                multiple={multiple}
+                disabled={disabled}
+                onChange={(e) => {
+                  const files = e.target.files;
+                  setSelectedFiles(files);
+                  onFileChange?.(files);
+                }}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                {...props}
+              />
+            </div>
+          </div>
+        ) : isSelectType && selectOptions ? (
           <ClientOnlySelect
             classNamePrefix="react-select"
             options={selectOptions}
@@ -100,28 +188,33 @@ const Input: React.FC<InputProps> = ({
                 paddingRight: "12px",
                 paddingTop: "4px",
                 paddingBottom: "4px",
+                cursor: disabled ? "not-allowed" : "pointer",
               }),
               menu: (base) => ({
                 ...base,
                 borderRadius: "8px",
                 zIndex: 20,
                 paddingLeft: 0,
+                cursor: disabled ? "not-allowed" : "default",
               }),
-              option: (base, { isFocused }) => ({
+              option: (base, { isFocused, isDisabled: optDisabled }) => ({
                 ...base,
                 backgroundColor: isFocused ? "#F0F0F0" : "white",
                 color: "#374151",
                 paddingLeft: "12px",
                 paddingTop: "8px",
                 paddingBottom: "8px",
+                cursor: disabled || optDisabled ? "not-allowed" : "pointer",
               }),
               singleValue: (base) => ({
                 ...base,
                 color: disabled ? "#98A2B3" : "#374151",
+                cursor: disabled ? "not-allowed" : "default",
               }),
               placeholder: (base) => ({
                 ...base,
                 color: "#98A2B3",
+                cursor: disabled ? "not-allowed" : "default",
               }),
               multiValue: (base) => ({
                 ...base,
@@ -129,15 +222,18 @@ const Input: React.FC<InputProps> = ({
                 borderRadius: "8px",
                 color: "white",
                 padding: "3px 6px",
+                cursor: "default",
               }),
               multiValueLabel: (base) => ({
                 ...base,
                 color: "white",
                 fontWeight: 400,
+                cursor: "default",
               }),
               multiValueRemove: (base) => ({
                 ...base,
                 color: "white",
+                cursor: disabled ? "not-allowed" : "pointer",
                 ":hover": {
                   backgroundColor: "rgba(255,255,255,0.2)",
                   color: "white",

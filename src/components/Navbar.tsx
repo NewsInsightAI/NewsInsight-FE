@@ -15,7 +15,8 @@ export const Navbar = () => {
   }
 
   return (
-    <nav id="navbar"
+    <nav
+      id="navbar"
       className={`flex justify-start gap-4 items-center p-4 fixed top-0 w-full px-8 z-50 ${bgColor}`}
     >
       <div className="flex justify-between items-center w-full">
@@ -65,7 +66,7 @@ export const Navbar = () => {
           </button>
           <Link
             href="/login"
-            className="flex items-center gap-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white rounded-3xl px-5 py-3 hover:opacity-80 transition duration-300 ease-in-out cursor-pointer"
+            className="flex items-center gap-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white rounded-3xl px-5 py-2.5 hover:opacity-80 transition duration-300 ease-in-out cursor-pointer"
           >
             <p>Masuk</p>
             <Icon

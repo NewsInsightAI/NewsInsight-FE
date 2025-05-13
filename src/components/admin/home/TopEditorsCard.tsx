@@ -24,7 +24,7 @@ export default function TopEditorsCard({ editors }: Props) {
           Editor Teratas
         </p>
       </div>
-      <div className="flex flex-col justify-start items-center w-full h-full mt-5">
+      <div className="flex flex-col justify-start items-center w-full h-full mt-3">
         {editors.map((editor, index) => (
           <div
             key={index}
