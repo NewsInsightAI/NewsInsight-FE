@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import { Icon } from "@iconify/react";
+import UserForm from "../popup/AddEditUser";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface UsersData {
   id: number;
@@ -19,6 +21,8 @@ interface UsersTableProps {
 
 export default function UsersTable({ datas }: UsersTableProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [showEditUser, setShowEditUser] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UsersData | null>(null);
 
   const toggleSelectItem = (id: string) => {
     setSelectedItems((prev) =>
@@ -85,6 +89,34 @@ export default function UsersTable({ datas }: UsersTableProps) {
 
   return (
     <>
+      <AnimatePresence>
+        {showEditUser && (
+          <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center">
+            <motion.div
+              key="verify-email"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className="w-full h-full inset-0 flex items-center justify-center"
+            >
+              <UserForm
+                mode="edit"
+                initialFullName={selectedUser?.fullName || ""}
+                initialUsername={selectedUser?.username || ""}
+                initialEmail={selectedUser?.email || ""}
+                initialRole={selectedUser?.role || ""}
+                initialStatus={selectedUser?.status || ""}
+                onSubmit={(data) => {
+                  console.log(data);
+                  setShowEditUser(false);
+                }}
+                onClose={() => setShowEditUser(false)}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
       <div className="bg-white overflow-x-auto w-full">
         <table className="min-w-full bg-white">
           <thead className="rounded-xl">
@@ -165,8 +197,11 @@ export default function UsersTable({ datas }: UsersTableProps) {
                 </td>
                 <td className="py-4 px-4 text-sm space-x-2">
                   <button
-                    className="border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-3 py-2 text-sm hover:bg-gray-50 disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15"
-                    onClick={() => console.log(`Edit report ${report.id}`)}
+                    className="border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-3 py-2 text-sm hover:opacity-80 hover:cursor-pointer disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15"
+                    onClick={() => {
+                      setSelectedUser(report);
+                      setShowEditUser(true);
+                    }}
                   >
                     <Icon
                       icon="mage:edit-fill"
@@ -176,7 +211,7 @@ export default function UsersTable({ datas }: UsersTableProps) {
                     />
                     Edit
                   </button>
-                  <button className="border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-3 py-2 text-sm hover:bg-red-50">
+                  <button className="border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-3 py-2 text-sm hover:opacity-80 hover:cursor-pointer">
                     <Icon
                       icon="mingcute:delete-fill"
                       className="inline mr-1"

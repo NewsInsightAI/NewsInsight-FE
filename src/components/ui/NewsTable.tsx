@@ -234,7 +234,7 @@ export default function NewsTable({ datas }: NewsTableProps) {
                 </td>
                 <td className="py-4 px-4 text-sm space-x-2">
                   <button
-                    className="border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-3 py-2 text-sm hover:bg-gray-50 disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15"
+                    className="border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-3 py-2 text-sm hover:opacity-80 hover:cursor-pointer disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15"
                     onClick={() => console.log(`Edit report ${report.id}`)}
                   >
                     <Icon
@@ -245,7 +245,7 @@ export default function NewsTable({ datas }: NewsTableProps) {
                     />
                     Edit
                   </button>
-                  <button className="border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-3 py-2 text-sm hover:bg-red-50">
+                  <button className="border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-3 py-2 text-sm hover:opacity-80 hover:cursor-pointer">
                     <Icon
                       icon="mingcute:delete-fill"
                       className="inline mr-1"

@@ -66,6 +66,7 @@ const Input: React.FC<InputProps> = ({
   const toggleShowPassword = () => setShowPassword(!showPassword);
 
   const isDateType = type === "date";
+  const isDateTimeType = type === "datetime";
   const isFileType = type === "file";
   const isSelectType = type === "select";
   const inputType =
@@ -85,7 +86,7 @@ const Input: React.FC<InputProps> = ({
   const fileBadge = (extension: string) => {
     const fileIcon = extension
       ? `bxs:file-${extension.toLowerCase()}`
-      : "mdi:camera-outline";
+      : "tabler:file-filled";
 
     const fileColor = extension
       ? extension === "PDF"
@@ -113,11 +114,9 @@ const Input: React.FC<InputProps> = ({
 
   return (
     <div className="w-full">
-      {label && (
-        <label className="block font-medium text-gray-800 mb-1">{label}</label>
-      )}
+      {label && <label className="font-medium text-gray-800">{label}</label>}
 
-      <div className="relative">
+      <div className="relative mt-1.5">
         {icon && (
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-[#98A2B3] z-10">
             <Icon icon={icon} width={20} height={20} />
@@ -261,7 +260,40 @@ const Input: React.FC<InputProps> = ({
               wrapperClassName="w-full"
               className={`w-full border border-[#CED4DA] rounded-xl py-2 px-3 ${
                 icon ? "pl-10" : ""
-              } text-gray-700 focus:outline-none transition-all ${
+              } focus:outline-none transition-all ${
+                disabled
+                  ? "bg-[#E9ECEF] text-[#98A2B3] cursor-not-allowed"
+                  : error
+                  ? "border-red-500 focus:border-red-500"
+                  : "border-gray-300 focus:border-blue-500"
+              }`}
+            />
+          </div>
+        ) : isDateTimeType ? (
+          <div className="w-full">
+            <DatePicker
+              selected={value instanceof Date ? value : null}
+              onChange={(date) => {
+                if (date) {
+                  date.setSeconds(0, 0);
+                }
+                onDateChange?.(date);
+              }}
+              disabled={disabled}
+              placeholderText={placeholder}
+              dateFormat="dd/MM/yyyy HH:mm:ss"
+              showTimeSelect
+              timeFormat="HH:mm"
+              timeIntervals={15}
+              timeCaption="Waktu"
+              showMonthDropdown
+              showYearDropdown
+              maxDate={new Date()}
+              dropdownMode="select"
+              wrapperClassName="w-full"
+              className={`w-full border border-[#CED4DA] rounded-xl py-2 px-3 ${
+                icon ? "pl-10" : ""
+              } focus:outline-none transition-all ${
                 disabled
                   ? "bg-[#E9ECEF] text-[#98A2B3] cursor-not-allowed"
                   : error

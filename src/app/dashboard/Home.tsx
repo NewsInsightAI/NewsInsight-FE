@@ -59,7 +59,7 @@ export default function Home() {
 
   return (
     <div
-      className="flex flex-col gap-6 justify-center items-start bg-white text-black rounded-4xl w-full p-6"
+      className="flex flex-col gap-6 justify-start items-start bg-white text-black rounded-4xl w-full h-full p-6"
       style={{ height: `calc(100vh - ${navbarDashboardHeight}px)` }}
     >
       <div className="grid grid-cols-10 gap-6 w-full h-full">

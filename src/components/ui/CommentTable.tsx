@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import { Icon } from "@iconify/react";
+import { AnimatePresence, motion } from "framer-motion";
+import CommentForm from "@/components/popup/AddEditComment";
 
 interface CommentData {
   id: number;
@@ -28,6 +30,10 @@ interface CommentTableProps {
 
 export default function CommentTable({ datas }: CommentTableProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [showAddComment, setShowAddComment] = useState(false);
+  const [selectedComment, setSelectedComment] = useState<CommentData | null>(
+    null
+  );
 
   const toggleSelectItem = (id: string) => {
     setSelectedItems((prev) =>
@@ -76,10 +82,7 @@ export default function CommentTable({ datas }: CommentTableProps) {
       case "rejected":
         return (
           <span className="bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444] px-3 py-2 rounded-full flex items-center justify-center w-fit">
-            <Icon
-              icon="icon-park-solid:close-one"
-              className="w-4 h-4 mr-1"
-            />
+            <Icon icon="icon-park-solid:close-one" className="w-4 h-4 mr-1" />
             Ditolak
           </span>
         );
@@ -90,6 +93,35 @@ export default function CommentTable({ datas }: CommentTableProps) {
 
   return (
     <>
+      <AnimatePresence>
+        {showAddComment && (
+          <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center">
+            <motion.div
+              key="verify-email"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className="w-full h-full inset-0 flex items-center justify-center"
+            >
+              <CommentForm
+                mode="edit"
+                initialReaderName={selectedComment?.reader.name || ""}
+                initialNewsTitle={selectedComment?.news.title || ""}
+                initialComment={selectedComment?.comment.content || ""}
+                initialDateTime={
+                  selectedComment?.dateTime || new Date().toISOString()
+                }
+                onSubmit={(data) => {
+                  console.log(data);
+                  setShowAddComment(false);
+                }}
+                onClose={() => setShowAddComment(false)}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
       <div className="bg-white overflow-x-auto w-full">
         <table className="min-w-full bg-white">
           <thead className="rounded-xl">
@@ -170,8 +202,11 @@ export default function CommentTable({ datas }: CommentTableProps) {
                 </td>
                 <td className="py-4 px-4 text-sm space-x-2">
                   <button
-                    className="border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-3 py-2 text-sm hover:bg-gray-50 disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15"
-                    onClick={() => console.log(`Edit report ${report.id}`)}
+                    className="border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-3 py-2 text-sm hover:opacity-80 hover:cursor-pointer disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15"
+                    onClick={() => {
+                      setSelectedComment(report);
+                      setShowAddComment(true);
+                    }}
                   >
                     <Icon
                       icon="mage:edit-fill"
@@ -181,7 +216,7 @@ export default function CommentTable({ datas }: CommentTableProps) {
                     />
                     Edit
                   </button>
-                  <button className="border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-3 py-2 text-sm hover:bg-red-50">
+                  <button className="border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-3 py-2 text-sm hover:opacity-80 hover:cursor-pointer">
                     <Icon
                       icon="mingcute:delete-fill"
                       className="inline mr-1"

@@ -133,26 +133,38 @@ export default function NavbarDashboard() {
               transition={{ duration: 0.2 }}
               className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-xl py-3 z-50"
             >
-              <ul className="text-sm text-black">
-                <li className="px-5 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2">
+              <ul className="text-sm text-black flex flex-col">
+                <Link
+                  href="/dashboard/profile"
+                  className="px-5 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+                >
                   <Icon icon="iconamoon:profile-fill" fontSize={18} />
                   Profil Saya
-                </li>
-                <li className="px-5 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2">
+                </Link>
+                <Link
+                  href="/dashboard/settings"
+                  className="px-5 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+                >
                   <Icon
                     icon="material-symbols:settings-rounded"
                     fontSize={18}
                   />
                   Pengaturan Akun
-                </li>
-                <li className="px-5 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2">
+                </Link>
+                <Link
+                  href="#"
+                  className="px-5 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+                >
                   <Icon icon="ic:round-dark-mode" fontSize={18} />
                   Mode Gelap
-                </li>
-                <li className="px-5 py-2 hover:bg-red-100 text-red-500 cursor-pointer flex items-center gap-2">
+                </Link>
+                <Link
+                  href="#"
+                  className="px-5 py-2 hover:bg-red-100 text-red-500 cursor-pointer flex items-center gap-2"
+                >
                   <Icon icon="solar:logout-2-bold" fontSize={18} />
                   Keluar
-                </li>
+                </Link>
               </ul>
             </motion.div>
           )}

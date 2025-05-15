@@ -152,9 +152,9 @@ export default function ListNewsCategory({
             <button
               onClick={handleSave}
               disabled={selected.length === 0}
-              className={`flex items-center justify-center gap-2 py-3 rounded-xl text-white font-semibold transition flex-1 ${
+              className={`flex items-center justify-center gap-2 py-3 rounded-xl text-white font-semibold transition flex-1 cursor-pointer ${
                 selected.length > 0
-                  ? "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] hover:opacity-90"
+                  ? "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] hover:opacity-80"
                   : "bg-gray-300 cursor-not-allowed"
               }`}
             >

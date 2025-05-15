@@ -10,12 +10,17 @@ interface RichTextEditorProps {
   placeholder?: string;
 }
 
-export default function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
+export default function RichTextEditor({
+  value,
+  onChange,
+  placeholder,
+}: RichTextEditorProps) {
   return (
     <ReactQuill
       value={value}
       onChange={onChange}
       placeholder={placeholder || "Tulis konten di sini..."}
+      className="rounded-xl"
       modules={{
         toolbar: [
           [{ header: [1, 2, 3, 4, 5, 6, false] }],

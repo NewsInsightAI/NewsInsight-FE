@@ -5,7 +5,6 @@ import Input from "@/components/ui/Input";
 import { AnimatePresence, motion } from "framer-motion";
 
 import Breadcrumbs from "@/components/Breadcrumbs";
-import { newsInterestOptions } from "@/utils/newsInterest";
 import SummaryProfile from "@/components/SummaryProfile";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import ListNewsCategory from "@/components/popup/ListNewsCategory";
@@ -16,6 +15,12 @@ const breadcrumbsItems = [
   { label: "Data Diri", isActive: true },
 ];
 
+interface City {
+  id: string;
+  name: string;
+  province_id: string;
+}
+
 export default function CompleteProfile() {
   const [navbarHeight, setNavbarHeight] = useState(0);
 
@@ -24,7 +29,7 @@ export default function CompleteProfile() {
   const [gender, setGender] = useState<string | null>(null);
   const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [domicile, setDomicile] = useState("");
+  const [domicile, setDomicile] = useState<City | null>(null);
   const [newsInterest, setNewsInterest] = useState<
     { label: string; value: string; icon: string }[]
   >([]);
@@ -33,6 +38,9 @@ export default function CompleteProfile() {
 
   const [showSummary, setShowSummary] = useState(false);
   const [showListNewsCategory, setShowListNewsCategory] = useState(false);
+  const [options, setOptions] = useState<{ value: string; label: string }[]>(
+    []
+  );
 
   useEffect(() => {
     const navbar = document.querySelector("nav");
@@ -59,40 +67,103 @@ export default function CompleteProfile() {
     label: string;
     icon: string;
   }) => {
-    // Remove the selected category from the newsInterest list
     setNewsInterest((prevInterest) =>
       prevInterest.filter((interest) => interest.value !== category.value)
     );
   };
 
+  useEffect(() => {
+    const fetchAllCities = async () => {
+      try {
+        const provinceIds = [
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "21",
+          "31",
+          "32",
+          "33",
+          "34",
+          "35",
+          "36",
+          "51",
+          "52",
+          "53",
+          "61",
+          "62",
+          "63",
+          "64",
+          "65",
+          "71",
+          "72",
+          "73",
+          "74",
+          "75",
+          "76",
+          "81",
+          "82",
+          "91",
+          "94",
+        ];
+        let allCitiesData: City[] = [];
+        for (const id of provinceIds) {
+          const response = await fetch(
+            `https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${id}.json`
+          );
+          const data: City[] = await response.json();
+          allCitiesData = [...allCitiesData, ...data];
+        }
+
+        const formattedOptions = allCitiesData.map((city) => ({
+          value: city.name,
+          label: city.name,
+        }));
+
+        setOptions(formattedOptions);
+      } catch (error) {
+        console.error("Gagal mengambil data kota/kabupaten:", error);
+      }
+    };
+
+    fetchAllCities();
+  }, []);
+
   return (
     <>
       <AnimatePresence>
         {showSummary && (
-          <motion.div
-            key="verify-email"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center"
-          >
-            <SummaryProfile
-              email={email}
-              fullName={fullName}
-              gender={gender === "Laki-laki"}
-              dateOfBirth={
-                dateOfBirth ? dateOfBirth.toISOString().split("T")[0] : ""
-              }
-              phoneNumber={phoneNumber}
-              domicile={domicile}
-              newsInterest={newsInterest.map((interest) => interest.label)}
-              headline={headline}
-              shortBio={shortBio}
-              onClose={() => setShowSummary(false)}
-              onSave={submitProfile}
-            />
-          </motion.div>
+          <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center">
+            <motion.div
+              key="verify-email"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className="w-full h-full inset-0 flex items-center justify-center"
+            >
+              <SummaryProfile
+                email={email}
+                fullName={fullName}
+                gender={gender === "Laki-laki"}
+                dateOfBirth={
+                  dateOfBirth ? dateOfBirth.toISOString().split("T")[0] : ""
+                }
+                phoneNumber={phoneNumber}
+                domicile={domicile?.name ?? ""}
+                newsInterest={newsInterest.map((interest) => interest.label)}
+                headline={headline}
+                shortBio={shortBio}
+                onClose={() => setShowSummary(false)}
+                onSave={submitProfile}
+              />
+            </motion.div>
+          </div>
         )}
         {showListNewsCategory && (
           <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center">
@@ -217,16 +288,28 @@ export default function CompleteProfile() {
               label="Kota Domisili"
               placeholder="Masukkan kota domisili..."
               type="select"
-              selectOptions={[...newsInterestOptions]}
+              selectOptions={[...options]}
               icon="ph:city-fill"
               value={
-                newsInterestOptions.find(
-                  (option) => option.value === domicile
-                ) || null
+                options.find((opt) => opt.value === domicile?.name) || null
               }
-              onSelectChange={(option) =>
-                setDomicile(Array.isArray(option) ? "" : option?.value || "")
-              }
+              onSelectChange={(option) => {
+                if (Array.isArray(option) || !option) {
+                  setDomicile(null);
+                } else {
+                  setDomicile((prev) => {
+                    const selectedCity = options.find(
+                      (opt) => opt.value === option.value
+                    );
+                    if (selectedCity) {
+                      return prev && prev.name === selectedCity.value
+                        ? prev
+                        : { id: "", name: selectedCity.value, province_id: "" };
+                    }
+                    return null;
+                  });
+                }
+              }}
             />
             <div className="flex flex-col gap-2.5 w-full">
               <div className="flex items-center gap-2">
@@ -237,7 +320,6 @@ export default function CompleteProfile() {
               </div>
 
               <div className="flex flex-col gap-2.5 w-full">
-                {/* If newsInterest is empty, show the button to choose interests */}
                 {newsInterest.length === 0 ? (
                   <button
                     type="button"
@@ -248,7 +330,6 @@ export default function CompleteProfile() {
                   </button>
                 ) : (
                   <>
-                    {/* Display the selected categories in grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
                       {newsInterest.map((interest) => (
                         <div
@@ -257,17 +338,16 @@ export default function CompleteProfile() {
                         >
                           <Icon icon={interest.icon} />
                           <p className="truncate">{interest.label}</p>
-                          {/* Button to remove category */}
+
                           <button
                             onClick={() => handleRemoveCategory(interest)}
-                            className="text-white ml-2"
+                            className="text-white ml-2 rounded-full p-1 hover:bg-white/20 transition cursor-pointer"
                           >
                             <Icon icon="mdi:close" />
                           </button>
                         </div>
                       ))}
 
-                      {/* Show the "Tambah Kategori" button only if there are less than 5 categories selected */}
                       {newsInterest.length < 5 && (
                         <button
                           type="button"

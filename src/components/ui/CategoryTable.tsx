@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import { Icon } from "@iconify/react";
+import { AnimatePresence, motion } from "framer-motion";
+import CategoryForm from "../popup/AddEditCategory";
 
 interface CategoryData {
   id: number;
@@ -17,6 +19,11 @@ interface CategoryTableProps {
 
 export default function CategoryTable({ datas }: CategoryTableProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryData | null>(
+    null
+  );
+
+  const [showEditCategory, setShowEditCategory] = useState(false);
 
   const toggleSelectItem = (id: string) => {
     setSelectedItems((prev) =>
@@ -34,6 +41,31 @@ export default function CategoryTable({ datas }: CategoryTableProps) {
 
   return (
     <>
+      <AnimatePresence>
+        {showEditCategory && (
+          <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center">
+            <motion.div
+              key="verify-email"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className="w-full h-full inset-0 flex items-center justify-center"
+            >
+              <CategoryForm
+                mode="edit"
+                initialName={selectedCategory?.name || ""}
+                initialDescription={selectedCategory?.description || ""}
+                onClose={() => setShowEditCategory(false)}
+                onSubmit={(data) => {
+                  console.log(data);
+                  setShowEditCategory(false);
+                }}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
       <div className="bg-white overflow-x-auto w-full">
         <table className="min-w-full bg-white">
           <thead className="rounded-xl">
@@ -102,8 +134,11 @@ export default function CategoryTable({ datas }: CategoryTableProps) {
                 </td>
                 <td className="py-4 px-4 text-sm space-x-2">
                   <button
-                    className="border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-3 py-2 text-sm hover:bg-gray-50 disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15"
-                    onClick={() => console.log(`Edit report ${report.id}`)}
+                    className="border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-3 py-2 text-sm hover:opacity-80 hover:cursor-pointer disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15"
+                    onClick={() => {
+                      setSelectedCategory(report);
+                      setShowEditCategory(true);
+                    }}
                   >
                     <Icon
                       icon="mage:edit-fill"
@@ -113,7 +148,7 @@ export default function CategoryTable({ datas }: CategoryTableProps) {
                     />
                     Edit
                   </button>
-                  <button className="border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-3 py-2 text-sm hover:bg-red-50">
+                  <button className="border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-3 py-2 text-sm hover:opacity-80 hover:cursor-pointer">
                     <Icon
                       icon="mingcute:delete-fill"
                       className="inline mr-1"

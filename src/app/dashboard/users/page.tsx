@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import Users from "./Users";
 
 export const metadata: Metadata = {
-  title: "Daftar Kategori - NewsInsight",
-  description: "Kelola kategori berita yang telah diunggah di NewsInsight.",
+  title: "Daftar Pengguna - NewsInsight",
+  description: "Kelola pengguna yang terdaftar di NewsInsight",
 };
 
 export default function UsersPage() {

@@ -7,6 +7,8 @@ import { newsStatusOptions } from "@/utils/newsStatus";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import React, { useEffect, useRef, useState } from "react";
 import { Vibrant } from "node-vibrant/browser";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 
 interface SectionProps {
   title: string;
@@ -27,15 +29,25 @@ const Section = ({
     switch (status) {
       case "in_filling":
         return (
-          <div className="bg-zinc-400 text-white rounded-full px-3 py-1.5 text-xs">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className="bg-zinc-400 text-white rounded-full px-3 py-1.5 text-xs"
+          >
             Dalam Pengisian
-          </div>
+          </motion.div>
         );
       case "filled":
         return (
-          <div className="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white rounded-full px-2 py-1 text-xs">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white rounded-full px-3 py-1.5 text-xs"
+          >
             Sudah Lengkap
-          </div>
+          </motion.div>
         );
       default:
         return null;
@@ -43,10 +55,21 @@ const Section = ({
   };
 
   return (
-    <div className="flex flex-row items-start justify-start gap-2.5 w-full">
-      <div className="h-10 w-10 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-2xl flex items-center justify-center p-2">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="flex flex-row items-start justify-start gap-2.5 w-full"
+    >
+      <motion.div
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.4 }}
+        className="h-10 w-10 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-2xl flex items-center justify-center p-2"
+      >
         <Icon icon={icon} fontSize={32} className="text-white" />
-      </div>
+      </motion.div>
+
       <div className="flex flex-col gap-2 w-full">
         <div className="flex items-center justify-between gap-2 w-full">
           <div className="flex flex-col w-full">
@@ -60,20 +83,22 @@ const Section = ({
         </div>
         {children}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
 export default function AddNews() {
-  const [newsTitle, setNewsTitle] = useState("");
-  const [newsCategory, setNewsCategory] = useState("");
-  const [newsStatus, setNewsStatus] = useState("");
+  const router = useRouter();
+  const [newsTitle, setNewsTitle] = useState<string>("");
+  const [newsCategory, setNewsCategory] = useState<string>("");
+  const [newsStatus, setNewsStatus] = useState<string>("");
   const [newsPublishDate, setNewsPublishDate] = useState<Date | string>(
     "15 Maret 2025, 15:20 WIB"
   );
   const [newsImage, setNewsImage] = useState<File | null>(null);
-  const [newsAuthor, setNewsAuthor] = useState("Rigel Ramadhani W.");
-  const [newsContent, setNewsContent] = useState("");
+  const [newsAuthor, setNewsAuthor] = useState<string>("Rigel Ramadhani W.");
+  const [newsContent, setNewsContent] = useState<string | null>(null);
+  const [newsTags, setNewsTags] = useState<string | null>(null);
 
   const [gradient, setGradient] = useState(
     "linear-gradient(to top, #367AF2CC, transparent)"
@@ -105,12 +130,18 @@ export default function AddNews() {
     };
   }, [imageUrl, newsImage]);
 
+  // useEffect(() => {
+  //   console.log("Konten berubah:", newsContent);
+  // }, [newsContent]);
+
   return (
     <div className="flex flex-col w-full h-full gap-6">
       <div className="flex items-center justify-between w-full pb-2.5 border-b border-[#E2E2E2]">
         <div className="flex items-center gap-2">
           <Icon
+            onClick={() => router.push("/dashboard/news")}
             icon="mingcute:arrow-left-circle-fill"
+            className="cursor-pointer"
             fontSize={28}
             color="#367AF2"
           />
@@ -196,6 +227,12 @@ export default function AddNews() {
                 </div>
               </div>
             </div>
+            <div
+              className="news-preview w-full h-full text-justify"
+              dangerouslySetInnerHTML={{
+                __html: newsContent || "<p>Konten berita muncul di sini</p>",
+              }}
+            ></div>
           </div>
         </div>
         <div className="flex flex-col gap-4 w-full items-start justify-start">
@@ -290,23 +327,30 @@ export default function AddNews() {
           </Section>
 
           <Section
-            title="Informasi Utama"
-            description="Masukkan data dasar informasi berita"
-            icon="solar:info-square-bold"
-            status="filled"
+            title="Konten Berita"
+            description="Masukkan konten utama berita dan tagar pendukung"
+            icon="fluent:content-view-16-filled"
+            status={
+              (newsContent ?? "").length > 0 && (newsTags ?? "").length > 0
+                ? "filled"
+                : "in_filling"
+            }
           >
             <div className="flex flex-col gap-4 w-full border rounded-2xl border-[#CFCFCF] p-5">
               <div className="flex flex-col gap-4 w-full">
+                <RichTextEditor
+                  value={newsContent ?? ""}
+                  onChange={setNewsContent}
+                />
                 <Input
-                  label="Judul Berita"
-                  placeholder="Masukkan judul berita..."
+                  label="Tagar Berita"
+                  placeholder="Masukkan tagar berita..."
                   type="text"
-                  icon="mingcute:text-fill"
-                  value={newsTitle}
-                  onChangeValue={setNewsTitle}
+                  icon="tabler:tag-filled"
+                  value={newsTags}
+                  onChangeValue={setNewsTags}
                   required
                 />
-                <RichTextEditor value={newsContent} onChange={setNewsContent} />
               </div>
             </div>
           </Section>
