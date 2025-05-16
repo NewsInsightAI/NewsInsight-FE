@@ -29,9 +29,10 @@ jobs:
           mkdir -p ~/.cloudflared
           echo "${{ secrets.CLOUDFLARE_CERT }}" > ~/.cloudflared/cert.pem
 
-      - name: Add server to known_hosts
+      - name: Setup known_hosts
         run: |
-          ssh-keyscan -p 22 ssh.robogo.website >> ~/.ssh/known_hosts
+          mkdir -p ~/.ssh
+          echo "${{ secrets.KNOWN_HOSTS }}" > ~/.ssh/known_hosts
 
       - name: Test SSH connection and run command
         run: |
