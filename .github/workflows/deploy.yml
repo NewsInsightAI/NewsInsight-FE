@@ -35,6 +35,12 @@ jobs:
           echo "${{ secrets.KNOWN_HOSTS }}" > ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
-      - name: Test SSH connection and run command
+      - name: Deploy app via SSH
         run: |
-          ssh -o "ProxyCommand=cloudflared access ssh --hostname ssh.robogo.website" -o StrictHostKeyChecking=no root@ssh.robogo.website hostname
+          ssh -o "ProxyCommand=cloudflared access ssh --hostname ssh.robogo.website" -o StrictHostKeyChecking=no root@ssh.robogo.website << 'EOF'
+            cd /mnt/sdcard/NewsInsightAI/client/
+            git pull
+            npm install
+            npm run build
+            pm2 restart newsinsight_fe
+          EOF
