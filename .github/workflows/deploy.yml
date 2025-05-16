@@ -1,0 +1,31 @@
+name: Deploy via SSH with Cloudflared
+
+on:
+  push:
+    branches:
+      - main  # atau sesuaikan branchmu
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Setup SSH directory and private key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+
+    - name: Setup Cloudflared cert
+      run: |
+        mkdir -p ~/.cloudflared
+        echo "${{ secrets.CLOUDFLARE_CERT }}" > ~/.cloudflared/cert.pem
+
+    - name: Test SSH connection and run command
+      env:
+        SSH_AUTH_SOCK: /tmp/ssh-agent.sock
+      run: |
+        ssh -o "ProxyCommand=cloudflared access ssh --hostname ssh.robogo.website" root@ssh.robogo.website hostname

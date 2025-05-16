@@ -70,7 +70,7 @@ export default function Login() {
           </motion.div>
         )}
       </AnimatePresence>
-      <div className="flex flex-col h-screen w-full bg-white text-black p-6 overflow-hidden">
+      <div className="flex flex-col h-screen w-full bg-white text-black p-6 overflow-y-auto">
         <div className="flex flex-1" style={{ paddingTop: navbarHeight }}>
           <motion.div
             className="flex flex-col gap-6 items-center justify-start w-full h-full bg-white rounded-lg pl-6 pr-10 py-6 text-black"

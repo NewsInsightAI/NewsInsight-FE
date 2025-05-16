@@ -59,7 +59,7 @@ export default function Register() {
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col h-screen bg-white w-full text-black p-6 overflow-hidden">
+      <div className="flex flex-col h-screen bg-white w-full text-black p-6 overflow-y-auto">
         <div className="flex flex-1" style={{ paddingTop: navbarHeight }}>
           <motion.div
             initial={{ opacity: 0, x: -40 }}

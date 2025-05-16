@@ -162,15 +162,14 @@ export default function AddNews() {
         </div>
       </div>
 
-      <div className="flex items-start justify-between w-full h-fit gap-6">
-        <div className="flex flex-col gap-4 w-full items-start justify-start">
+      <div className="flex items-start justify-between w-full h-fit gap-6 overflow-y-auto">
+        <div className="flex flex-col gap-4 w-full items-start justify-start sticky top-0">
           <div className="flex items-center justify-center gap-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white rounded-xl px-4 py-2.5 font-semibold w-full">
             <Icon icon="fluent:content-view-28-filled" fontSize={20} />
             <p className="text-sm">Preview Berita</p>
           </div>
           <div className="flex flex-col gap-4 w-full border rounded-2xl border-[#CFCFCF] p-5">
             <div className="relative w-full h-[400px] rounded-2xl overflow-hidden">
-              {/* use <img> so Vibrant can read it */}
               <img
                 alt="Preview"
                 src={imageUrl}
@@ -194,7 +193,6 @@ export default function AddNews() {
                 crossOrigin="anonymous"
               />
 
-              {/* overlay gradient */}
               <div
                 className="absolute inset-0 flex flex-col items-end justify-between p-6"
                 style={{ background: gradient }}
