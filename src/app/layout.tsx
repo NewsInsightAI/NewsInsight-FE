@@ -24,7 +24,7 @@ export default function RootLayout({
       <body className={`${interFont.className} antialiased`}>
         <Navbar />
         <div className="bg-white min-h-screen">
-          <main className="flex flex-col items-center justify-center h-full">
+          <main className="flex flex-col items-center justify-center h-full w-full">
             {children}
           </main>
           <Footer />
