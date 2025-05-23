@@ -42,6 +42,7 @@ jobs:
             export NVM_DIR=\"\$HOME/.nvm\"
             [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\"
             cd /mnt/sdcard/NewsInsightAI/client/
+            git stash
             git pull
             npm install
             npm run build
