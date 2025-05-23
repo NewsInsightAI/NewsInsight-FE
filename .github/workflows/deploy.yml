@@ -3,7 +3,7 @@ name: Deploy via SSH with Cloudflared
 on:
   push:
     branches:
-      - main # atau sesuaikan branchmu
+      - main
 
 jobs:
   deploy:
