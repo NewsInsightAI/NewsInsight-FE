@@ -37,11 +37,13 @@ jobs:
 
       - name: Deploy app via SSH
         run: |
-          ssh -o "ProxyCommand=cloudflared access ssh --hostname ssh.robogo.website" -o StrictHostKeyChecking=no root@ssh.robogo.website bash -lc '
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          ssh -o "ProxyCommand=cloudflared access ssh --hostname ssh.robogo.website" -o StrictHostKeyChecking=no root@ssh.robogo.website bash -lc "
+            export PATH=\$PATH:/usr/local/bin
+            export NVM_DIR=\"\$HOME/.nvm\"
+            [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\"
             cd /mnt/sdcard/NewsInsightAI/client/
+            git pull
             npm install
             npm run build
             pm2 restart newsinsight_fe
-          '
+          "
