@@ -1,7 +1,9 @@
+"use client";
 import React from "react";
 import { Icon } from "@iconify/react";
 import Image from "next/image";
 import { Manrope } from "next/font/google";
+import { usePathname } from "next/navigation";
 
 const manropeFont = Manrope({
   subsets: ["latin"],
@@ -39,21 +41,48 @@ const menuItems = [
 ];
 
 export default function Footer() {
-  return (
-    <footer className="flex flex-col gap-6">
-      {/* <div className="relative text-white px-12 py-6 rounded-3xl font-normal overflow-hidden flex justify-center items-center gap-10 h-48">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] z-0" />
-        <div className="absolute inset-0 bg-black/20 z-10" />
-        <div className="relative z-20 flex flex-row justify-between items-center w-full">
-          <p className="font-bold text-3xl w-96 leading-12">
-            Ingin terus update dengan berita terbaik kami?
-          </p>
+  const pathname = usePathname();
+  const isShowFooter =
+    !pathname.includes("/dashboard") &&
+    !pathname.includes("/login") &&
+    !pathname.includes("/register") &&
+    !pathname.includes("/dashboard") &&
+    !pathname.includes("/news") &&
+    !pathname.includes("/profile") &&
+    !pathname.includes("/reset-password");
 
-          <button className="px-7 py-4 rounded-full border-2 border-white/60 bg-white/20 text-white font-bold text-base hover:bg-white/30 transition duration-300 ease-in-out cursor-pointer">
+  if (!isShowFooter) return null;
+
+  return (
+    <footer className="flex flex-col gap-6 p-6">
+      <div className="relative text-white px-12 py-6 rounded-3xl font-normal overflow-hidden flex justify-center items-center gap-10 h-48">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] z-0" />
+        <Image
+          src="/images/newsinsight-fullwhite.png"
+          alt="News"
+          width={70}
+          height={70}
+          className="object-cover opacity-50 absolute -bottom-4 -left-2 -rotate-[13deg]"
+        />
+        <div className="relative z-20 flex flex-row justify-between items-center w-full">
+          <div className="relative">
+            <Image
+              src="/images/newsinsight-fullwhite.png"
+              alt="News"
+              width={70}
+              height={70}
+              className="object-cover opacity-50 absolute -top-4 -right-20 rotate-[22deg]"
+            />
+            <p className="font-bold text-[32px] w-[420px] leading-12">
+              Ingin terus update dengan berita terbaik kami?
+            </p>
+          </div>
+
+          <button className="px-7 py-4 rounded-full border-2 border-white/60 text-white font-medium text-base hover:bg-white/30 transition duration-300 ease-in-out cursor-pointer">
             DAFTAR SEKARANG
           </button>
         </div>
-      </div> */}
+      </div>
 
       <div className="relative text-white px-12 py-6 rounded-3xl font-normal overflow-hidden flex flex-col gap-10">
         <div className="absolute inset-0 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] z-0" />
