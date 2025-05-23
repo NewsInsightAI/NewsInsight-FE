@@ -1,36 +1,27 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NewsInsight AI
 
-## Getting Started
+## Overview
+NewsInsight AI is a powerful tool designed to help users stay informed about the latest news and trends in their industry. By leveraging advanced AI technology, NewsInsight AI provides personalized news summaries, trend analysis, and insights tailored to individual user preferences.
 
-First, run the development server:
+## Features
+- **Personalized News Summaries**: Get concise summaries of the latest news articles based on your interests.
+- **Trend Analysis**: Stay ahead of the curve with insights into emerging trends and topics in your industry.
+- **AI Summarization**: Save time by receiving AI-generated summaries of lengthy articles, allowing you to quickly grasp the key points.
+- **User-Friendly Interface**: Navigate through the app easily with a clean and intuitive design.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Paths Page
+- **/**: Homepage
+- **/register**: User registration page
+- **/login**: User login page
+- **/reset-password**: Password reset page
+- **/profile**: User profile page
+- **/dashboard**: Dashboard page for Admin, Editor, and Contributor roles, showing statistics and news articles
+- **/dashboard/news**: News articles page for Admin, Editor, and Contributor roles
+- **/dashboard/news/add**: Create news article page for Admin and Editor roles
+- **/dashboard/news/edit/:id**: Edit news article page for Admin and Editor roles
+- **/dashboard/categories**: Categories page for Admin and Editor roles
+- **/dashboard/comments**: Comments page for Admin and Editor roles
+- **/dashboard/users**: User management page for Admin roles
+- **/dashboard/settings/profile**: Profile settings page for all users
+- **/dashboard/settings/personal-data**: Personal data settings page for all users
+- **/dashboard/settings/account-security**: Account security settings page for all users

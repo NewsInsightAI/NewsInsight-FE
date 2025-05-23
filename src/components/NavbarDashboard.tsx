@@ -135,7 +135,7 @@ export default function NavbarDashboard() {
             >
               <ul className="text-sm text-black flex flex-col">
                 <Link
-                  href="/dashboard/profile"
+                  href="/profile"
                   className="px-5 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
                 >
                   <Icon icon="iconamoon:profile-fill" fontSize={18} />
