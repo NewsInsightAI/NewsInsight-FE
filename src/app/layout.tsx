@@ -3,6 +3,7 @@ import "./globals.css";
 import { Navbar } from "../components/Navbar";
 import { Inter } from "next/font/google";
 import Footer from "../components/Footer";
+import { ToastProvider } from "@/context/ToastProvider";
 
 const interFont = Inter({
   subsets: ["latin"],
@@ -22,13 +23,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${interFont.className} antialiased`}>
-        <Navbar />
-        <div className="bg-white min-h-screen">
-          <main className="flex flex-col items-center justify-center h-full w-full">
-            {children}
-          </main>
-          <Footer />
-        </div>
+        <ToastProvider>
+          <Navbar />
+          <div className="bg-white min-h-screen">
+            <main className="flex flex-col items-center justify-center h-full w-full">
+              {children}
+            </main>
+            <Footer />
+          </div>
+        </ToastProvider>
       </body>
     </html>
   );

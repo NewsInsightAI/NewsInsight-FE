@@ -1,14 +1,45 @@
 "use client";
 import { Icon } from "@iconify/react";
 import React, { useState } from "react";
+import { useToast } from "@/context/ToastProvider";
 
 export default function ForgotPassword(props: { onClose: () => void }) {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { promise } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: kirim request reset password
-    console.log("Kirim link reset ke:", email);
+    setLoading(true);
+    await promise(
+      (async () => {
+        const res = await fetch("/api/auth/request-reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(
+            data?.message || "Gagal mengirim link reset password."
+          );
+        }
+        setEmail("");
+        // Close popup on success
+        props.onClose();
+        return data;
+      })(),
+      {
+        loading: "Mengirim link reset password...",
+        success: () =>
+          "Link reset password telah dikirim ke email Anda (cek folder spam jika tidak ditemukan).",
+        error: (err) =>
+          err instanceof Error
+            ? err.message
+            : "Terjadi kesalahan. Silakan coba lagi.",
+      }
+    );
+    setLoading(false);
   };
 
   const handleClose = () => {
@@ -18,7 +49,7 @@ export default function ForgotPassword(props: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center p-6 text-black bg-black/30 backdrop-blur-sm"
+      className="fixed inset-0 flex items-center justify-center p-6 text-black backdrop-blur-sm"
       style={{ zIndex: 1000 }}
     >
       <div className="relative bg-white rounded-2xl shadow-xl p-8 w-[480px] max-w-[95%] text-center space-y-6">
@@ -63,9 +94,10 @@ export default function ForgotPassword(props: { onClose: () => void }) {
 
           <button
             type="submit"
-            className="w-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition cursor-pointer"
+            className="w-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition cursor-pointer disabled:opacity-60"
+            disabled={loading}
           >
-            Kirim Link Reset
+            {loading ? "Mengirim..." : "Kirim Link Reset"}
             <Icon icon="ph:paper-plane-tilt-fill" className="text-base" />
           </button>
         </form>

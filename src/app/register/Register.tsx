@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import VerifyEmail from "../../components/popup/VerifyEmail";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import { useToast } from "@/context/ToastProvider";
 
 const breadcrumbsItems = [
   { label: "Beranda", href: "/" },
@@ -16,21 +17,74 @@ export default function Register() {
   const [navbarHeight, setNavbarHeight] = useState(0);
   const [showVerifyEmail, setShowVerifyEmail] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { promise, showToast } = useToast();
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [verifyEmailData, setVerifyEmailData] = useState<{
+    email: string;
+    userId: number;
+  } | null>(null);
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (password !== confirmPassword) {
+      showToast("Konfirmasi password tidak cocok.", "error");
+      return;
+    }
+    await promise(
+      (async () => {
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, email, password }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data?.message || "Registrasi gagal.");
+        }
+        setVerifyEmailData({ email, userId: data.id });
+        setShowVerifyEmail(true);
+        return data;
+      })(),
+      {
+        loading: "Mendaftarkan akun...",
+        success: () => "Registrasi berhasil! Silakan verifikasi email Anda.",
+        error: (err) =>
+          err instanceof Error
+            ? err.message
+            : "Terjadi kesalahan. Silakan coba lagi.",
+      }
+    );
+  };
 
   useEffect(() => {
-    const navbar = document.querySelector("nav");
+    const navbar = document.querySelector("#navbar");
     if (navbar) {
       setNavbarHeight(navbar.clientHeight);
     }
 
     const handleResize = () => {
+      const navbar = document.querySelector("#navbar");
       if (navbar) {
         setNavbarHeight(navbar.clientHeight);
       }
     };
 
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    // Observer untuk perubahan ukuran navbar
+    let observer: ResizeObserver | null = null;
+    if (navbar && typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(() => {
+        setNavbarHeight(navbar.clientHeight);
+      });
+      observer.observe(navbar);
+    }
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (observer && navbar) observer.disconnect();
+    };
   }, []);
 
   const advancedFeatures = [
@@ -53,19 +107,30 @@ export default function Register() {
               transition={{ duration: 0.3 }}
               className="w-full h-full inset-0 flex items-center justify-center"
             >
-              <VerifyEmail onClose={() => setShowVerifyEmail(false)} />
+              <VerifyEmail
+                onClose={() => setShowVerifyEmail(false)}
+                {...(verifyEmailData ? verifyEmailData : {})}
+              />
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col h-screen bg-white w-full text-black p-6 overflow-y-auto">
-        <div className="flex flex-1" style={{ paddingTop: navbarHeight }}>
+      <div
+        style={{
+          paddingTop:
+            typeof window !== "undefined" && window.innerWidth < 768
+              ? navbarHeight
+              : navbarHeight + 20,
+        }}
+        className="flex flex-col md:flex-row h-full w-full bg-white text-black p-4 md:p-6 overflow-y-auto"
+      >
+        <div className="flex flex-1 w-full md:w-auto items-center justify-center">
           <motion.div
             initial={{ opacity: 0, x: -40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
-            className="relative text-white px-14 py-12 rounded-3xl font-normal overflow-hidden flex justify-center items-center w-fit h-full bg-gradient-to-br from-[#2FAACC] to-[#2B62C2]"
+            className="hidden md:flex relative text-white px-14 py-12 rounded-3xl font-normal overflow-hidden justify-center items-center w-fit h-full bg-gradient-to-br from-[#2FAACC] to-[#2B62C2]"
           >
             <div className="relative z-20 flex flex-col justify-between items-start w-full h-full">
               <div className="flex flex-col gap-4 items-start">
@@ -85,21 +150,25 @@ export default function Register() {
                 </ul>
               </div>
 
-              <Image
-                src="/images/undraw_online-articles.png"
-                alt="NewsInsight"
-                width={500}
-                height={500}
-                className="object-contain"
-              />
+              {/* Gambar dinamis, responsive */}
+              <div className="relative w-full h-40 md:h-60 lg:h-80 mt-6">
+                <Image
+                  src="/images/undraw_online-articles.png"
+                  alt="NewsInsight"
+                  fill
+                  className="object-contain w-full h-full"
+                  priority
+                />
+              </div>
             </div>
           </motion.div>
 
+          {/* Panel Kanan: Form Register */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="flex flex-col gap-4 items-center justify-start w-full h-full bg-white rounded-lg pl-10 pr-6 py-6 text-black"
+            className="flex flex-col gap-4 items-center justify-start w-full mx-auto h-full bg-white rounded-lg px-4 md:pl-10 md:pr-6 py-6 text-black"
           >
             <div className="flex w-full items-start">
               <Breadcrumbs items={breadcrumbsItems} />
@@ -111,7 +180,10 @@ export default function Register() {
               </p>
             </div>
 
-            <form className="flex flex-col gap-3 w-full">
+            <form
+              className="flex flex-col gap-3 w-full"
+              onSubmit={handleSubmit}
+            >
               {/* Username */}
               <div className="mb-3">
                 <label className="block font-medium text-gray-800 mb-1">
@@ -125,10 +197,11 @@ export default function Register() {
                     type="text"
                     placeholder="Masukkan username..."
                     className="w-full border border-gray-300 rounded-lg py-2 px-3 pl-10 text-gray-700 focus:outline-none focus:border-blue-500"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                   />
                 </div>
               </div>
-
               {/* Email */}
               <div className="mb-3">
                 <label className="block font-medium text-gray-800 mb-1">
@@ -142,10 +215,11 @@ export default function Register() {
                     type="email"
                     placeholder="Masukkan email..."
                     className="w-full border border-gray-300 rounded-lg py-2 px-3 pl-10 text-gray-700 focus:outline-none focus:border-blue-500"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
               </div>
-
               {/* Password */}
               <div className="mb-3">
                 <label className="block font-medium text-gray-800 mb-1">
@@ -162,6 +236,8 @@ export default function Register() {
                     type={showPassword ? "text" : "password"}
                     placeholder="Masukkan password..."
                     className="w-full border border-gray-300 rounded-lg py-2 px-3 pl-10 pr-10 text-gray-700 focus:outline-none focus:border-blue-500"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                   />
                   <button
                     type="button"
@@ -179,7 +255,6 @@ export default function Register() {
                   Gunakan minimal 8 karakter dengan kombinasi huruf dan angka
                 </p>
               </div>
-
               {/* Konfirmasi Password */}
               <div className="mb-3">
                 <label className="block font-medium text-gray-800 mb-1">
@@ -196,6 +271,8 @@ export default function Register() {
                     type={showPassword ? "text" : "password"}
                     placeholder="Masukkan konfirmasi password..."
                     className="w-full border border-gray-300 rounded-lg py-2 px-3 pl-10 pr-10 text-gray-700 focus:outline-none focus:border-blue-500"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                   />
                   <button
                     type="button"
@@ -213,7 +290,7 @@ export default function Register() {
             </form>
 
             <div className="flex flex-col gap-2.5 items-center w-full">
-              <p className="text-black/40 text-sm">
+              <p className="text-black/40 text-sm text-justify">
                 Dengan melakukan pendaftaran, Anda setuju dengan{" "}
                 <span className="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] bg-clip-text text-transparent font-bold">
                   syarat & ketentuan
@@ -222,7 +299,7 @@ export default function Register() {
               </p>
 
               <motion.button
-                onClick={() => setShowVerifyEmail(true)}
+                onClick={handleSubmit}
                 className="cursor-pointer text-white rounded-lg px-5 py-3 w-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] transition duration-300 ease-in-out hover:opacity-80"
               >
                 Daftar
@@ -257,6 +334,7 @@ export default function Register() {
           </motion.div>
         </div>
       </div>
+      {/* Panel Kiri: Kenapa NewsInsight? (hidden di mobile) */}
     </>
   );
 }

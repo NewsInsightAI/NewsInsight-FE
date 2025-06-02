@@ -1,10 +1,20 @@
 "use client";
 import { Icon } from "@iconify/react";
 import React, { useRef, useState } from "react";
+import { useToast } from "@/context/ToastProvider";
 
-export default function VerifyEmail(props: { onClose: () => void }) {
+interface VerifyEmailProps {
+  onClose: () => void;
+  email?: string;
+  userId?: number;
+}
+
+export default function VerifyEmail(props: VerifyEmailProps) {
   const [code, setCode] = useState(Array(6).fill(""));
+  const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  const { showToast } = useToast();
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -37,6 +47,58 @@ export default function VerifyEmail(props: { onClose: () => void }) {
     props.onClose();
   };
 
+  const handleVerify = async () => {
+    if (code.some((c) => !c)) {
+      showToast("Kode verifikasi harus 6 digit.", "error");
+      return;
+    }
+    setLoading(true);
+    try {
+      console.log("Verifying email with code:", code.join(""));
+      const res = await fetch("/api/auth/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: props.userId,
+          otp: code.join(""),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setLoading(false);
+      if (!res.ok) {
+        showToast(data?.message || "Verifikasi gagal.", "error");
+        return;
+      }
+      showToast("Email berhasil diverifikasi! Silakan login.", "success");
+      handleClose();
+    } catch {
+      setLoading(false);
+      showToast("Terjadi kesalahan. Silakan coba lagi.", "error");
+    }
+  };
+
+  const handleResend = async () => {
+    if (!props.userId) return;
+    setResendLoading(true);
+    try {
+      const res = await fetch("/api/auth/resend-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: props.userId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setResendLoading(false);
+      if (!res.ok) {
+        showToast(data?.message || "Gagal mengirim ulang kode.", "error");
+        return;
+      }
+      showToast("Kode verifikasi berhasil dikirim ulang!", "success");
+    } catch {
+      setResendLoading(false);
+      showToast("Terjadi kesalahan. Silakan coba lagi.", "error");
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 flex items-center justify-center p-6 text-black"
@@ -60,8 +122,8 @@ export default function VerifyEmail(props: { onClose: () => void }) {
         <div>
           <h2 className="text-xl font-bold mb-1">Verifikasi Email</h2>
           <p className="text-gray-800 text-sm">
-            Kami telah mengirimkan email yang berisi 6 digit kode verifikasi ke{" "}
-            <span className="font-semibold">rigel@gmail.com</span>
+            Kami telah mengirimkan email yang berisi 6 digit kode verifikasi ke
+            <span className="font-semibold"> {props.email || "-"}</span>
           </p>
         </div>
 
@@ -80,24 +142,31 @@ export default function VerifyEmail(props: { onClose: () => void }) {
               onChange={(e) => handleChange(e, index)}
               onKeyDown={(e) => handleKeyDown(e, index)}
               className={`w-14 h-14 text-center text-2xl font-bold border-2 rounded-xl outline-none transition 
-              ${
-                digit ? "border-blue-400" : "border-gray-200"
-              } focus:ring-2 focus:ring-blue-300`}
+              ${digit ? "border-blue-400" : "border-gray-200"} focus:ring-2 focus:ring-blue-300`}
+              disabled={loading}
             />
           ))}
         </div>
 
         {/* Tombol Verifikasi */}
-        <button className="w-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition cursor-pointer">
-          Verifikasi
+        <button
+          className="w-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition cursor-pointer disabled:opacity-60"
+          onClick={handleVerify}
+          disabled={loading}
+        >
+          {loading ? "Memverifikasi..." : "Verifikasi"}
           <Icon icon="ph:paper-plane-tilt-fill" className="text-base" />
         </button>
 
         {/* Kirim ulang */}
         <p className="text-sm text-gray-500">
           Tidak menerima email?{" "}
-          <button className="text-blue-500 hover:underline font-medium cursor-pointer">
-            Kirim ulang
+          <button
+            className="text-blue-500 hover:underline font-medium cursor-pointer"
+            disabled={loading || resendLoading}
+            onClick={handleResend}
+          >
+            {resendLoading ? "Mengirim ulang..." : "Kirim ulang"}
           </button>
         </p>
       </div>
