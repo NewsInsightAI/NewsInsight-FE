@@ -20,12 +20,16 @@ export default function ForgotPassword(props: { onClose: () => void }) {
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
+          
+          if (data?.error?.code === "GOOGLE_AUTH_NO_PASSWORD") {
+            throw new Error("Akun ini terdaftar melalui Google. Untuk masuk, silakan gunakan tombol 'Masuk dengan Google'.");
+          }
           throw new Error(
             data?.message || "Gagal mengirim link reset password."
           );
         }
         setEmail("");
-        // Close popup on success
+        
         props.onClose();
         return data;
       })(),

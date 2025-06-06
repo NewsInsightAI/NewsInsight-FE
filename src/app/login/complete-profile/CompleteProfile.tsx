@@ -3,11 +3,16 @@
 import React, { useState, useEffect } from "react";
 import Input from "@/components/ui/Input";
 import { AnimatePresence, motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/context/ToastProvider";
+import { useSession } from "next-auth/react";
+import Image from "next/image";
 
 import Breadcrumbs from "@/components/Breadcrumbs";
 import SummaryProfile from "@/components/SummaryProfile";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import ListNewsCategory from "@/components/popup/ListNewsCategory";
+import { getAvatarUrl } from "@/utils/avatarUtils";
 
 const breadcrumbsItems = [
   { label: "Beranda", href: "/" },
@@ -22,19 +27,28 @@ interface City {
 }
 
 export default function CompleteProfile() {
+  const router = useRouter();
+  const { showToast } = useToast();
+  const { data: session } = useSession();
   const [navbarHeight, setNavbarHeight] = useState(0);
 
-  const [email, setEmail] = useState("rigel@gmail.com");
+  const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [gender, setGender] = useState<string | null>(null);
   const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [domicile, setDomicile] = useState<City | null>(null);
   const [newsInterest, setNewsInterest] = useState<
-    { label: string; value: string; icon: string }[]
+    { label: string; value: string }[]
   >([]);
   const [headline, setHeadline] = useState("");
   const [shortBio, setShortBio] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  
+  const [avatar, setAvatar] = useState<string>("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>("");
 
   const [showSummary, setShowSummary] = useState(false);
   const [showListNewsCategory, setShowListNewsCategory] = useState(false);
@@ -58,14 +72,115 @@ export default function CompleteProfile() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const submitProfile = () => {
+  
+  useEffect(() => {
+    if (session?.user?.email) {
+      setEmail(session.user.email);
+    }
+  }, [session]);
+
+  const showProfileSummary = () => {
     setShowSummary(true);
+  };
+
+  
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      
+      if (!file.type.startsWith('image/')) {
+        showToast('Mohon pilih file gambar yang valid', 'error');
+        return;
+      }
+      
+      
+      if (file.size > 2 * 1024 * 1024) {
+        showToast('Ukuran file harus kurang dari 2MB', 'error');
+        return;
+      }
+      
+      setAvatarFile(file);
+      
+      
+      const previewUrl = URL.createObjectURL(file);
+      setAvatarPreview(previewUrl);
+    }
+  };
+
+  const submitProfile = async () => {
+    setIsSubmitting(true);
+    try {
+      let avatarUrl = avatar;
+
+      
+      if (avatarFile) {
+        const formData = new FormData();
+        formData.append('avatar', avatarFile);
+        
+        const uploadResponse = await fetch("/api/upload/avatar", {
+          method: "POST",
+          body: formData,
+        });
+        
+        const uploadResult = await uploadResponse.json();
+        
+        if (uploadResponse.ok && uploadResult.status === "success") {
+          avatarUrl = uploadResult.data.avatar;
+          setAvatar(avatarUrl); 
+        } else {
+          throw new Error(uploadResult.message || "Gagal mengupload avatar");
+        }
+      }
+
+      const profileData = {
+        full_name: fullName,
+        gender: gender,
+        date_of_birth: dateOfBirth?.toISOString().split('T')[0],
+        phone_number: phoneNumber,
+        domicile: domicile?.name || "",
+        news_interest: JSON.stringify(newsInterest),
+        headline: headline,
+        biography: shortBio,
+        avatar: avatarUrl,
+      };
+
+      const response = await fetch("/api/profile/me", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.status === "success") {
+        showToast("Profil berhasil dilengkapi!", "success");
+        
+        
+        setShowSummary(false);
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 1000);
+      } else {
+        throw new Error(result.message || "Gagal menyimpan profil");
+      }
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      showToast(
+        error instanceof Error
+          ? error.message
+          : "Terjadi kesalahan saat menyimpan profil",
+        "error"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleRemoveCategory = (category: {
     value: string;
     label: string;
-    icon: string;
   }) => {
     setNewsInterest((prevInterest) =>
       prevInterest.filter((interest) => interest.value !== category.value)
@@ -159,8 +274,10 @@ export default function CompleteProfile() {
                 newsInterest={newsInterest.map((interest) => interest.label)}
                 headline={headline}
                 shortBio={shortBio}
+                avatar={avatarPreview || avatar}
                 onClose={() => setShowSummary(false)}
                 onSave={submitProfile}
+                isSubmitting={isSubmitting}
               />
             </motion.div>
           </div>
@@ -219,6 +336,44 @@ export default function CompleteProfile() {
             />
           </div>
           <form className="flex flex-col gap-5 w-full">
+            {/* Profile Picture Upload */}
+            <div className="flex flex-col gap-2.5 w-full">
+              <p className="font-medium text-gray-800">Foto Profil (Opsional)</p>
+              <div className="flex items-center justify-start gap-3">
+                <Image
+                  src={avatarPreview || getAvatarUrl(avatar)}
+                  alt="Profile Preview"
+                  width={80}
+                  height={80}
+                  className="rounded-full border border-gray-300 bg-gray-200 object-cover"
+                />
+                <div className="flex flex-col items-start gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                    id="avatar-upload"
+                  />
+                  <label
+                    htmlFor="avatar-upload"
+                    className="px-4 py-2 rounded-xl bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white font-medium hover:opacity-80 transition cursor-pointer flex items-center justify-center gap-2 w-fit"
+                  >
+                    Pilih Foto
+                    <Icon icon="mynaui:image-solid" width={16} height={16} />
+                  </label>
+                  {avatarFile && (
+                    <p className="text-sm text-green-600">
+                      File terpilih: {avatarFile.name}
+                    </p>
+                  )}
+                  <p className="text-sm text-gray-500">
+                    Gambar profil sebaiknya memiliki rasio 1:1 dan berukuran tidak lebih dari 2MB.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <Input
               label="Email"
               placeholder="Masukkan email..."
@@ -336,7 +491,6 @@ export default function CompleteProfile() {
                           key={interest.value}
                           className="flex items-center justify-center gap-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] px-4 py-2 rounded-xl text-base text-white"
                         >
-                          <Icon icon={interest.icon} />
                           <p className="truncate">{interest.label}</p>
 
                           <button
@@ -385,7 +539,7 @@ export default function CompleteProfile() {
           <motion.button
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
-            onClick={() => setShowSummary(true)}
+            onClick={showProfileSummary}
             disabled={
               !email ||
               !fullName ||

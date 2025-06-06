@@ -33,3 +33,11 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Additional responsive utilities */
+@media (max-width: 640px) {
+  .container-padding {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}

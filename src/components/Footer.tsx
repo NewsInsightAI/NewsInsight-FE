@@ -54,52 +54,52 @@ export default function Footer() {
   if (!isShowFooter) return null;
 
   return (
-    <footer className="flex flex-col gap-6 p-6">
-      <div className="relative text-white px-12 py-6 rounded-3xl font-normal overflow-hidden flex justify-center items-center gap-10 h-48">
+    <footer className="flex flex-col gap-4 md:gap-6 p-4 md:p-6 bg-white">
+      <div className="relative text-white px-6 md:px-12 py-6 md:py-8 rounded-2xl md:rounded-3xl font-normal overflow-hidden flex justify-center items-center gap-4 md:gap-10 min-h-[200px] md:h-48">
         <div className="absolute inset-0 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] z-0" />
         <Image
           src="/images/newsinsight-fullwhite.png"
           alt="News"
-          width={70}
-          height={70}
-          className="object-cover opacity-50 absolute -bottom-4 -left-2 -rotate-[13deg]"
+          width={50}
+          height={50}
+          className="object-cover opacity-50 absolute -bottom-2 md:-bottom-4 -left-1 md:-left-2 -rotate-[13deg] w-[50px] md:w-[70px] h-[50px] md:h-[70px]"
         />
-        <div className="relative z-20 flex flex-row justify-between items-center w-full">
-          <div className="relative">
+        <div className="relative z-20 flex flex-col md:flex-row justify-between items-center w-full gap-6 md:gap-0">
+          <div className="relative text-center md:text-left">
             <Image
               src="/images/newsinsight-fullwhite.png"
               alt="News"
-              width={70}
-              height={70}
-              className="object-cover opacity-50 absolute -top-4 -right-20 rotate-[22deg]"
+              width={50}
+              height={50}
+              className="object-cover opacity-50 absolute -top-2 md:-top-4 -right-8 md:-right-20 rotate-[22deg] w-[50px] md:w-[70px] h-[50px] md:h-[70px] hidden md:block"
             />
-            <p className="font-bold text-[32px] w-[420px] leading-12">
+            <p className="font-bold text-xl md:text-[32px] w-full md:w-[420px] leading-tight md:leading-12">
               Ingin terus update dengan berita terbaik kami?
             </p>
           </div>
 
-          <button className="px-7 py-4 rounded-full border-2 border-white/60 text-white font-medium text-base hover:bg-white/30 transition duration-300 ease-in-out cursor-pointer">
+          <button className="px-6 md:px-7 py-3 md:py-4 rounded-full border-2 border-white/60 text-white font-medium text-sm md:text-base hover:bg-white/30 transition duration-300 ease-in-out cursor-pointer whitespace-nowrap">
             DAFTAR SEKARANG
           </button>
         </div>
       </div>
 
-      <div className="relative text-white px-12 py-6 rounded-3xl font-normal overflow-hidden flex flex-col gap-10">
+      <div className="relative text-white px-6 md:px-12 py-6 md:py-8 rounded-2xl md:rounded-3xl font-normal overflow-hidden flex flex-col gap-6 md:gap-10">
         <div className="absolute inset-0 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] z-0" />
         <div className="absolute inset-0 bg-black/20 z-10" />
-        <div className="relative z-20 flex flex-row justify-between items-start w-full">
-          <div className="flex flex-row justify-between gap-12">
+        <div className="relative z-20 flex flex-col lg:flex-row justify-between items-start w-full gap-8 lg:gap-0">
+          <div className="flex flex-col md:flex-row justify-between gap-8 md:gap-12 w-full lg:w-auto">
             {menuItems.map((menu, index) => (
-              <div key={index} className="flex flex-col gap-3 w-40">
-                <p className="font-bold text-base">{menu.section}</p>
+              <div key={index} className="flex flex-col gap-3 w-full md:w-40">
+                <p className="font-bold text-sm md:text-base">{menu.section}</p>
                 <hr className="border-white/60" />
                 <ul
-                  className={`flex flex-col gap-3 font-medium ${manropeFont.className}`}
+                  className={`flex flex-col gap-2 md:gap-3 font-medium ${manropeFont.className}`}
                 >
                   {menu.items.map((item, index) => (
                     <li
                       key={index}
-                      className="text-base cursor-pointer hover:underline"
+                      className="text-sm md:text-base cursor-pointer hover:underline"
                     >
                       {item}
                     </li>
@@ -108,54 +108,60 @@ export default function Footer() {
               </div>
             ))}
           </div>
-          <div className="flex flex-col gap-3 w-fit">
-            <p className="font-bold text-base">HUBUNGI KAMI</p>
+          <div className="flex flex-col gap-3 w-full lg:w-fit">
+            <p className="font-bold text-sm md:text-base">HUBUNGI KAMI</p>
             <hr className="border-white/60" />
             <ul
-              className={`flex flex-col gap-3 items-start font-medium ${manropeFont.className}`}
+              className={`flex flex-col gap-2 md:gap-3 items-start font-medium ${manropeFont.className}`}
             >
-              <li className="flex items-center gap-4 text-base cursor-pointer hover:underline">
-                <Icon icon="ic:round-email" className="text-2xl" />
-                <p>helpdesk@newsinsight.id</p>
+              <li className="flex items-center gap-3 md:gap-4 text-sm md:text-base cursor-pointer hover:underline">
+                <Icon icon="ic:round-email" className="text-xl md:text-2xl flex-shrink-0" />
+                <p className="break-all md:break-normal">helpdesk@newsinsight.id</p>
               </li>
-              <li className="flex items-center gap-4 text-base cursor-pointer hover:underline">
-                <Icon icon="ic:round-phone" className="text-2xl" />
+              <li className="flex items-center gap-3 md:gap-4 text-sm md:text-base cursor-pointer hover:underline">
+                <Icon icon="ic:round-phone" className="text-xl md:text-2xl flex-shrink-0" />
                 <p>+62 81234567890</p>
               </li>
-              <li className="flex items-center gap-4 text-base cursor-pointer hover:underline">
-                <Icon icon="ph:map-pin-fill" className="text-2xl" />
+              <li className="flex items-start gap-3 md:gap-4 text-sm md:text-base cursor-pointer hover:underline">
+                <Icon icon="ph:map-pin-fill" className="text-xl md:text-2xl flex-shrink-0 mt-0.5" />
                 <p>Jl. Contoh No. 88, Jakarta Pusat</p>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="relative z-20 grid grid-cols-3 items-center text-center pt-4 border-t border-white/60">
-          <div className="flex items-center gap-2">
+        <div className="relative z-20 grid grid-cols-1 md:grid-cols-3 gap-4 items-center text-center pt-4 border-t border-white/60">
+          <div className="flex items-center justify-center md:justify-start gap-2 order-2 md:order-1">
             <Image
               src="/images/newsinsight-fullwhite.png"
               alt="Logo"
               width={20}
               height={20}
             />
-            <p className="font-bold text-base">NewsInsight</p>
+            <p className="font-bold text-sm md:text-base">NewsInsight</p>
           </div>
 
-          <p className="text-xs md:text-sm justify-self-center">
+          <p className="text-xs md:text-sm order-1 md:order-2">
             &copy; {new Date().getFullYear()} NewsInsight. All rights reserved.
           </p>
 
-          <div className="flex justify-end items-center gap-4">
+          <div className="flex justify-center md:justify-end items-center gap-3 md:gap-4 order-3">
             <Icon
               icon="ri:twitter-x-fill"
-              className="text-2xl cursor-pointer"
+              className="text-xl md:text-2xl cursor-pointer hover:scale-110 transition-transform"
             />
             <Icon
               icon="ri:instagram-fill"
-              className="text-2xl cursor-pointer"
+              className="text-xl md:text-2xl cursor-pointer hover:scale-110 transition-transform"
             />
-            <Icon icon="ri:linkedin-fill" className="text-2xl cursor-pointer" />
-            <Icon icon="ri:youtube-fill" className="text-2xl cursor-pointer" />
+            <Icon 
+              icon="ri:linkedin-fill" 
+              className="text-xl md:text-2xl cursor-pointer hover:scale-110 transition-transform" 
+            />
+            <Icon 
+              icon="ri:youtube-fill" 
+              className="text-xl md:text-2xl cursor-pointer hover:scale-110 transition-transform" 
+            />
           </div>
         </div>
       </div>

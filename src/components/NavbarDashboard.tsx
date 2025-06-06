@@ -7,6 +7,21 @@ import { usePathname } from "next/navigation";
 import React from "react";
 import { useState, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { signOut, useSession } from "next-auth/react";
+import { getAvatarUrl } from "@/utils/avatarUtils";
+import { shortenName } from "@/utils/nameUtils";
+
+interface ProfileData {
+  id: number;
+  user_id: number;
+  full_name: string | null;
+  username: string;
+  email: string;
+  avatar: string | null;
+  headline: string | null;
+  biography: string | null;
+  news_interest: string[] | null;
+}
 
 const basePath = "/dashboard";
 
@@ -34,6 +49,112 @@ export default function NavbarDashboard() {
   const pathname = usePathname();
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { data: session, status } = useSession();
+  const [profileAvatar, setProfileAvatar] = useState<string>("");
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  
+  
+  const getAvatarSource = () => {
+    if (profileAvatar) {
+      console.log("Using profile avatar");
+      return getAvatarUrl(profileAvatar, session?.user?.image || "/images/default_profile.png");
+    }
+    if (session?.user?.image) {
+      console.log("Using Google session avatar");
+      return session.user.image;
+    }
+    console.log("Using default avatar");
+    return "/images/default_profile.png";
+  };
+
+  
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      if (status === "authenticated") {
+        try {
+          const response = await fetch("/api/profile/me");
+          const result = await response.json();
+          
+          console.log("Profile API response:", result); 
+          
+          if (response.ok && result.status === "success") {
+            setProfileData(result.data);
+            if (result.data?.avatar) {
+              console.log("Setting profile avatar:", result.data.avatar.substring(0, 50) + "..."); 
+              setProfileAvatar(result.data.avatar);
+            } else {
+              console.log("No avatar in profile data, using fallback"); 
+              setProfileAvatar("");
+            }
+          } else {
+            console.error("Failed to fetch profile:", result.message);
+          }
+        } catch (error) {
+          console.error("Error fetching profile:", error);
+        }
+      }
+    };
+
+    fetchProfileData();
+
+    
+    const handleProfileUpdate = () => {
+      fetchProfileData();
+    };
+
+    window.addEventListener('profile-updated', handleProfileUpdate);
+    
+    return () => {
+      window.removeEventListener('profile-updated', handleProfileUpdate);
+    };
+  }, [status]);
+
+  const getRoleBadge = (role: string) => {
+    switch (role) {
+      case "admin":
+        return (
+          <div className="flex items-center gap-1 bg-[#6366F1] text-white border border-[#6366F1] px-3 py-1 rounded-full">
+            <Icon icon="eos-icons:admin" fontSize={14} />
+            <p className="text-xs">Admin</p>
+          </div>
+        );
+      case "editor":
+        return (
+          <div className="flex items-center gap-1 bg-[#22C55E] text-white border border-[#22C55E] px-3 py-1 rounded-full">
+            <Icon icon="ic:round-person" fontSize={14} />
+            <p className="text-xs">Editor</p>
+          </div>
+        );
+      case "contributor":
+        return (
+          <div className="flex items-center gap-1 bg-[#F97316] text-white border border-[#F97316] px-3 py-1 rounded-full">
+            <Icon icon="mingcute:pen-fill" fontSize={14} />
+            <p className="text-xs">Kontributor</p>
+          </div>
+        );
+      case "user":
+        return (
+          <div className="flex items-center gap-1 bg-[#64748B] text-white border border-[#64748B] px-3 py-1 rounded-full">
+            <Icon icon="solar:user-outline" fontSize={14} />
+            <p className="text-xs">User</p>
+          </div>
+        );
+      default:
+        return (
+          <div className="flex items-center gap-1 bg-[#64748B] text-white border border-[#64748B] px-3 py-1 rounded-full">
+            <Icon icon="solar:user-outline" fontSize={14} />
+            <p className="text-xs">User</p>
+          </div>
+        );
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut({
+      redirect: true,
+      callbackUrl: "/login",
+    });
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -100,16 +221,20 @@ export default function NavbarDashboard() {
           onClick={() => setShowDropdown(!showDropdown)}
         >
           <img
-            src="/images/profile.jpeg"
+            src={getAvatarSource()}
             alt="Profile"
-            className="w-12 h-12 rounded-full"
+            className="w-12 h-12 rounded-full object-cover"
+            onError={(e) => {
+              console.log("Image load error, falling back to default");
+              const target = e.target as HTMLImageElement;
+              target.src = "/images/default_profile.png";
+            }}
           />
           <div className="flex flex-col items-start gap-1.5">
-            <p className="text-sm font-semibold">Rigel Ramadhani W.</p>
-            <div className="flex items-center gap-1 bg-gradient-to-r from-[#6366F1] to-[#393B8B] px-3 py-1 rounded-full text-white">
-              <Icon icon="eos-icons:admin" fontSize={14} />
-              <p className="text-xs">Admin</p>
-            </div>
+            <p className="text-sm font-semibold">
+              {shortenName(profileData?.full_name || profileData?.username || session?.user?.name || session?.user?.email || "User")}
+            </p>
+            {getRoleBadge(session?.user?.role || "user")}
           </div>
           <Icon
             icon="majesticons:chevron-down-line"
@@ -158,13 +283,13 @@ export default function NavbarDashboard() {
                   <Icon icon="ic:round-dark-mode" fontSize={18} />
                   Mode Gelap
                 </Link>
-                <Link
-                  href="#"
-                  className="px-5 py-2 hover:bg-red-100 text-red-500 cursor-pointer flex items-center gap-2"
+                <button
+                  onClick={handleLogout}
+                  className="px-5 py-2 hover:bg-red-100 text-red-500 cursor-pointer flex items-center gap-2 w-full text-left"
                 >
                   <Icon icon="solar:logout-2-bold" fontSize={18} />
                   Keluar
-                </Link>
+                </button>
               </ul>
             </motion.div>
           )}

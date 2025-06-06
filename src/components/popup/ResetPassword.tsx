@@ -7,7 +7,6 @@ export default function ForgotPassword(props: { onClose: () => void }) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: kirim request reset password
     console.log("Kirim link reset ke:", email);
   };
 

@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import VerifyEmail from "../../components/popup/VerifyEmail";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useToast } from "@/context/ToastProvider";
+import { signIn, getSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const breadcrumbsItems = [
   { label: "Beranda", href: "/" },
@@ -17,7 +19,9 @@ export default function Register() {
   const [navbarHeight, setNavbarHeight] = useState(0);
   const [showVerifyEmail, setShowVerifyEmail] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { promise, showToast } = useToast();
+  const router = useRouter();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,25 +30,24 @@ export default function Register() {
     email: string;
     userId: number;
   } | null>(null);
-
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (password !== confirmPassword) {
       showToast("Konfirmasi password tidak cocok.", "error");
       return;
     }
+    setIsLoading(true);
     await promise(
       (async () => {
         const res = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username, email, password }),
-        });
-        const data = await res.json().catch(() => ({}));
+        });        const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           throw new Error(data?.message || "Registrasi gagal.");
         }
-        setVerifyEmailData({ email, userId: data.id });
+        setVerifyEmailData({ email: email, userId: data.data?.id });
         setShowVerifyEmail(true);
         return data;
       })(),
@@ -57,6 +60,42 @@ export default function Register() {
             : "Terjadi kesalahan. Silakan coba lagi.",
       }
     );
+    setIsLoading(false);
+  };  const handleGoogleSignUp = async () => {
+    setIsLoading(true);
+    try {
+      const result = await signIn("google", {
+        redirect: false,
+        callbackUrl: "/dashboard",
+      });
+
+      if (result?.ok) {
+        
+        const session = await getSession();
+        if (session) {
+          
+          const message = session.isNewUser 
+            ? "Selamat datang di NewsInsight! Akun Anda berhasil didaftarkan." 
+            : "Anda sudah terdaftar sebelumnya. Selamat datang kembali!";
+          showToast(message, "success");
+          router.push("/dashboard");
+        } else {
+          showToast("Terjadi kesalahan saat menyimpan data akun. Silakan coba lagi.", "error");
+        }
+      } else if (result?.error) {
+        console.error("Google sign up error:", result.error);
+        if (result.error === "AccessDenied") {
+          showToast("Registrasi dengan Google dibatalkan.", "error");
+        } else {
+          showToast("Gagal mendaftar dengan Google. Silakan coba lagi.", "error");
+        }
+      }
+    } catch (error) {
+      console.error("Error during Google sign up:", error);
+      showToast("Terjadi kesalahan saat mendaftar dengan Google.", "error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -73,7 +112,7 @@ export default function Register() {
     };
 
     window.addEventListener("resize", handleResize);
-    // Observer untuk perubahan ukuran navbar
+    
     let observer: ResizeObserver | null = null;
     if (navbar && typeof ResizeObserver !== "undefined") {
       observer = new ResizeObserver(() => {
@@ -106,10 +145,14 @@ export default function Register() {
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.3 }}
               className="w-full h-full inset-0 flex items-center justify-center"
-            >
-              <VerifyEmail
+            >              <VerifyEmail
                 onClose={() => setShowVerifyEmail(false)}
-                {...(verifyEmailData ? verifyEmailData : {})}
+                {...(verifyEmailData
+                  ? {
+                      email: verifyEmailData.email,
+                      userId: verifyEmailData.userId,
+                    }
+                  : {})}
               />
             </motion.div>
           </div>
@@ -179,7 +222,6 @@ export default function Register() {
                 Kelola berita dan komentar Anda dengan mudah.
               </p>
             </div>
-
             <form
               className="flex flex-col gap-3 w-full"
               onSubmit={handleSubmit}
@@ -199,6 +241,7 @@ export default function Register() {
                     className="w-full border border-gray-300 rounded-lg py-2 px-3 pl-10 text-gray-700 focus:outline-none focus:border-blue-500"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -217,6 +260,7 @@ export default function Register() {
                     className="w-full border border-gray-300 rounded-lg py-2 px-3 pl-10 text-gray-700 focus:outline-none focus:border-blue-500"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -238,6 +282,7 @@ export default function Register() {
                     className="w-full border border-gray-300 rounded-lg py-2 px-3 pl-10 pr-10 text-gray-700 focus:outline-none focus:border-blue-500"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
@@ -266,18 +311,20 @@ export default function Register() {
                       icon="material-symbols:password-rounded"
                       fontSize={20}
                     />
-                  </div>
+                  </div>{" "}
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder="Masukkan konfirmasi password..."
                     className="w-full border border-gray-300 rounded-lg py-2 px-3 pl-10 pr-10 text-gray-700 focus:outline-none focus:border-blue-500"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                    disabled={isLoading}
                   >
                     {showPassword ? (
                       <Icon icon="lucide:eye-off" />
@@ -288,7 +335,6 @@ export default function Register() {
                 </div>
               </div>
             </form>
-
             <div className="flex flex-col gap-2.5 items-center w-full">
               <p className="text-black/40 text-sm text-justify">
                 Dengan melakukan pendaftaran, Anda setuju dengan{" "}
@@ -296,32 +342,46 @@ export default function Register() {
                   syarat & ketentuan
                 </span>{" "}
                 NewsInsight.
-              </p>
-
+              </p>{" "}
               <motion.button
                 onClick={handleSubmit}
-                className="cursor-pointer text-white rounded-lg px-5 py-3 w-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] transition duration-300 ease-in-out hover:opacity-80"
+                className="cursor-pointer text-white rounded-lg px-5 py-3 w-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] transition duration-300 ease-in-out hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isLoading}
               >
-                Daftar
+                {isLoading ? (
+                  <Icon
+                    icon="line-md:loading-loop"
+                    className="text-xl animate-spin mx-auto"
+                  />
+                ) : (
+                  "Daftar"
+                )}
               </motion.button>
             </div>
-
             <div className="flex flex-row gap-4 items-center w-full opacity-20">
               <hr className="border-t border-black w-full" />
               <p className="text-black text-sm">atau</p>
               <hr className="border-t border-black w-full" />
-            </div>
-
+            </div>{" "}
             <motion.button
               className="w-full"
-              onClick={() => alert("Google Sign In")}
+              onClick={handleGoogleSignUp}
+              disabled={isLoading}
             >
-              <div className="flex flex-row gap-2 items-center justify-center w-full bg-white border border-gray-300 rounded-lg px-5 py-3 transition duration-300 ease-in-out hover:opacity-80 cursor-pointer">
-                <p className="text-black text-sm">Daftar dengan Google</p>
-                <Icon icon="flat-color-icons:google" className="text-2xl" />
+              <div className="flex flex-row gap-2 items-center justify-center w-full bg-white border border-gray-300 rounded-lg px-5 py-3 transition duration-300 ease-in-out hover:opacity-80 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                {isLoading ? (
+                  <Icon
+                    icon="line-md:loading-loop"
+                    className="text-2xl animate-spin"
+                  />
+                ) : (
+                  <>
+                    <p className="text-black text-sm">Daftar dengan Google</p>
+                    <Icon icon="flat-color-icons:google" className="text-2xl" />
+                  </>
+                )}
               </div>
             </motion.button>
-
             <p className="text-gray-500 text-sm text-center mt-4">
               Sudah punya akun?{" "}
               <Link

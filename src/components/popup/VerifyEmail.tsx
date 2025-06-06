@@ -54,7 +54,6 @@ export default function VerifyEmail(props: VerifyEmailProps) {
     }
     setLoading(true);
     try {
-      console.log("Verifying email with code:", code.join(""));
       const res = await fetch("/api/auth/verify-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

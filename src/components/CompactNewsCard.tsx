@@ -33,25 +33,27 @@ export default function CompactNewsCard({
 
   return (
     <div onClick={() => router.push(link)} className="cursor-pointer w-full">
-      <div className="flex flex-row gap-4 items-center justify-start w-full bg-white">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center justify-start w-full bg-white">
         <img
           src={imageUrl}
           alt={title}
-          className="w-20 h-20 object-cover rounded-xl"
+          className="w-full sm:w-16 md:w-20 h-32 sm:h-16 md:h-20 object-cover rounded-xl flex-shrink-0"
         />
-        <div className="flex flex-col gap-2 w-full">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-bold bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text">
+        <div className="flex flex-col gap-1 sm:gap-2 w-full min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-xs sm:text-sm font-bold bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text">
               {source}
             </p>
             <div className="h-1 w-1 bg-gray-400 rounded-full" />
-            <p className="text-sm text-gray-500">{customFormattedTimestamp}</p>
+            <p className="text-xs sm:text-sm text-gray-500">
+              {customFormattedTimestamp}
+            </p>
           </div>
           <p
-            className="text-black font-medium line-clamp-2"
+            className="text-black font-medium text-sm sm:text-base line-clamp-2 sm:line-clamp-3"
             style={{
               display: "-webkit-box",
-              WebkitLineClamp: 2,
+              WebkitLineClamp: 3,
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
               textOverflow: "ellipsis",

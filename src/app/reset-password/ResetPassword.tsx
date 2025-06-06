@@ -22,7 +22,7 @@ export default function ResetPassword() {
   const { promise, showToast } = useToast();
   const router = useRouter();
 
-  // Parse token from URL
+  
   const [token, setToken] = useState<string | null>(null);
   const [tokenValid, setTokenValid] = useState<null | boolean>(null);
   const [tokenCheckLoading, setTokenCheckLoading] = useState(true);
@@ -40,12 +40,20 @@ export default function ResetPassword() {
       })
         .then(async (res) => {
           const data = await res.json().catch(() => ({}));
-          if (!res.ok || !data.valid) {
+          if (!res.ok || !data.data?.valid) {
             setTokenValid(false);
-            showToast(
-              data?.message || "Token tidak valid atau sudah expired",
-              "error"
-            );
+            
+            if (data?.error?.code === "GOOGLE_AUTH_NO_PASSWORD") {
+              showToast(
+                "Akun ini terdaftar melalui Google. Reset password tidak diperlukan. Silakan login menggunakan Google.",
+                "error"
+              );
+            } else {
+              showToast(
+                data?.message || "Token tidak valid atau sudah expired",
+                "error"
+              );
+            }
           } else {
             setTokenValid(true);
           }
@@ -77,7 +85,7 @@ export default function ResetPassword() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Handle reset password submit
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) {
@@ -109,8 +117,13 @@ export default function ResetPassword() {
           body: JSON.stringify({ token, password }),
         }).then(async (res) => {
           const data = await res.json().catch(() => ({}));
-          if (!res.ok)
+          if (!res.ok) {
+            
+            if (data?.error?.code === "GOOGLE_AUTH_NO_PASSWORD") {
+              throw new Error("Akun ini terdaftar melalui Google. Reset password tidak diperlukan. Silakan login menggunakan Google.");
+            }
             throw new Error(data?.message || "Gagal reset password.");
+          }
           return data;
         }),
         {
@@ -127,7 +140,7 @@ export default function ResetPassword() {
       setConfirmPassword("");
       setTimeout(() => router.push("/login"), 1500);
     } catch {
-      // error handled by toast
+      
     } finally {
       setLoading(false);
     }

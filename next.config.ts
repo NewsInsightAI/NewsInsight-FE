@@ -11,6 +11,17 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "placehold.co",
       },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "5000",
+        pathname: "/uploads/avatars/**",
+      },
+      {
+        protocol: "https",
+        hostname: "api.newsinsight.space",
+        pathname: "/uploads/avatars/**",
+      },
     ],
   },
 };

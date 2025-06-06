@@ -7,13 +7,9 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import ForgotPassword from "@/components/popup/ForgotPassword";
 import VerifyEmail from "@/components/popup/VerifyEmail";
-import Breadcrumbs from "@/components/Breadcrumbs";
 import { useToast } from "@/context/ToastProvider";
-
-const breadcrumbsItems = [
-  { label: "Beranda", href: "/" },
-  { label: "Masuk", isActive: true },
-];
+import { signIn, getSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function Login() {
   const [navbarHeight, setNavbarHeight] = useState(0);
@@ -21,7 +17,10 @@ export default function Login() {
   const [showVerifyEmail, setShowVerifyEmail] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { promise } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [highlightGoogleSignIn, setHighlightGoogleSignIn] = useState(false);
+  const { promise, showToast } = useToast();
+  const router = useRouter();
   const [verifyEmailData, setVerifyEmailData] = useState<{
     email: string;
     userId: number;
@@ -41,7 +40,7 @@ export default function Login() {
     };
 
     window.addEventListener("resize", handleResize);
-    // Observer untuk perubahan ukuran navbar
+    
     let observer: ResizeObserver | null = null;
     if (navbar && typeof ResizeObserver !== "undefined") {
       observer = new ResizeObserver(() => {
@@ -64,24 +63,72 @@ export default function Login() {
 
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    setIsLoading(true);
     await promise(
       (async () => {
-        const res = await fetch("/api/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ identifier: email, password }),
+        const result = await signIn("credentials", {
+          identifier: email,
+          password: password,
+          redirect: false,
         });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          if (data?.status === "unverified") {
-            setVerifyEmailData({ email: data.email, userId: data.userId });
+
+        if (result?.ok) {
+          
+          const session = await getSession();
+          if (session?.backendUser) {
+            
+            try {
+              const profileCheckRes = await fetch("/api/profile/me");
+              const profileData = await profileCheckRes.json();
+              
+              
+              let isProfileComplete = false;
+              if (profileData.status === "success" && profileData.data) {
+                const profile = profileData.data;
+                isProfileComplete = !!(
+                  profile.full_name &&
+                  profile.gender &&
+                  profile.date_of_birth &&
+                  profile.phone_number &&
+                  profile.domicile &&
+                  profile.news_interest &&
+                  profile.headline &&
+                  profile.biography
+                );
+              }
+              
+              
+              if (!isProfileComplete) {
+                router.push("/login/complete-profile");
+              } else {
+                router.push("/dashboard");
+              }
+            } catch (error) {
+              console.error("Error checking profile completion:", error);
+              
+              router.push("/dashboard");
+            }
+          } else {
+            throw new Error("Gagal mendapatkan data sesi.");
+          }
+        } else if (result?.error) {
+          
+          if (result.error.includes("EMAIL_UNVERIFIED:")) {
+            const errorData = JSON.parse(result.error.replace("EMAIL_UNVERIFIED:", ""));
+            setVerifyEmailData({ email: errorData.email, userId: errorData.userId });
             setShowVerifyEmail(true);
             return;
           }
-          throw new Error(data?.message || "Login gagal.");
+          
+          if (result.error.includes("Akun ini terdaftar melalui Google")) {
+            setHighlightGoogleSignIn(true);
+            setTimeout(() => setHighlightGoogleSignIn(false), 5000);
+          }
+          
+          throw new Error(result.error);
+        } else {
+          throw new Error("Login gagal. Silakan coba lagi.");
         }
-        // TODO: handle successful login (redirect, save token, etc)
-        return data;
       })(),
       {
         loading: "Sedang login...",
@@ -92,6 +139,79 @@ export default function Login() {
             : "Terjadi kesalahan. Silakan coba lagi.",
       }
     );
+    setIsLoading(false);
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const result = await signIn("google", {
+        redirect: false,
+        callbackUrl: "/dashboard",
+      });
+
+      if (result?.ok) {
+        
+        const session = await getSession();
+        if (session) {
+          
+          try {
+            const profileCheckRes = await fetch("/api/profile/me");
+            const profileData = await profileCheckRes.json();
+            
+            
+            let isProfileComplete = false;
+            if (profileData.status === "success" && profileData.data) {
+              const profile = profileData.data;
+              isProfileComplete = !!(
+                profile.full_name &&
+                profile.gender &&
+                profile.date_of_birth &&
+                profile.phone_number &&
+                profile.domicile &&
+                profile.news_interest &&
+                profile.headline &&
+                profile.biography
+              );
+            }
+            
+            const message = session.isNewUser 
+              ? "Akun berhasil dibuat dan Anda telah masuk. Selamat datang di NewsInsight!" 
+              : "Selamat datang kembali!";
+            showToast(message, "success");
+            
+            
+            if (!isProfileComplete) {
+              router.push("/login/complete-profile");
+            } else {
+              router.push("/dashboard");
+            }
+          } catch (error) {
+            console.error("Error checking profile completion:", error);
+            
+            const message = session.isNewUser 
+              ? "Akun berhasil dibuat dan Anda telah masuk. Selamat datang di NewsInsight!" 
+              : "Selamat datang kembali!";
+            showToast(message, "success");
+            router.push("/dashboard");
+          }
+        } else {
+          showToast("Terjadi kesalahan saat masuk. Silakan coba lagi.", "error");
+        }
+      } else if (result?.error) {
+        console.error("Google sign in error:", result.error);
+        if (result.error === "AccessDenied") {
+          showToast("Login dengan Google dibatalkan.", "error");
+        } else {
+          showToast("Gagal masuk dengan Google. Silakan coba lagi.", "error");
+        }
+      }
+    } catch (error) {
+      console.error("Error during Google sign in:", error);
+      showToast("Terjadi kesalahan saat masuk dengan Google.", "error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -137,18 +257,15 @@ export default function Login() {
               ? navbarHeight
               : navbarHeight + 20,
         }}
-        className="flex flex-col md:flex-row h-full w-full bg-white text-black p-4 md:p-6 overflow-y-auto"
+        className="flex flex-col md:flex-row w-full bg-white text-black p-4 md:p-6 min-h-screen overflow-hidden"
       >
-        <div className="flex flex-1 w-full md:w-auto items-center justify-center">
+        <div className="flex flex-1 w-full items-center justify-center min-h-full">
           <motion.div
-            className="flex flex-col gap-6 items-center justify-start w-full h-full bg-white rounded-lg px-4 md:pl-6 md:pr-10 py-6 text-black shadow-md md:shadow-none"
+            className="flex flex-col gap-6 items-center justify-start w-full bg-white rounded-lg px-4 md:px-8 py-6 text-black shadow-md md:shadow-none"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="flex w-full items-start">
-              <Breadcrumbs items={breadcrumbsItems} />
-            </div>
             <div className="flex flex-col items-center gap-1">
               <h1 className="text-xl font-bold">Masuk ke Akun Anda</h1>
               <p className="text-gray-600 text-center mb-2">
@@ -172,14 +289,12 @@ export default function Login() {
                 value={password}
                 onChangeValue={setPassword}
               />
-              <motion.button
+              <button
                 type="submit"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.98 }}
                 className="cursor-pointer text-white rounded-lg px-5 py-3 w-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] transition duration-300 ease-in-out hover:opacity-80"
               >
                 Masuk
-              </motion.button>
+              </button>
             </form>
             <div className="flex flex-col gap-2.5 items-end w-full">
               <p
@@ -195,17 +310,31 @@ export default function Login() {
               <hr className="border-t border-black w-full" />
             </div>
 
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
+            <button
               className="w-full"
-              onClick={() => alert("Google Sign In")}
+              onClick={handleGoogleSignIn}
+              disabled={isLoading}
             >
-              <div className="flex flex-row gap-2 items-center justify-center w-full bg-white border border-gray-300 rounded-lg px-5 py-3 transition duration-300 ease-in-out hover:opacity-80 cursor-pointer">
-                <p className="text-black text-sm">Masuk dengan Google</p>
-                <Icon icon="flat-color-icons:google" className="text-2xl" />
+              <div className={`flex flex-row gap-2 items-center justify-center w-full rounded-lg px-5 py-3 transition-all duration-300 ease-in-out cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                highlightGoogleSignIn 
+                  ? 'bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white border-2 border-blue-400 shadow-lg transform scale-105' 
+                  : 'bg-white border border-gray-300 hover:opacity-80'
+              }`}>
+                {isLoading ? (
+                  <Icon
+                    icon="line-md:loading-loop"
+                    className="text-2xl animate-spin"
+                  />
+                ) : (
+                  <>
+                    <p className={`text-sm ${highlightGoogleSignIn ? 'text-white' : 'text-black'}`}>
+                      Masuk dengan Google
+                    </p>
+                    <Icon icon="flat-color-icons:google" className="text-2xl" />
+                  </>
+                )}
               </div>
-            </motion.button>
+            </button>
             <p className="text-gray-500 text-sm text-center mt-4">
               Belum punya akun?{" "}
               <Link
@@ -220,10 +349,10 @@ export default function Login() {
 
         {/* Panel kanan hanya tampil di md ke atas, layout desktop kembali ke semula */}
         <motion.div
-          initial={{ opacity: 0, x: 50 }}
+          initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="hidden md:flex relative text-white px-14 py-12 rounded-3xl font-normal overflow-hidden justify-center items-center w-fit h-full bg-gradient-to-br from-[#2FAACC] to-[#2B62C2]"
+          className="hidden md:flex relative text-white px-14 py-12 rounded-3xl font-normal overflow-hidden justify-center items-center w-fit min-h-full bg-gradient-to-br from-[#2FAACC] to-[#2B62C2]"
         >
           <div className="relative z-20 flex flex-col justify-between items-start w-full h-full">
             <div className="flex flex-col gap-4 items-start">

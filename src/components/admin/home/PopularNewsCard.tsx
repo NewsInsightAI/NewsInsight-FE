@@ -1,4 +1,3 @@
-// components/PopularNewsCard.tsx
 "use client";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import React from "react";

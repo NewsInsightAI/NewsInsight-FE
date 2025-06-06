@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 interface Category {
   label: string;
   value: string;
-  icon: string;
 }
 
 interface ListNewsCategoryProps {
@@ -15,26 +14,17 @@ interface ListNewsCategoryProps {
 }
 
 const categories: Category[] = [
-  { label: "Teknologi", value: "teknologi", icon: "mdi:laptop" },
-  { label: "Pendidikan", value: "pendidikan", icon: "mdi:school" },
-  { label: "Politik", value: "politik", icon: "mdi:vote" },
-  {
-    label: "Ekonomi & Bisnis",
-    value: "ekonomi-bisnis",
-    icon: "mdi:chart-line",
-  },
-  { label: "Sains & Kesehatan", value: "sains-kesehatan", icon: "mdi:flask" },
-  { label: "Olahraga", value: "olahraga", icon: "mdi:soccer" },
-  {
-    label: "Hiburan & Selebriti",
-    value: "hiburan-selebriti",
-    icon: "mdi:movie",
-  },
-  { label: "Gaya Hidup", value: "gaya-hidup", icon: "mdi:spa" },
+  { label: "Teknologi", value: "teknologi" },
+  { label: "Pendidikan", value: "pendidikan" },
+  { label: "Politik", value: "politik" },
+  { label: "Ekonomi & Bisnis", value: "ekonomi-bisnis" },
+  { label: "Sains & Kesehatan", value: "sains-kesehatan" },
+  { label: "Olahraga", value: "olahraga" },
+  { label: "Hiburan & Selebriti", value: "hiburan-selebriti" },
+  { label: "Gaya Hidup", value: "gaya-hidup" },
   ...Array.from({ length: 100 }, (_, i) => ({
     label: `Category ${i + 1}`,
     value: `category-${i + 1}`,
-    icon: "mdi:circle",
   })),
 ];
 
@@ -58,7 +48,6 @@ export default function ListNewsCategory({
   };
 
   const handleSave = () => {
-    console.log("Selected categories:", selected);
     onSave(selected);
     onClose();
   };
@@ -119,7 +108,7 @@ export default function ListNewsCategory({
                   type="button"
                   onClick={() => handleToggleCategory(cat)}
                   disabled={selected.length >= maxSelect && !isSelected(cat)}
-                  className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm border transition cursor-pointer w-full ${
+                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm border transition cursor-pointer w-full ${
                     isSelected(cat)
                       ? "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white"
                       : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
@@ -129,7 +118,6 @@ export default function ListNewsCategory({
                       : ""
                   }`}
                 >
-                  <Icon icon={cat.icon} className="text-lg" />
                   {cat.label}
                 </button>
               </motion.div>

@@ -1,5 +1,7 @@
 import React from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import Image from "next/image";
+import { getAvatarUrl } from "@/utils/avatarUtils";
 
 interface SummaryProfileProps {
   email: string;
@@ -11,6 +13,7 @@ interface SummaryProfileProps {
   newsInterest: string[];
   headline: string;
   shortBio: string;
+  avatar?: string;
 }
 
 const convertToDate = (dateString: string) => {
@@ -36,6 +39,7 @@ export default function SummaryProfile(
   props: SummaryProfileProps & {
     onClose: () => void;
     onSave: () => void;
+    isSubmitting?: boolean;
   }
 ) {
   const infoList = [
@@ -102,6 +106,19 @@ export default function SummaryProfile(
           </p>
         </div>
 
+        {/* Avatar Section */}
+        {props.avatar && (
+          <div className="flex justify-center mt-4">
+            <Image
+              src={getAvatarUrl(props.avatar)}
+              alt="Profile Picture"
+              width={80}
+              height={80}
+              className="rounded-full border border-gray-300 bg-gray-200 object-cover"
+            />
+          </div>
+        )}
+
         {/* Scrollable info list */}
         <div className="w-full mt-4 space-y-3 max-h-[40vh] overflow-y-auto pr-2">
           {infoList.map((item, index) => (
@@ -135,9 +152,17 @@ export default function SummaryProfile(
 
           <button
             onClick={props.onSave}
-            className="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white font-medium py-2 px-4 rounded-lg cursor-pointer w-full"
+            disabled={props.isSubmitting}
+            className="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white font-medium py-2 px-4 rounded-lg cursor-pointer w-full disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Simpan
+            {props.isSubmitting ? (
+              <>
+                <Icon icon="line-md:loading-loop" className="text-lg animate-spin" />
+                Menyimpan...
+              </>
+            ) : (
+              "Simpan"
+            )}
           </button>
         </div>
       </div>

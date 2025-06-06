@@ -1,3 +1,5 @@
+"use client";
+
 import NewsCard from "@/components/NewsCard";
 import React from "react";
 

@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 
 interface NewsInterest {
   label: string;
-  icon: string;
 }
 
 interface ProfileCardProps {
@@ -14,6 +13,7 @@ interface ProfileCardProps {
   shortBio: string;
   profilePicture: string;
   newsInterests: NewsInterest[];
+  joinedDate?: string; 
 }
 
 export default function ProfileCard({
@@ -23,8 +23,26 @@ export default function ProfileCard({
   shortBio,
   profilePicture,
   newsInterests,
+  joinedDate,
 }: ProfileCardProps) {
   const [navbarHeight, setNavbarHeight] = useState(0);
+
+  
+  const formatJoinedDate = (dateString?: string) => {
+    if (!dateString) return "Bergabung sejak 19 Maret 2025"; 
+    
+    const date = new Date(dateString);
+    const months = [
+      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ];
+    
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    
+    return `Bergabung sejak ${day} ${month} ${year}`;
+  };
 
   useEffect(() => {
     const navbar = document.querySelector("nav");
@@ -53,8 +71,8 @@ export default function ProfileCard({
           alt="Profile"
           className="w-56 h-56 rounded-full border-4 border-white"
         />
-        <h2 className="text-2xl font-bold mt-4">{name}</h2>
-        <p className="text-base opacity-40">{email}</p>
+        <h2 className="text-2xl text-center font-bold mt-4">{name}</h2>
+        <p className="text-base text-center opacity-40">{email}</p>
         {role == "reader" ? (
           <div className="flex items-center gap-2 bg-[#367AF2]/15 border border-[#367AF2] rounded-full px-4 py-2 my-2.5">
             <Icon icon="fa-solid:book-reader" fontSize={20} color="#367AF2" />
@@ -84,16 +102,15 @@ export default function ProfileCard({
               <div
                 key={index}
                 title={interest.label}
-                className="flex items-center justify-center gap-2 text-sm px-3.5 py-2.5 rounded-lg bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white"
+                className="flex items-center justify-center text-sm px-3.5 py-2.5 rounded-2xl bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white"
               >
-                <Icon icon={interest.icon} fontSize={16} />
-                <p className=" truncate">{interest.label}</p>
+                <p className="truncate">{interest.label}</p>
               </div>
             ))}
           </div>
         </div>
       </div>
-      <p className="opacity-30 text-sm">Bergabung sejak 19 Maret 2025</p>
+      <p className="opacity-30 text-sm">{formatJoinedDate(joinedDate)}</p>
     </div>
   );
 }
