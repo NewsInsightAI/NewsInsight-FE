@@ -7,13 +7,17 @@ import Image from "next/image";
 export default function GoogleAuthTest() {
   const { data: session, status } = useSession();
   const router = useRouter();
-
   const handleGoogleSignIn = async () => {
     try {
       console.log("Starting Google sign in...");
+      
+      // Get the current origin for callback URL
+      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://newsinsight.space';
+      const callbackUrl = `${currentOrigin}/dashboard`;
+      
       const result = await signIn("google", {
         redirect: false,
-        callbackUrl: "/dashboard",
+        callbackUrl: callbackUrl,
       });
       console.log("Sign in result:", result);
 

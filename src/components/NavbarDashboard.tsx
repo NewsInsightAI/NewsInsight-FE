@@ -148,11 +148,15 @@ export default function NavbarDashboard() {
         );
     }
   };
-
   const handleLogout = async () => {
+    // Get the current origin for callback URL
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://newsinsight.space';
+    const callbackUrl = `${currentOrigin}/login`;
+    
     await signOut({
       redirect: true,
-      callbackUrl: "/login",
+      callbackUrl: callbackUrl,
+    });
     });
   };
 

@@ -194,13 +194,16 @@ export default function Login() {
       }
     }
   };
-
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
+      // Get the current origin for callback URL
+      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://newsinsight.space';
+      const callbackUrl = `${currentOrigin}/dashboard`;
+      
       const result = await signIn("google", {
         redirect: false,
-        callbackUrl: "/dashboard",
+        callbackUrl: callbackUrl,
       });
 
       if (result?.ok) {

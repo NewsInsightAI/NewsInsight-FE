@@ -13,7 +13,7 @@ export const authOptions: AuthOptions = {
           prompt: "select_account",
         },
       },
-    }),    CredentialsProvider({
+    }),CredentialsProvider({
       name: "credentials",
       credentials: {
         identifier: { label: "Email atau Username", type: "text" },
@@ -229,8 +229,7 @@ export const authOptions: AuthOptions = {
       }
       
       return session;
-    },
-  },
+    },  },
   pages: {
     signIn: "/auth/signin", 
     error: "/auth/error", 
@@ -240,6 +239,13 @@ export const authOptions: AuthOptions = {
     maxAge: 30 * 24 * 60 * 60, 
   },
 
+  // Add NEXTAUTH_URL and secret configuration
+  secret: process.env.NEXTAUTH_SECRET,
+  
+  // Force the correct URL in production
+  ...(process.env.NODE_ENV === "production" && {
+    url: process.env.NEXTAUTH_URL || "https://newsinsight.space",
+  }),
   
   debug: process.env.NODE_ENV === "development",
 
