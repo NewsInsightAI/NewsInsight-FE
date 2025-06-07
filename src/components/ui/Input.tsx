@@ -20,23 +20,24 @@ interface InputProps
   icon?: string;
   disabled?: boolean;
   error?: boolean;
-  errorMessage?: string;
-  selectOptions?: OptionType[];
+  errorMessage?: string;  selectOptions?: OptionType[];
   onSelectChange?: (
     option: SingleValue<OptionType> | OptionType[] | null
   ) => void;
+  onInputChange?: (inputValue: string) => void;
 
   value?: string | Date | SingleValue<OptionType> | OptionType[] | null;
   onChangeValue?: (value: string) => void;
   onDateChange?: (date: Date | null) => void;
-
   onFileChange?: (files: FileList | null) => void;
   accept?: string;
   multiple?: boolean;
+  currentFileName?: string;
 
   isLoading?: boolean;
   isClearable?: boolean;
   isMulti?: boolean;
+  isSearchable?: boolean;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -50,15 +51,16 @@ const Input: React.FC<InputProps> = ({
   errorMessage = "",
   selectOptions,
   onSelectChange,
+  onInputChange,
   value,
   onChangeValue,
-  onDateChange,
-  onFileChange,
-  accept,
+  onDateChange,  onFileChange,  accept,
   multiple = false,
+  currentFileName,
   isLoading = false,
   isClearable = true,
   isMulti = false,
+  isSearchable = true,
   ...props
 }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -77,11 +79,22 @@ const Input: React.FC<InputProps> = ({
       setSelectedFiles(null);
     }
   }, [value, type]);
-
   const fileExtension =
     selectedFiles && selectedFiles.length > 0
       ? selectedFiles[0].name.split(".").pop()?.toUpperCase() ?? ""
+      : currentFileName
+      ? currentFileName.split(".").pop()?.toUpperCase() ?? ""
       : "";
+
+  const getCurrentFileName = () => {
+    if (selectedFiles && selectedFiles.length > 0) {
+      return Array.from(selectedFiles).map((f) => f.name).join(", ");
+    }
+    if (currentFileName) {
+      return currentFileName;
+    }
+    return placeholder || "Tidak ada file dipilih";
+  };
 
   const fileBadge = (extension: string) => {
     const fileIcon = extension
@@ -123,7 +136,7 @@ const Input: React.FC<InputProps> = ({
           </div>
         )}
 
-        {/* SELECT */}
+        
         {isFileType ? (
           <div
             className={`w-full border rounded-xl overflow-hidden transition-all focus-within:ring-2 ${
@@ -133,17 +146,12 @@ const Input: React.FC<InputProps> = ({
                 ? "border-red-500 focus-within:ring-red-300"
                 : "border-gray-300 focus-within:ring-blue-300"
             }`}
-          >
-            <div className="flex items-center">
-              {selectedFiles && selectedFiles.length > 0
+          >            <div className="flex items-center">
+              {(selectedFiles && selectedFiles.length > 0) || currentFileName
                 ? fileBadge(fileExtension)
                 : fileBadge("")}
               <div className="flex-1 px-4 py-2 text-gray-700 truncate">
-                {selectedFiles && selectedFiles.length > 0
-                  ? Array.from(selectedFiles)
-                      .map((f) => f.name)
-                      .join(", ")
-                  : placeholder || "Tidak ada file dipilih"}
+                {getCurrentFileName()}
               </div>
 
               <input
@@ -160,8 +168,7 @@ const Input: React.FC<InputProps> = ({
                 {...props}
               />
             </div>
-          </div>
-        ) : isSelectType && selectOptions ? (
+          </div>        ) : isSelectType && selectOptions ? (
           <ClientOnlySelect
             classNamePrefix="react-select"
             options={selectOptions}
@@ -171,10 +178,14 @@ const Input: React.FC<InputProps> = ({
                 option as SingleValue<OptionType> | OptionType[] | null
               );
             }}
+            onInputChange={(inputValue) => {
+              onInputChange?.(inputValue);
+            }}
             isDisabled={disabled}
             isLoading={isLoading}
             isClearable={isClearable}
             isMulti={isMulti}
+            isSearchable={isSearchable}
             placeholder={placeholder}
             styles={{
               control: (base) => ({
@@ -322,7 +333,7 @@ const Input: React.FC<InputProps> = ({
           />
         )}
 
-        {/* PASSWORD TOGGLE */}
+        
         {type === "password" && !selectOptions && (
           <button
             type="button"
@@ -338,7 +349,7 @@ const Input: React.FC<InputProps> = ({
         )}
       </div>
 
-      {/* HELPER TEXT / ERROR */}
+      
       {error ||
         errorMessage ||
         (helperText && (

@@ -71,7 +71,7 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
                       href={menu.href}
                       className={`flex items-center gap-2 px-5 py-3 rounded-full ${
                         isActive
-                          ? "bg-white rounded-xl border-r-4 border-gray-400 font-bold text-[#2B62C2]"
+                          ? "bg-white rounded-xl font-bold text-[#2B62C2]"
                           : "hover:bg-white/20 transition duration-300 ease-in-out rounded-xl text-white"
                       }`}
                     >
