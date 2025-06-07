@@ -7,6 +7,7 @@ interface VerifyEmailProps {
   onClose: () => void;
   email?: string;
   userId?: number;
+  onVerificationComplete?: () => void;
 }
 
 export default function VerifyEmail(props: VerifyEmailProps) {
@@ -63,12 +64,17 @@ export default function VerifyEmail(props: VerifyEmailProps) {
         }),
       });
       const data = await res.json().catch(() => ({}));
-      setLoading(false);
-      if (!res.ok) {
+      setLoading(false);      if (!res.ok) {
         showToast(data?.message || "Verifikasi gagal.", "error");
         return;
       }
-      showToast("Email berhasil diverifikasi! Silakan login.", "success");
+      
+      if (props.onVerificationComplete) {
+        props.onVerificationComplete();
+      } else {
+        showToast("Email berhasil diverifikasi! Silakan login.", "success");
+      }
+      
       handleClose();
     } catch {
       setLoading(false);

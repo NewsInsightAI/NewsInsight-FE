@@ -7,23 +7,28 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import ForgotPassword from "@/components/popup/ForgotPassword";
 import VerifyEmail from "@/components/popup/VerifyEmail";
+import MFAVerification from "@/components/popup/MFAVerification";
 import { useToast } from "@/context/ToastProvider";
 import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function Login() {
-  const [navbarHeight, setNavbarHeight] = useState(0);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [navbarHeight, setNavbarHeight] = useState(0);  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showVerifyEmail, setShowVerifyEmail] = useState(false);
+  const [showMFAVerification, setShowMFAVerification] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [highlightGoogleSignIn, setHighlightGoogleSignIn] = useState(false);
   const { promise, showToast } = useToast();
-  const router = useRouter();
-  const [verifyEmailData, setVerifyEmailData] = useState<{
+  const router = useRouter();  const [verifyEmailData, setVerifyEmailData] = useState<{
     email: string;
     userId: number;
+  } | null>(null);  const [mfaData, setMfaData] = useState<{
+    email: string;
+    tempToken: string;
+    userId: number;
+    availableMethods: string[];
   } | null>(null);
 
   useEffect(() => {
@@ -70,9 +75,7 @@ export default function Login() {
           identifier: email,
           password: password,
           redirect: false,
-        });
-
-        if (result?.ok) {
+        });        if (result?.ok) {
           
           const session = await getSession();
           if (session?.backendUser) {
@@ -119,6 +122,17 @@ export default function Login() {
             setShowVerifyEmail(true);
             return;
           }
+            if (result.error.includes("MFA_REQUIRED:")) {
+            const errorData = JSON.parse(result.error.replace("MFA_REQUIRED:", ""));
+            setMfaData({
+              email: errorData.email,
+              tempToken: errorData.tempToken,
+              userId: errorData.userId,
+              availableMethods: errorData.availableMethods
+            });
+            setShowMFAVerification(true);
+            return;
+          }
           
           if (result.error.includes("Akun ini terdaftar melalui Google")) {
             setHighlightGoogleSignIn(true);
@@ -138,8 +152,47 @@ export default function Login() {
             ? err.message
             : "Terjadi kesalahan. Silakan coba lagi.",
       }
-    );
-    setIsLoading(false);
+    );    setIsLoading(false);
+  };
+
+  const handleMFASuccess = async () => {
+    setShowMFAVerification(false);
+    setMfaData(null);
+    
+    const session = await getSession();
+    if (session?.backendUser) {
+      try {
+        const profileCheckRes = await fetch("/api/profile/me");
+        const profileData = await profileCheckRes.json();
+        
+        let isProfileComplete = false;
+        if (profileData.status === "success" && profileData.data) {
+          const profile = profileData.data;
+          isProfileComplete = !!(
+            profile.full_name &&
+            profile.gender &&
+            profile.date_of_birth &&
+            profile.phone_number &&
+            profile.domicile &&
+            profile.news_interest &&
+            profile.headline &&
+            profile.biography
+          );
+        }
+        
+        showToast("Login berhasil!", "success");
+        
+        if (!isProfileComplete) {
+          router.push("/login/complete-profile");
+        } else {
+          router.push("/dashboard");
+        }
+      } catch (error) {
+        console.error("Error checking profile completion:", error);
+        showToast("Login berhasil!", "success");
+        router.push("/dashboard");
+      }
+    }
   };
 
   const handleGoogleSignIn = async () => {
@@ -228,8 +281,7 @@ export default function Login() {
           >
             <ForgotPassword onClose={() => setShowForgotPassword(false)} />
           </motion.div>
-        )}
-        {showVerifyEmail && (
+        )}        {showVerifyEmail && (
           <motion.div
             key="verify-email"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -246,6 +298,28 @@ export default function Login() {
                     userId: verifyEmailData.userId,
                   }
                 : {})}
+            />
+          </motion.div>
+        )}
+        {showMFAVerification && mfaData && (
+          <motion.div
+            key="mfa-verification"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center"
+          >            <MFAVerification
+              onClose={() => {
+                setShowMFAVerification(false);
+                setMfaData(null);
+              }}
+              onVerificationComplete={handleMFASuccess}
+              email={mfaData.email}
+              tempToken={mfaData.tempToken}
+              userId={mfaData.userId}
+              availableMethods={mfaData.availableMethods}
+              isLoginFlow={true}
             />
           </motion.div>
         )}

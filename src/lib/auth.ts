@@ -13,22 +13,57 @@ export const authOptions: AuthOptions = {
           prompt: "select_account",
         },
       },
-    }),
-    CredentialsProvider({
+    }),    CredentialsProvider({
       name: "credentials",
       credentials: {
         identifier: { label: "Email atau Username", type: "text" },
         password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
+        mfaToken: { label: "MFA Token", type: "text" },
+      },async authorize(credentials) {
         console.log("NextAuth CredentialsProvider authorize called with:", {
           identifier: credentials?.identifier,
-          password: credentials?.password ? "***" : "empty"
+          password: credentials?.password ? "***" : "empty",
+          mfaToken: credentials?.mfaToken ? "***" : "none"
         });
 
         if (!credentials?.identifier || !credentials?.password) {
           console.log("Missing credentials");
           throw new Error("Email/username dan password wajib diisi");
+        }
+
+        // Handle MFA token case - this means user already passed MFA verification
+        if (credentials.password === "__MFA_TOKEN__" && credentials.mfaToken) {
+          try {
+            // Verify the MFA token and get user data
+            const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/auth/verify-mfa-token`;
+            const response = await fetch(backendUrl, {
+              method: "POST",
+              headers: { 
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${credentials.mfaToken}`
+              },
+            });
+
+            const result = await response.json();
+            if (response.ok && result.status === "success" && result.data) {
+              const userObject = {
+                id: result.data.account.id.toString(),
+                email: result.data.account.email,
+                name: result.data.account.fullName || result.data.account.username,
+                role: result.data.account.role,
+                backendToken: credentials.mfaToken,
+                isProfileComplete: result.data.account.isProfileComplete,
+                backendUser: result.data.account,
+              };
+              console.log("MFA token verified, returning user object:", userObject);
+              return userObject;
+            } else {
+              throw new Error("Invalid MFA token");
+            }
+          } catch (error) {
+            console.error("MFA token verification error:", error);
+            throw new Error("Gagal verifikasi token MFA");
+          }
         }
 
         try {
@@ -64,8 +99,7 @@ export const authOptions: AuthOptions = {
               backendUser: result.data.account,
             };
             console.log("Returning user object:", userObject);
-            return userObject;
-          } else {
+            return userObject;          } else {
             
             if (result?.error?.code === "GOOGLE_AUTH_REQUIRED") {
               throw new Error("Akun ini terdaftar melalui Google. Silakan gunakan tombol 'Masuk dengan Google'.");
@@ -74,6 +108,13 @@ export const authOptions: AuthOptions = {
               throw new Error("EMAIL_UNVERIFIED:" + JSON.stringify({
                 email: result.data?.email,
                 userId: result.data?.userId
+              }));
+            }            if (result?.status === "mfa_required") {
+              throw new Error("MFA_REQUIRED:" + JSON.stringify({
+                userId: result.data?.userId,
+                email: result.data?.email,
+                tempToken: result.data?.tempToken || "", // Backend might provide this
+                availableMethods: result.data?.enabledMethods || []
               }));
             }
             throw new Error(result?.message || "Login gagal");
