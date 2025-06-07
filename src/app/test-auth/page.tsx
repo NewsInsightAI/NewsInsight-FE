@@ -2,6 +2,7 @@
 
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useEffect } from "react";
+import Image from "next/image";
 
 export default function TestAuth() {
   const { data: session, status } = useSession();
@@ -27,12 +28,13 @@ export default function TestAuth() {
         <h1 className="text-2xl font-bold text-center mb-6">Auth Test Page</h1>
 
         {session ? (
-          <div className="text-center">
-            <div className="mb-4">
-              <img
+          <div className="text-center">            <div className="mb-4">
+              <Image
                 src={session.user?.image || "/default-avatar.png"}
                 alt="Profile"
-                className="w-16 h-16 rounded-full mx-auto mb-2"
+                width={64}
+                height={64}
+                className="rounded-full mx-auto mb-2"
               />
               <h2 className="text-xl font-semibold">{session.user?.name}</h2>
               <p className="text-gray-600">{session.user?.email}</p>

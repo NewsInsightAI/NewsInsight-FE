@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 
@@ -10,7 +10,7 @@ interface MFAData {
   enabledMethods: string[];
 }
 
-export default function MFAVerifyPage() {
+function MFAVerifyContent() {
   const [code, setCode] = useState("");
   const [method, setMethod] = useState("totp");
   const [loading, setLoading] = useState(false);
@@ -225,7 +225,25 @@ export default function MFAVerifyPage() {
             </button>
           </div>
         </div>
+      </div>    </div>
+  );
+}
+
+function LoadingSpinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Memuat...</p>
       </div>
     </div>
+  );
+}
+
+export default function MFAVerifyPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <MFAVerifyContent />
+    </Suspense>
   );
 }
