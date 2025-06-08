@@ -16,30 +16,61 @@ export default function VerifyEmail(props: VerifyEmailProps) {
   const [resendLoading, setResendLoading] = useState(false);
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
   const { showToast } = useToast();
-
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     index: number
   ) => {
     const value = e.target.value.replace(/[^0-9]/g, "");
-    if (!value) return;
     const newCode = [...code];
-    newCode[index] = value[0];
-    setCode(newCode);
-    if (index < 5 && inputsRef.current[index + 1]) {
-      inputsRef.current[index + 1]?.focus();
+
+    if (value) {
+      newCode[index] = value[value.length - 1];
+      setCode(newCode);
+
+      if (index < 5 && inputsRef.current[index + 1]) {
+        inputsRef.current[index + 1]?.focus();
+      }
+    } else {
+      newCode[index] = "";
+      setCode(newCode);
     }
   };
-
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
     index: number
   ) => {
-    if (e.key === "Backspace" && !code[index] && index > 0) {
-      const newCode = [...code];
-      newCode[index - 1] = "";
-      setCode(newCode);
+    if (e.key === "Backspace") {
+      if (code[index]) {
+        const newCode = [...code];
+        newCode[index] = "";
+        setCode(newCode);
+      } else if (index > 0) {
+        const newCode = [...code];
+        newCode[index - 1] = "";
+        setCode(newCode);
+        inputsRef.current[index - 1]?.focus();
+      }
+    } else if (e.key === "ArrowLeft" && index > 0) {
       inputsRef.current[index - 1]?.focus();
+    } else if (e.key === "ArrowRight" && index < 5) {
+      inputsRef.current[index + 1]?.focus();
+    } else if (e.key === "Enter") {
+      handleVerify();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pasteData = e.clipboardData.getData("text").replace(/[^0-9]/g, "");
+    if (pasteData.length <= 6) {
+      const newCode = Array(6).fill("");
+      for (let i = 0; i < pasteData.length; i++) {
+        newCode[i] = pasteData[i];
+      }
+      setCode(newCode);
+
+      const lastFilledIndex = Math.min(pasteData.length - 1, 5);
+      inputsRef.current[lastFilledIndex]?.focus();
     }
   };
 
@@ -55,6 +86,8 @@ export default function VerifyEmail(props: VerifyEmailProps) {
     }
     setLoading(true);
     try {
+      console.log("Verifying code:", code.join(""));
+      console.log("User ID:", props.userId);
       const res = await fetch("/api/auth/verify-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -64,17 +97,18 @@ export default function VerifyEmail(props: VerifyEmailProps) {
         }),
       });
       const data = await res.json().catch(() => ({}));
-      setLoading(false);      if (!res.ok) {
+      setLoading(false);
+      if (!res.ok) {
         showToast(data?.message || "Verifikasi gagal.", "error");
         return;
       }
-      
+
       if (props.onVerificationComplete) {
         props.onVerificationComplete();
       } else {
         showToast("Email berhasil diverifikasi! Silakan login.", "success");
       }
-      
+
       handleClose();
     } catch {
       setLoading(false);
@@ -146,6 +180,7 @@ export default function VerifyEmail(props: VerifyEmailProps) {
               value={digit}
               onChange={(e) => handleChange(e, index)}
               onKeyDown={(e) => handleKeyDown(e, index)}
+              onPaste={handlePaste}
               className={`w-14 h-14 text-center text-2xl font-bold border-2 rounded-xl outline-none transition 
               ${digit ? "border-blue-400" : "border-gray-200"} focus:ring-2 focus:ring-blue-300`}
               disabled={loading}

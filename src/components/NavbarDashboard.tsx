@@ -52,12 +52,14 @@ export default function NavbarDashboard() {
   const { data: session, status } = useSession();
   const [profileAvatar, setProfileAvatar] = useState<string>("");
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
-  
-  
+
   const getAvatarSource = () => {
     if (profileAvatar) {
       console.log("Using profile avatar");
-      return getAvatarUrl(profileAvatar, session?.user?.image || "/images/default_profile.png");
+      return getAvatarUrl(
+        profileAvatar,
+        session?.user?.image || "/images/default_profile.png"
+      );
     }
     if (session?.user?.image) {
       console.log("Using Google session avatar");
@@ -67,23 +69,25 @@ export default function NavbarDashboard() {
     return "/images/default_profile.png";
   };
 
-  
   useEffect(() => {
     const fetchProfileData = async () => {
       if (status === "authenticated") {
         try {
           const response = await fetch("/api/profile/me");
           const result = await response.json();
-          
-          console.log("Profile API response:", result); 
-          
+
+          console.log("Profile API response:", result);
+
           if (response.ok && result.status === "success") {
             setProfileData(result.data);
             if (result.data?.avatar) {
-              console.log("Setting profile avatar:", result.data.avatar.substring(0, 50) + "..."); 
+              console.log(
+                "Setting profile avatar:",
+                result.data.avatar.substring(0, 50) + "..."
+              );
               setProfileAvatar(result.data.avatar);
             } else {
-              console.log("No avatar in profile data, using fallback"); 
+              console.log("No avatar in profile data, using fallback");
               setProfileAvatar("");
             }
           } else {
@@ -97,15 +101,14 @@ export default function NavbarDashboard() {
 
     fetchProfileData();
 
-    
     const handleProfileUpdate = () => {
       fetchProfileData();
     };
 
-    window.addEventListener('profile-updated', handleProfileUpdate);
-    
+    window.addEventListener("profile-updated", handleProfileUpdate);
+
     return () => {
-      window.removeEventListener('profile-updated', handleProfileUpdate);
+      window.removeEventListener("profile-updated", handleProfileUpdate);
     };
   }, [status]);
 
@@ -147,11 +150,14 @@ export default function NavbarDashboard() {
           </div>
         );
     }
-  };  const handleLogout = async () => {
-    // Get the current origin for callback URL
-    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://newsinsight.space';
+  };
+  const handleLogout = async () => {
+    const currentOrigin =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : "https://newsinsight.space";
     const callbackUrl = `${currentOrigin}/login`;
-    
+
     await signOut({
       redirect: true,
       callbackUrl: callbackUrl,
@@ -234,7 +240,13 @@ export default function NavbarDashboard() {
           />
           <div className="flex flex-col items-start gap-1.5">
             <p className="text-sm font-semibold">
-              {shortenName(profileData?.full_name || profileData?.username || session?.user?.name || session?.user?.email || "User")}
+              {shortenName(
+                profileData?.full_name ||
+                  profileData?.username ||
+                  session?.user?.name ||
+                  session?.user?.email ||
+                  "User"
+              )}
             </p>
             {getRoleBadge(session?.user?.role || "user")}
           </div>
@@ -269,7 +281,7 @@ export default function NavbarDashboard() {
                   Profil Saya
                 </Link>
                 <Link
-                  href="/dashboard/settings/profile"
+                  href="/settings/profile"
                   className="px-5 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
                 >
                   <Icon

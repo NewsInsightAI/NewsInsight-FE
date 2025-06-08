@@ -98,5 +98,5 @@ export const userData = [
     status: "inactive",
     createdAt: "2023-10-10T04:00:00Z",
     updatedAt: "2023-10-10T04:00:00Z",
-  }
+  },
 ];

@@ -22,7 +22,6 @@ export default function ResetPassword() {
   const { promise, showToast } = useToast();
   const router = useRouter();
 
-  
   const [token, setToken] = useState<string | null>(null);
   const [tokenValid, setTokenValid] = useState<null | boolean>(null);
   const [tokenCheckLoading, setTokenCheckLoading] = useState(true);
@@ -42,7 +41,7 @@ export default function ResetPassword() {
           const data = await res.json().catch(() => ({}));
           if (!res.ok || !data.data?.valid) {
             setTokenValid(false);
-            
+
             if (data?.error?.code === "GOOGLE_AUTH_NO_PASSWORD") {
               showToast(
                 "Akun ini terdaftar melalui Google. Reset password tidak diperlukan. Silakan login menggunakan Google.",
@@ -85,7 +84,6 @@ export default function ResetPassword() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) {
@@ -118,9 +116,10 @@ export default function ResetPassword() {
         }).then(async (res) => {
           const data = await res.json().catch(() => ({}));
           if (!res.ok) {
-            
             if (data?.error?.code === "GOOGLE_AUTH_NO_PASSWORD") {
-              throw new Error("Akun ini terdaftar melalui Google. Reset password tidak diperlukan. Silakan login menggunakan Google.");
+              throw new Error(
+                "Akun ini terdaftar melalui Google. Reset password tidak diperlukan. Silakan login menggunakan Google."
+              );
             }
             throw new Error(data?.message || "Gagal reset password.");
           }
@@ -140,7 +139,6 @@ export default function ResetPassword() {
       setConfirmPassword("");
       setTimeout(() => router.push("/login"), 1500);
     } catch {
-      
     } finally {
       setLoading(false);
     }

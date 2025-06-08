@@ -1,7 +1,8 @@
 "use client";
 
 import NewsCard from "@/components/NewsCard";
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { Icon } from "@iconify/react/dist/iconify.js";
 
 const listNews = [
   {
@@ -79,8 +80,35 @@ const listNews = [
 ];
 
 export default function Profile() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadProfileData = async () => {
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfileData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3">
+          <Icon
+            icon="line-md:loading-loop"
+            className="text-4xl text-blue-500"
+          />
+          <p className="text-gray-600">Memuat profil dan konten...</p>
+        </div>
+      </div>
+    );
+  }
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-4 overflow-y-auto outline-none">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 mt-4 overflow-y-auto outline-none">
       {listNews.map((news, index) => (
         <NewsCard
           key={index}

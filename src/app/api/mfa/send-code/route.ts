@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    
+
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     const apiRes = await fetch(`${apiUrl}/mfa/send-code`, {
       method: "POST",
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
         message: "Internal server error",
         data: null,
         error: { code: "SERVER_ERROR" },
-        metadata: null
+        metadata: null,
       },
       { status: 500 }
     );

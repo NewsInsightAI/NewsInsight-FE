@@ -30,36 +30,103 @@ export const Navbar = () => {
   const { data: session, status } = useSession();
   const [profileAvatar, setProfileAvatar] = useState<string>("");
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [isBackendConnected, setIsBackendConnected] = useState(false);
+  const [isCheckingBackend, setIsCheckingBackend] = useState(true); 
+  useEffect(() => {
+    const checkBackendConnection = async () => {
+      if (status === "authenticated") {
+        try {
+          setIsCheckingBackend(true);
 
-  
+          
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000); 
+
+          const response = await fetch("/api/profile/me", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.status === "success") {
+              setIsBackendConnected(true);
+            } else {
+              console.warn("Backend authentication failed:", result.message);
+              setIsBackendConnected(false);
+              
+              if (
+                result.message?.includes("token") ||
+                result.message?.includes("unauthorized") ||
+                result.message?.includes("invalid")
+              ) {
+                console.log("Clearing invalid session...");
+                await signOut({ redirect: false });
+              }
+            }
+          } else {
+            console.warn("Backend not accessible, status:", response.status);
+            setIsBackendConnected(false);
+            
+            if (response.status === 401 || response.status === 403) {
+              console.log("Clearing unauthorized session...");
+              await signOut({ redirect: false });
+            }
+          }
+        } catch (error: unknown) {
+          console.warn("Backend connection check failed:", error);
+          setIsBackendConnected(false);
+          
+          if (error instanceof Error && error.name !== "AbortError") {
+            
+            console.warn("Non-timeout error:", error.message);
+          }
+        } finally {
+          setIsCheckingBackend(false);
+        }
+      } else {
+        setIsBackendConnected(false);
+        setIsCheckingBackend(false);
+      }
+    };
+
+    checkBackendConnection();
+  }, [status]);
+
   React.useEffect(() => {
     console.log("Navbar session check:", {
       hasSession: !!session,
       userEmail: session?.user?.email,
       userRole: session?.user?.role,
-      backendUser: session?.backendUser
+      backendUser: session?.backendUser,
+      isBackendConnected,
     });
-  }, [session]);
+  }, [session, isBackendConnected]);
 
-  
   const getAvatarSource = () => {
     if (profileAvatar) {
-      return getAvatarUrl(profileAvatar, session?.user?.image || "/images/default_profile.png");
+      return getAvatarUrl(
+        profileAvatar,
+        session?.user?.image || "/images/default_profile.png"
+      );
     }
     if (session?.user?.image) {
       return session.user.image;
     }
     return "/images/default_profile.png";
   };
-
-  
   useEffect(() => {
     const fetchProfileData = async () => {
-      if (status === "authenticated") {
+      if (status === "authenticated" && isBackendConnected) {
         try {
           const response = await fetch("/api/profile/me");
           const result = await response.json();
-          
+
           if (response.ok && result.status === "success") {
             setProfileData(result.data);
             if (result.data?.avatar) {
@@ -69,28 +136,30 @@ export const Navbar = () => {
             }
           } else {
             console.error("Failed to fetch profile:", result.message);
+            setProfileData(null);
+            setProfileAvatar("");
           }
         } catch (error) {
           console.error("Error fetching profile:", error);
+          setProfileData(null);
+          setProfileAvatar("");
         }
       }
     };
 
     fetchProfileData();
 
-    
     const handleProfileUpdate = () => {
       fetchProfileData();
     };
 
-    window.addEventListener('profile-updated', handleProfileUpdate);
-    
-    return () => {
-      window.removeEventListener('profile-updated', handleProfileUpdate);
-    };
-  }, [status]);
+    window.addEventListener("profile-updated", handleProfileUpdate);
 
-  
+    return () => {
+      window.removeEventListener("profile-updated", handleProfileUpdate);
+    };
+  }, [status, isBackendConnected]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -106,25 +175,30 @@ export const Navbar = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
   const handleLogout = async () => {
+    setIsBackendConnected(false);
+    setProfileData(null);
+    setProfileAvatar("");
     await signOut({
       redirect: true,
       callbackUrl: "/login",
     });
   };
 
-  let bgColor = "white text-black";
-  if (pathname === "/profile") {
-    bgColor = "transparent text-white";
-  } else {
-    bgColor = "bg-white text-black shadow-md";
-  }
+  
+  const isUserAuthenticated = () => {
+    return (
+      status === "authenticated" &&
+      session &&
+      isBackendConnected &&
+      !isCheckingBackend
+    );
+  };
 
   return (
     <nav
       id="navbar"
-      className={`flex flex-col md:flex-row justify-start gap-2 md:gap-4 items-center p-4 fixed top-0 w-full px-4 md:px-8 z-50 ${bgColor}`}
+      className={`flex flex-col md:flex-row justify-start gap-2 md:gap-4 items-center p-4 fixed top-0 w-full px-4 md:px-8 z-50 bg-white text-black`}
     >
       <div className="flex w-full justify-between items-center">
         <div className="flex items-center gap-4 md:gap-10">
@@ -183,12 +257,10 @@ export const Navbar = () => {
               icon="material-symbols:dark-mode-rounded"
               className="text-2xl"
             />
-          </button>
-
-          {session ? (
+          </button>{" "}
+          {isUserAuthenticated() && session ? (
             <>
               {session.user?.role === "user" ? (
-                
                 <div className="relative" ref={dropdownRef}>
                   <div
                     className="flex items-center gap-2 cursor-pointer"
@@ -205,7 +277,13 @@ export const Navbar = () => {
                     />
                     <div className="hidden md:flex flex-col items-start">
                       <p className="text-sm font-semibold">
-                        {shortenName(profileData?.full_name || profileData?.username || session?.user?.name || session?.user?.email || "User")}
+                        {shortenName(
+                          profileData?.full_name ||
+                            profileData?.username ||
+                            session?.user?.name ||
+                            session?.user?.email ||
+                            "User"
+                        )}
                       </p>
                     </div>
                     <Icon
@@ -229,6 +307,7 @@ export const Navbar = () => {
                         transition={{ duration: 0.2 }}
                         className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-xl py-3 z-50"
                       >
+                        {" "}
                         <ul className="text-sm text-black flex flex-col">
                           <Link
                             href="/profile"
@@ -238,11 +317,11 @@ export const Navbar = () => {
                             Profil Saya
                           </Link>
                           <Link
-                            href="/dashboard"
+                            href="/settings"
                             className="px-5 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
                           >
-                            <Icon icon="mynaui:home-solid" fontSize={18} />
-                            Dashboard
+                            <Icon icon="solar:settings-bold" fontSize={18} />
+                            Pengaturan
                           </Link>
                           <Link
                             href="#"
@@ -264,7 +343,6 @@ export const Navbar = () => {
                   </AnimatePresence>
                 </div>
               ) : (
-                
                 <div className="flex items-center gap-3">
                   <Link
                     href="/dashboard"
@@ -281,20 +359,29 @@ export const Navbar = () => {
                     <p>Keluar</p>
                   </button>
                 </div>
-              )}
+              )}{" "}
             </>
           ) : (
-            <Link
-              href="/login"
-              className="flex items-center gap-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white rounded-3xl px-4 md:px-5 py-2 md:py-2.5 hover:opacity-80 transition duration-300 ease-in-out cursor-pointer text-sm md:text-base"
-            >
-              <p>Masuk</p>
-              <Icon
-                icon="majesticons:login"
-                fontSize={20}
-                className="inline-block"
-              />
-            </Link>
+            
+            <div className="flex items-center">
+              {isCheckingBackend ? (
+                <div className="flex items-center justify-center w-20 h-10">
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-blue-500"></div>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="flex items-center gap-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white rounded-3xl px-4 md:px-5 py-2 md:py-2.5 hover:opacity-80 transition duration-300 ease-in-out cursor-pointer text-sm md:text-base"
+                >
+                  <p>Masuk</p>
+                  <Icon
+                    icon="majesticons:login"
+                    fontSize={20}
+                    className="inline-block"
+                  />
+                </Link>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -336,73 +423,6 @@ export const Navbar = () => {
                 <span>Kategori</span>
                 <Icon icon="mingcute:down-line" />
               </div>
-              
-              {/* Mobile menu buttons - conditional based on session and role */}
-              {session ? (
-                <>
-                  {session.user?.role === "user" ? (
-                    
-                    <>
-                      <Link
-                        href="/profile"
-                        className="py-2 flex items-center gap-2"
-                        onClick={() => setShowMobileMenu(false)}
-                      >
-                        <Icon icon="iconamoon:profile-fill" fontSize={20} />
-                        <span>Profil Saya</span>
-                      </Link>
-                      <Link
-                        href="/dashboard"
-                        className="py-2 flex items-center gap-2"
-                        onClick={() => setShowMobileMenu(false)}
-                      >
-                        <Icon icon="mynaui:home-solid" fontSize={20} />
-                        <span>Dashboard</span>
-                      </Link>
-                      <button
-                        onClick={() => {
-                          setShowMobileMenu(false);
-                          handleLogout();
-                        }}
-                        className="py-2 flex items-center gap-2 text-left"
-                      >
-                        <Icon icon="solar:logout-2-bold" fontSize={20} />
-                        <span>Keluar</span>
-                      </button>
-                    </>
-                  ) : (
-                    
-                    <>
-                      <Link
-                        href="/dashboard"
-                        className="py-2 flex items-center gap-2"
-                        onClick={() => setShowMobileMenu(false)}
-                      >
-                        <Icon icon="mynaui:home-solid" fontSize={20} />
-                        <span>Dashboard</span>
-                      </Link>
-                      <button
-                        onClick={() => {
-                          setShowMobileMenu(false);
-                          handleLogout();
-                        }}
-                        className="py-2 flex items-center gap-2 text-left"
-                      >
-                        <Icon icon="solar:logout-2-bold" fontSize={20} />
-                        <span>Keluar</span>
-                      </button>
-                    </>
-                  )}
-                </>
-              ) : (
-                <Link
-                  href="/login"
-                  className="py-2"
-                  onClick={() => setShowMobileMenu(false)}
-                >
-                  Masuk
-                </Link>
-              )}
             </motion.div>
           </motion.div>
         )}

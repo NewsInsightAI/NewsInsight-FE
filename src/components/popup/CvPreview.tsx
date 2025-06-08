@@ -10,13 +10,18 @@ interface CvPreviewProps {
   fileName?: string;
 }
 
-export default function CvPreview({ isOpen, onClose, cvUrl, fileName }: CvPreviewProps) {
+export default function CvPreview({
+  isOpen,
+  onClose,
+  cvUrl,
+  fileName,
+}: CvPreviewProps) {
   if (!isOpen) return null;
 
   const handleDownload = () => {
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = cvUrl;
-    link.download = fileName || 'CV.pdf';
+    link.download = fileName || "CV.pdf";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -40,7 +45,9 @@ export default function CvPreview({ isOpen, onClose, cvUrl, fileName }: CvPrevie
                   <Icon icon="mdi:file-pdf" className="text-2xl text-red-600" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">Preview CV</h2>
+                  <h2 className="text-xl font-bold text-gray-800">
+                    Preview CV
+                  </h2>
                   {fileName && (
                     <p className="text-sm text-gray-600">{fileName}</p>
                   )}
@@ -69,7 +76,10 @@ export default function CvPreview({ isOpen, onClose, cvUrl, fileName }: CvPrevie
                   }}
                 >
                   <div className="flex flex-col items-center justify-center h-full gap-4">
-                    <Icon icon="mdi:file-pdf" className="text-6xl text-red-600" />
+                    <Icon
+                      icon="mdi:file-pdf"
+                      className="text-6xl text-red-600"
+                    />
                     <div className="text-center">
                       <p className="text-gray-600 mb-2">
                         Browser Anda tidak mendukung preview PDF

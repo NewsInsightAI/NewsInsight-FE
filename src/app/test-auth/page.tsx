@@ -28,7 +28,9 @@ export default function TestAuth() {
         <h1 className="text-2xl font-bold text-center mb-6">Auth Test Page</h1>
 
         {session ? (
-          <div className="text-center">            <div className="mb-4">
+          <div className="text-center">
+            {" "}
+            <div className="mb-4">
               <Image
                 src={session.user?.image || "/default-avatar.png"}
                 alt="Profile"

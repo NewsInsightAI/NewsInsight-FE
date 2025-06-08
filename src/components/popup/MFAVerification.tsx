@@ -14,14 +14,14 @@ interface MFAVerificationProps {
   isLoginFlow?: boolean;
 }
 
-export default function MFAVerification({ 
-  email, 
-  onClose, 
+export default function MFAVerification({
+  email,
+  onClose,
   onVerificationComplete,
   tempToken,
   userId,
   availableMethods: propAvailableMethods,
-  isLoginFlow = false
+  isLoginFlow = false,
 }: MFAVerificationProps) {
   const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -66,15 +66,15 @@ export default function MFAVerification({
     try {
       let body;
       if (isLoginFlow) {
-        body = { 
+        body = {
           tempToken,
           method: selectedMethod,
-          purpose: "login" 
+          purpose: "login",
         };
       } else {
-        body = { 
+        body = {
           method: selectedMethod,
-          purpose: "login" 
+          purpose: "login",
         };
       }
 
@@ -106,20 +106,22 @@ export default function MFAVerification({
     setIsLoading(true);
     try {
       let endpoint, body;
-        if (isLoginFlow) {
+      if (isLoginFlow) {
         endpoint = "/api/mfa/verify-login";
         body = {
           userId: userId,
           code: verificationCode,
           method: useBackupCode ? "backup" : selectedMethod,
-          trustDevice
+          trustDevice,
         };
       } else {
-        endpoint = useBackupCode ? "/api/mfa/verify-backup" : "/api/mfa/verify-code";
-        body = { 
+        endpoint = useBackupCode
+          ? "/api/mfa/verify-backup"
+          : "/api/mfa/verify-code";
+        body = {
           code: verificationCode,
           method: useBackupCode ? undefined : selectedMethod,
-          trustDevice
+          trustDevice,
         };
       }
 
@@ -127,7 +129,8 @@ export default function MFAVerification({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
-      });      const result = await response.json();
+      });
+      const result = await response.json();
       if (response.ok && result.status === "success") {
         if (isLoginFlow) {
           const signInResult = await signIn("credentials", {
@@ -212,16 +215,22 @@ export default function MFAVerification({
                           className="mr-3"
                         />
                         <div className="flex items-center gap-2">
-                          <Icon 
+                          <Icon
                             icon={
-                              method === "totp" ? "mdi:cellphone-key" :
-                              method === "email" ? "mdi:email" : "mdi:shield"
-                            } 
+                              method === "totp"
+                                ? "mdi:cellphone-key"
+                                : method === "email"
+                                  ? "mdi:email"
+                                  : "mdi:shield"
+                            }
                             className="text-lg text-gray-600"
                           />
                           <span className="text-sm">
-                            {method === "totp" ? "Aplikasi Authenticator" :
-                             method === "email" ? "Email" : method}
+                            {method === "totp"
+                              ? "Aplikasi Authenticator"
+                              : method === "email"
+                                ? "Email"
+                                : method}
                           </span>
                         </div>
                       </label>
@@ -229,7 +238,6 @@ export default function MFAVerification({
                   </div>
                 </div>
               )}
-
               {/* Send Code Button */}
               {selectedMethod === "email" && (
                 <button
@@ -249,7 +257,8 @@ export default function MFAVerification({
                     </>
                   )}
                 </button>
-              )}              {/* Verification Code Input */}
+              )}{" "}
+              {/* Verification Code Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {`Kode Verifikasi ${selectedMethod === "totp" ? "(dari Aplikasi Authenticator)" : "(dari Email)"}`}
@@ -270,7 +279,8 @@ export default function MFAVerification({
                 </div>
               </div>
             </>
-          ) : (            <>
+          ) : (
+            <>
               {/* Backup Code Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -293,7 +303,8 @@ export default function MFAVerification({
                   ⚠️ Setiap kode cadangan hanya dapat digunakan sekali
                 </p>
               </div>
-            </>)}
+            </>
+          )}
 
           {/* Trust Device Option - Only show for login flow */}
           {showTrustedDevice && (
@@ -355,7 +366,7 @@ export default function MFAVerification({
 
           {/* Help Text */}
           <div className="text-xs text-gray-500 space-y-1">
-            <p>• Kode verifikasi berlaku selama 5 menit</p>
+            <p>• Kode verifikasi berlaku selama 30 menit</p>
             <p>• Jika tidak menerima kode, periksa folder spam</p>
             <p>• Hubungi admin jika mengalami masalah</p>
           </div>

@@ -13,7 +13,8 @@ import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function Login() {
-  const [navbarHeight, setNavbarHeight] = useState(0);  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [navbarHeight, setNavbarHeight] = useState(0);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showVerifyEmail, setShowVerifyEmail] = useState(false);
   const [showMFAVerification, setShowMFAVerification] = useState(false);
   const [email, setEmail] = useState("");
@@ -21,10 +22,12 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [highlightGoogleSignIn, setHighlightGoogleSignIn] = useState(false);
   const { promise, showToast } = useToast();
-  const router = useRouter();  const [verifyEmailData, setVerifyEmailData] = useState<{
+  const router = useRouter();
+  const [verifyEmailData, setVerifyEmailData] = useState<{
     email: string;
     userId: number;
-  } | null>(null);  const [mfaData, setMfaData] = useState<{
+  } | null>(null);
+  const [mfaData, setMfaData] = useState<{
     email: string;
     tempToken: string;
     userId: number;
@@ -45,7 +48,7 @@ export default function Login() {
     };
 
     window.addEventListener("resize", handleResize);
-    
+
     let observer: ResizeObserver | null = null;
     if (navbar && typeof ResizeObserver !== "undefined") {
       observer = new ResizeObserver(() => {
@@ -75,16 +78,14 @@ export default function Login() {
           identifier: email,
           password: password,
           redirect: false,
-        });        if (result?.ok) {
-          
+        });
+        if (result?.ok) {
           const session = await getSession();
           if (session?.backendUser) {
-            
             try {
               const profileCheckRes = await fetch("/api/profile/me");
               const profileData = await profileCheckRes.json();
-              
-              
+
               let isProfileComplete = false;
               if (profileData.status === "success" && profileData.data) {
                 const profile = profileData.data;
@@ -99,46 +100,57 @@ export default function Login() {
                   profile.biography
                 );
               }
-              
-              
+
               if (!isProfileComplete) {
                 router.push("/login/complete-profile");
               } else {
-                router.push("/dashboard");
+                
+                const userRole = session.backendUser.role;
+                if (userRole === "user") {
+                  router.push("/");
+                } else {
+                  router.push("/dashboard");
+                }
               }
             } catch (error) {
               console.error("Error checking profile completion:", error);
-              
+
               router.push("/dashboard");
             }
           } else {
             throw new Error("Gagal mendapatkan data sesi.");
           }
         } else if (result?.error) {
-          
           if (result.error.includes("EMAIL_UNVERIFIED:")) {
-            const errorData = JSON.parse(result.error.replace("EMAIL_UNVERIFIED:", ""));
-            setVerifyEmailData({ email: errorData.email, userId: errorData.userId });
+            const errorData = JSON.parse(
+              result.error.replace("EMAIL_UNVERIFIED:", "")
+            );
+            setVerifyEmailData({
+              email: errorData.email,
+              userId: errorData.userId,
+            });
             setShowVerifyEmail(true);
             return;
           }
-            if (result.error.includes("MFA_REQUIRED:")) {
-            const errorData = JSON.parse(result.error.replace("MFA_REQUIRED:", ""));
+          if (result.error.includes("MFA_REQUIRED:")) {
+            const errorData = JSON.parse(
+              result.error.replace("MFA_REQUIRED:", "")
+            );
             setMfaData({
               email: errorData.email,
               tempToken: errorData.tempToken,
               userId: errorData.userId,
-              availableMethods: errorData.availableMethods
+              availableMethods: errorData.availableMethods,
             });
             setShowMFAVerification(true);
             return;
           }
-          
+
           if (result.error.includes("Akun ini terdaftar melalui Google")) {
             setHighlightGoogleSignIn(true);
             setTimeout(() => setHighlightGoogleSignIn(false), 5000);
           }
-          
+
           throw new Error(result.error);
         } else {
           throw new Error("Login gagal. Silakan coba lagi.");
@@ -152,19 +164,20 @@ export default function Login() {
             ? err.message
             : "Terjadi kesalahan. Silakan coba lagi.",
       }
-    );    setIsLoading(false);
+    );
+    setIsLoading(false);
   };
 
   const handleMFASuccess = async () => {
     setShowMFAVerification(false);
     setMfaData(null);
-    
+
     const session = await getSession();
     if (session?.backendUser) {
       try {
         const profileCheckRes = await fetch("/api/profile/me");
         const profileData = await profileCheckRes.json();
-        
+
         let isProfileComplete = false;
         if (profileData.status === "success" && profileData.data) {
           const profile = profileData.data;
@@ -179,43 +192,54 @@ export default function Login() {
             profile.biography
           );
         }
-        
         showToast("Login berhasil!", "success");
-        
+
         if (!isProfileComplete) {
           router.push("/login/complete-profile");
         } else {
-          router.push("/dashboard");
+          
+          const userRole = session.backendUser.role;
+          if (userRole === "user") {
+            router.push("/");
+          } else {
+            router.push("/dashboard");
+          }
         }
       } catch (error) {
         console.error("Error checking profile completion:", error);
         showToast("Login berhasil!", "success");
-        router.push("/dashboard");
+        
+        const userRole = session?.backendUser?.role;
+        if (userRole === "user") {
+          router.push("/");
+        } else {
+          router.push("/dashboard");
+        }
       }
     }
   };
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      // Get the current origin for callback URL
-      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://newsinsight.space';
-      const callbackUrl = `${currentOrigin}/dashboard`;
       
+      const currentOrigin =
+        typeof window !== "undefined"
+          ? window.location.origin
+          : "https://newsinsight.space";
+      const callbackUrl = `${currentOrigin}/dashboard`;
+
       const result = await signIn("google", {
         redirect: false,
         callbackUrl: callbackUrl,
       });
 
       if (result?.ok) {
-        
         const session = await getSession();
         if (session) {
-          
           try {
             const profileCheckRes = await fetch("/api/profile/me");
             const profileData = await profileCheckRes.json();
-            
-            
+
             let isProfileComplete = false;
             if (profileData.status === "success" && profileData.data) {
               const profile = profileData.data;
@@ -230,29 +254,42 @@ export default function Login() {
                 profile.biography
               );
             }
-            
-            const message = session.isNewUser 
-              ? "Akun berhasil dibuat dan Anda telah masuk. Selamat datang di NewsInsight!" 
+
+            const message = session.isNewUser
+              ? "Akun berhasil dibuat dan Anda telah masuk. Selamat datang di NewsInsight!"
               : "Selamat datang kembali!";
             showToast(message, "success");
-            
-            
             if (!isProfileComplete) {
               router.push("/login/complete-profile");
             } else {
-              router.push("/dashboard");
+              
+              const userRole = session?.backendUser?.role;
+              if (userRole === "user") {
+                router.push("/");
+              } else {
+                router.push("/dashboard");
+              }
             }
           } catch (error) {
             console.error("Error checking profile completion:", error);
-            
-            const message = session.isNewUser 
-              ? "Akun berhasil dibuat dan Anda telah masuk. Selamat datang di NewsInsight!" 
+
+            const message = session.isNewUser
+              ? "Akun berhasil dibuat dan Anda telah masuk. Selamat datang di NewsInsight!"
               : "Selamat datang kembali!";
             showToast(message, "success");
-            router.push("/dashboard");
+            
+            const userRole = session?.backendUser?.role;
+            if (userRole === "user") {
+              router.push("/");
+            } else {
+              router.push("/dashboard");
+            }
           }
         } else {
-          showToast("Terjadi kesalahan saat masuk. Silakan coba lagi.", "error");
+          showToast(
+            "Terjadi kesalahan saat masuk. Silakan coba lagi.",
+            "error"
+          );
         }
       } else if (result?.error) {
         console.error("Google sign in error:", result.error);
@@ -284,7 +321,8 @@ export default function Login() {
           >
             <ForgotPassword onClose={() => setShowForgotPassword(false)} />
           </motion.div>
-        )}        {showVerifyEmail && (
+        )}{" "}
+        {showVerifyEmail && (
           <motion.div
             key="verify-email"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -312,7 +350,9 @@ export default function Login() {
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.3 }}
             className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center"
-          >            <MFAVerification
+          >
+            {" "}
+            <MFAVerification
               onClose={() => {
                 setShowMFAVerification(false);
                 setMfaData(null);
@@ -392,11 +432,13 @@ export default function Login() {
               onClick={handleGoogleSignIn}
               disabled={isLoading}
             >
-              <div className={`flex flex-row gap-2 items-center justify-center w-full rounded-lg px-5 py-3 transition-all duration-300 ease-in-out cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-                highlightGoogleSignIn 
-                  ? 'bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white border-2 border-blue-400 shadow-lg transform scale-105' 
-                  : 'bg-white border border-gray-300 hover:opacity-80'
-              }`}>
+              <div
+                className={`flex flex-row gap-2 items-center justify-center w-full rounded-lg px-5 py-3 transition-all duration-300 ease-in-out cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                  highlightGoogleSignIn
+                    ? "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white border-2 border-blue-400 shadow-lg transform scale-105"
+                    : "bg-white border border-gray-300 hover:opacity-80"
+                }`}
+              >
                 {isLoading ? (
                   <Icon
                     icon="line-md:loading-loop"
@@ -404,7 +446,9 @@ export default function Login() {
                   />
                 ) : (
                   <>
-                    <p className={`text-sm ${highlightGoogleSignIn ? 'text-white' : 'text-black'}`}>
+                    <p
+                      className={`text-sm ${highlightGoogleSignIn ? "text-white" : "text-black"}`}
+                    >
                       Masuk dengan Google
                     </p>
                     <Icon icon="flat-color-icons:google" className="text-2xl" />

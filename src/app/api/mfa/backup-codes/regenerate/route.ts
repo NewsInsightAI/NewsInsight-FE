@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth";
 export async function POST() {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.backendToken) {
       return NextResponse.json(
         {
@@ -13,7 +13,7 @@ export async function POST() {
           message: "Unauthorized",
           data: null,
           error: { code: "UNAUTHORIZED" },
-          metadata: null
+          metadata: null,
         },
         { status: 401 }
       );
@@ -24,7 +24,7 @@ export async function POST() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${session.backendToken}`,
+        Authorization: `Bearer ${session.backendToken}`,
       },
     });
 
@@ -38,7 +38,7 @@ export async function POST() {
         message: "Internal server error",
         data: null,
         error: { code: "SERVER_ERROR" },
-        metadata: null
+        metadata: null,
       },
       { status: 500 }
     );

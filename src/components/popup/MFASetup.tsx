@@ -19,7 +19,9 @@ interface TOTPSetupData {
 
 export default function MFASetup({ onClose, onSetupComplete }: MFASetupProps) {
   const { showToast } = useToast();
-  const [currentStep, setCurrentStep] = useState<"choose" | "totp-setup" | "totp-verify" | "email-setup">("choose");
+  const [currentStep, setCurrentStep] = useState<
+    "choose" | "totp-setup" | "totp-verify" | "email-setup"
+  >("choose");
   const [totpData, setTotpData] = useState<TOTPSetupData | null>(null);
   const [totpCode, setTotpCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -45,7 +47,7 @@ export default function MFASetup({ onClose, onSetupComplete }: MFASetupProps) {
       });
 
       const result = await response.json();
-      
+
       if (response.ok && result.status === "success") {
         setTotpData(result.data);
         setCurrentStep("totp-setup");
@@ -77,7 +79,7 @@ export default function MFASetup({ onClose, onSetupComplete }: MFASetupProps) {
       });
 
       const result = await response.json();
-      
+
       if (response.ok && result.status === "success") {
         setBackupCodes(result.data.backupCodes || []);
         setShowBackupCodes(true);
@@ -104,7 +106,7 @@ export default function MFASetup({ onClose, onSetupComplete }: MFASetupProps) {
       });
 
       const result = await response.json();
-      
+
       if (response.ok && result.status === "success") {
         showToast("MFA Email berhasil diaktifkan!", "success");
         onSetupComplete("email");
@@ -167,7 +169,7 @@ export default function MFASetup({ onClose, onSetupComplete }: MFASetupProps) {
             <p className="text-gray-600 text-sm">
               Pilih metode autentikasi dua faktor yang ingin Anda gunakan:
             </p>
-            
+
             <div className="space-y-3">
               <button
                 onClick={() => handleMethodChoice("totp")}
@@ -176,7 +178,10 @@ export default function MFASetup({ onClose, onSetupComplete }: MFASetupProps) {
               >
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-blue-100 rounded-lg">
-                    <Icon icon="mdi:cellphone-key" className="text-blue-600 text-xl" />
+                    <Icon
+                      icon="mdi:cellphone-key"
+                      className="text-blue-600 text-xl"
+                    />
                   </div>
                   <div>
                     <h3 className="font-medium">Authenticator App (TOTP)</h3>
@@ -194,7 +199,10 @@ export default function MFASetup({ onClose, onSetupComplete }: MFASetupProps) {
               >
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-green-100 rounded-lg">
-                    <Icon icon="mdi:email-lock" className="text-green-600 text-xl" />
+                    <Icon
+                      icon="mdi:email-lock"
+                      className="text-green-600 text-xl"
+                    />
                   </div>
                   <div>
                     <h3 className="font-medium">Email Verification</h3>
@@ -214,7 +222,11 @@ export default function MFASetup({ onClose, onSetupComplete }: MFASetupProps) {
             <div className="text-center">
               <h3 className="font-medium mb-2">Scan QR Code</h3>
               <div className="bg-white p-4 rounded-lg border inline-block">
-                <img src={totpData.qrCode} alt="QR Code" className="w-48 h-48" />
+                <img
+                  src={totpData.qrCode}
+                  alt="QR Code"
+                  className="w-48 h-48"
+                />
               </div>
             </div>
 
@@ -252,7 +264,7 @@ export default function MFASetup({ onClose, onSetupComplete }: MFASetupProps) {
               <p className="text-sm text-gray-600 mb-4">
                 Masukkan kode 6 digit dari aplikasi authenticator Anda:
               </p>
-              
+
               <Input
                 label="Kode TOTP"
                 type="text"
@@ -278,7 +290,10 @@ export default function MFASetup({ onClose, onSetupComplete }: MFASetupProps) {
                 className="flex-1 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white font-semibold py-2.5 rounded-lg hover:opacity-80 transition disabled:opacity-50"
               >
                 {isLoading ? (
-                  <Icon icon="eos-icons:loading" className="animate-spin mx-auto" />
+                  <Icon
+                    icon="eos-icons:loading"
+                    className="animate-spin mx-auto"
+                  />
                 ) : (
                   "Verifikasi"
                 )}
@@ -295,9 +310,11 @@ export default function MFASetup({ onClose, onSetupComplete }: MFASetupProps) {
                 Setup TOTP Berhasil!
               </h3>
               <p className="text-sm text-gray-600 mb-4">
-                Simpan kode backup ini di tempat yang aman. Anda dapat menggunakan kode ini jika tidak dapat mengakses aplikasi authenticator.
+                Simpan kode backup ini di tempat yang aman. Anda dapat
+                menggunakan kode ini jika tidak dapat mengakses aplikasi
+                authenticator.
               </p>
-              
+
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Icon icon="mdi:warning" className="text-yellow-600" />
@@ -306,13 +323,17 @@ export default function MFASetup({ onClose, onSetupComplete }: MFASetupProps) {
                   </span>
                 </div>
                 <p className="text-sm text-yellow-700">
-                  Kode backup hanya ditampilkan sekali. Setelah Anda menutup dialog ini, kode tidak akan ditampilkan lagi.
+                  Kode backup hanya ditampilkan sekali. Setelah Anda menutup
+                  dialog ini, kode tidak akan ditampilkan lagi.
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-2 p-4 bg-gray-50 rounded-lg mb-4">
                 {backupCodes.map((code, index) => (
-                  <div key={index} className="font-mono text-sm text-center py-2 bg-white rounded border">
+                  <div
+                    key={index}
+                    className="font-mono text-sm text-center py-2 bg-white rounded border"
+                  >
                     {code}
                   </div>
                 ))}

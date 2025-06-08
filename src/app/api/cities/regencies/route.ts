@@ -1,21 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000";
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get('search');
-    
-    let backendUrl = `${BACKEND_URL}/api/v1/cities/regencies`;
-    
-    
+    const search = searchParams.get("search");
+
+    let apiUrl = `${API_URL}/cities/regencies`;
+
     if (search) {
-      backendUrl = `${BACKEND_URL}/api/v1/cities/search?search=${encodeURIComponent(search)}`;
+      apiUrl = `${API_URL}/cities/search?search=${encodeURIComponent(search)}`;
     }
-    
-    const response = await fetch(backendUrl, {
+
+    const response = await fetch(apiUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

@@ -15,7 +15,7 @@ export default function Profile() {
   const [username, setUsername] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [avatar, setAvatar] = useState<string>("");
-  const [avatarPreview, setAvatarPreview] = useState<string>(""); 
+  const [avatarPreview, setAvatarPreview] = useState<string>("");
   const [newsInterest, setNewsInterest] = useState<
     { label: string; value: string }[]
   >([]);
@@ -28,76 +28,69 @@ export default function Profile() {
   const [success, setSuccess] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
-  
   const convertValueToCategory = (value: string) => {
     const categoryMap: { [key: string]: { label: string } } = {
-      'teknologi': { label: 'Teknologi' },
-      'pendidikan': { label: 'Pendidikan' },
-      'politik': { label: 'Politik' },
-      'ekonomi-bisnis': { label: 'Ekonomi & Bisnis' },
-      'sains-kesehatan': { label: 'Sains & Kesehatan' },
-      'olahraga': { label: 'Olahraga' },
-      'hiburan-selebriti': { label: 'Hiburan & Selebriti' },
-      'gaya-hidup': { label: 'Gaya Hidup' },
+      teknologi: { label: "Teknologi" },
+      pendidikan: { label: "Pendidikan" },
+      politik: { label: "Politik" },
+      "ekonomi-bisnis": { label: "Ekonomi & Bisnis" },
+      "sains-kesehatan": { label: "Sains & Kesehatan" },
+      olahraga: { label: "Olahraga" },
+      "hiburan-selebriti": { label: "Hiburan & Selebriti" },
+      "gaya-hidup": { label: "Gaya Hidup" },
     };
-    
+
     const category = categoryMap[value];
     return {
       value: value,
-      label: category ? category.label : value.charAt(0).toUpperCase() + value.slice(1),
+      label: category
+        ? category.label
+        : value.charAt(0).toUpperCase() + value.slice(1),
     };
   };
 
-  
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      
-      if (!file.type.startsWith('image/')) {
-        setError('Please select a valid image file');
+      if (!file.type.startsWith("image/")) {
+        setError("Please select a valid image file");
         return;
       }
-      
-      
+
       if (file.size > 2 * 1024 * 1024) {
-        setError('File size must be less than 2MB');
+        setError("File size must be less than 2MB");
         return;
       }
-      
+
       setAvatarFile(file);
       setError(null);
-      
-      
+
       const previewUrl = URL.createObjectURL(file);
       setAvatarPreview(previewUrl);
     }
   };
 
-  const handleRemoveCategory = (category: {
-    value: string;
-    label: string;
-  }) => {
+  const handleRemoveCategory = (category: { value: string; label: string }) => {
     setNewsInterest((prevInterest) =>
       prevInterest.filter((interest) => interest.value !== category.value)
     );
   };
 
-  
   const fetchProfile = React.useCallback(async () => {
     if (status !== "authenticated") return;
-    
+
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await fetch("/api/profile/me", {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
-      
+
       const result = await response.json();
-      
+
       if (response.ok && result.status === "success" && result.data) {
         const profile = result.data;
         setFullName(profile.full_name || "");
@@ -105,36 +98,55 @@ export default function Profile() {
         setEmail(profile.email || "");
         setAvatar(profile.avatar || "");
         setHeadline(profile.headline || "");
-        setAbout(profile.biography || profile.about || ""); 
+        setAbout(profile.biography || profile.about || "");
 
-        
-        
         if (profile.news_interest) {
           try {
-            const interests = typeof profile.news_interest === "string" 
-              ? JSON.parse(profile.news_interest) 
-              : profile.news_interest;
-            
-            if (Array.isArray(interests)) {
-              
-              const convertedInterests = interests.map(interest => {
-                if (typeof interest === 'string') {
-                  
-                  return convertValueToCategory(interest);
-                } else if (interest && typeof interest === 'object' && interest.value) {
-                  
-                  return interest;
+            let interests: string[] = [];
+
+            if (typeof profile.news_interest === "string") {
+              if (
+                profile.news_interest.startsWith("[") ||
+                profile.news_interest.startsWith("{")
+              ) {
+                const parsed = JSON.parse(profile.news_interest);
+                if (Array.isArray(parsed)) {
+                  interests = parsed.map((item: unknown) =>
+                    typeof item === "string" ? item : String(item)
+                  );
                 }
-                return null;
-              }).filter(Boolean); 
-              
+              } else {
+                interests = profile.news_interest
+                  .split(",")
+                  .map((item: string) => item.trim())
+                  .filter(Boolean);
+              }
+            } else if (Array.isArray(profile.news_interest)) {
+              interests = profile.news_interest.map((item: unknown) =>
+                typeof item === "string" ? item : String(item)
+              );
+            }
+
+            if (interests.length > 0) {
+              const convertedInterests = interests.map((interest: string) => {
+                return convertValueToCategory(interest);
+              });
               setNewsInterest(convertedInterests);
-            } else {
-              setNewsInterest([]);
             }
           } catch (e) {
             console.error("Error parsing news interests:", e);
-            setNewsInterest([]);
+
+            try {
+              const fallbackInterests = String(profile.news_interest)
+                .split(",")
+                .map((item: string) => item.trim())
+                .filter(Boolean)
+                .map((interest: string) => convertValueToCategory(interest));
+              setNewsInterest(fallbackInterests);
+            } catch (fallbackError) {
+              console.error("Fallback parsing also failed:", fallbackError);
+              setNewsInterest([]);
+            }
           }
         }
       } else {
@@ -143,49 +155,51 @@ export default function Profile() {
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to load profile data";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to load profile data";
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
   }, [status]);
 
-  
   const handleSubmit = async () => {
     if (status !== "authenticated") return;
-    
+
     try {
       setSaving(true);
       setError(null);
       setSuccess(null);
-      
+
       let avatarUrl = avatar;
-      
-      
+
       if (avatarFile) {
         const formData = new FormData();
-        formData.append('avatar', avatarFile);
-        
+        formData.append("avatar", avatarFile);
+
         const uploadResponse = await fetch("/api/upload/avatar", {
           method: "POST",
-          body: formData, 
+          body: formData,
         });
-        
+
         const uploadResult = await uploadResponse.json();
-        
+
         if (uploadResponse.ok && uploadResult.status === "success") {
           avatarUrl = uploadResult.data.avatar;
         } else {
           throw new Error(uploadResult.message || "Failed to upload avatar");
         }
       }
-      
-      
+
       const currentProfileResponse = await fetch("/api/profile/me");
       const currentProfileResult = await currentProfileResponse.json();
-      
+
       let currentProfile = {};
-      if (currentProfileResponse.ok && currentProfileResult.status === "success" && currentProfileResult.data) {
+      if (
+        currentProfileResponse.ok &&
+        currentProfileResult.status === "success" &&
+        currentProfileResult.data
+      ) {
         currentProfile = currentProfileResult.data;
       }
 
@@ -196,9 +210,9 @@ export default function Profile() {
         headline: headline,
         biography: about,
         news_interest: JSON.stringify(newsInterest),
-        avatar: avatarUrl
+        avatar: avatarUrl,
       };
-      
+
       const response = await fetch("/api/profile/me", {
         method: "PUT",
         headers: {
@@ -206,31 +220,25 @@ export default function Profile() {
         },
         body: JSON.stringify(profileData),
       });
-      
+
       const result = await response.json();
-      
+
       if (response.ok && result.status === "success") {
         setSuccess("Profil berhasil diperbarui!");
         setError(null);
-        
-        
+
         if (avatarFile) {
           setAvatar(avatarUrl);
           setAvatarPreview("");
         }
-        
-        
+
         setAvatarFile(null);
-        
-        
-        window.dispatchEvent(new CustomEvent('profile-updated'));
-        
-        
+
+        window.dispatchEvent(new CustomEvent("profile-updated"));
+
         setTimeout(() => setSuccess(null), 3000);
-        
-        
+
         await fetchProfile();
-        
       } else {
         console.error("Failed to update profile:", result.message);
         setError(result.message || "Failed to update profile");
@@ -238,7 +246,8 @@ export default function Profile() {
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to update profile";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update profile";
       setError(errorMessage);
       setSuccess(null);
     } finally {
@@ -259,17 +268,15 @@ export default function Profile() {
     return () => window.removeEventListener("resize", handleResize);
   }, [navbarDashboardHeight]);
 
-  
   useEffect(() => {
     if (status === "authenticated") {
       fetchProfile();
     }
   }, [status, fetchProfile]);
 
-  
   useEffect(() => {
     return () => {
-      if (avatar && avatar.startsWith('blob:')) {
+      if (avatar && avatar.startsWith("blob:")) {
         URL.revokeObjectURL(avatar);
       }
     };
@@ -299,12 +306,15 @@ export default function Profile() {
           </div>
         )}
       </AnimatePresence>
-      
+
       <div className="w-full h-full flex flex-col items-center rounded-xl border border-[#CFCFCF] p-5 gap-2.5">
         {loading ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="flex flex-col items-center gap-3">
-              <Icon icon="line-md:loading-loop" className="text-4xl text-blue-500" />
+              <Icon
+                icon="line-md:loading-loop"
+                className="text-4xl text-blue-500"
+              />
               <p className="text-gray-600">Memuat data profil...</p>
             </div>
           </div>
@@ -313,7 +323,10 @@ export default function Profile() {
             {error && (
               <div className="w-full p-3 bg-red-50 border border-red-200 rounded-lg mb-2.5">
                 <div className="flex items-center gap-2">
-                  <Icon icon="material-symbols:error" className="text-red-500" />
+                  <Icon
+                    icon="material-symbols:error"
+                    className="text-red-500"
+                  />
                   <p className="text-red-700 text-sm">{error}</p>
                 </div>
               </div>
@@ -321,7 +334,10 @@ export default function Profile() {
             {success && (
               <div className="w-full p-3 bg-green-50 border border-green-200 rounded-lg mb-2.5">
                 <div className="flex items-center gap-2">
-                  <Icon icon="material-symbols:check-circle" className="text-green-500" />
+                  <Icon
+                    icon="material-symbols:check-circle"
+                    className="text-green-500"
+                  />
                   <p className="text-green-700 text-sm">{success}</p>
                 </div>
               </div>
@@ -365,7 +381,11 @@ export default function Profile() {
                         className="px-4 py-2 rounded-xl bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white font-medium hover:opacity-80 transition cursor-pointer flex items-center justify-center gap-2 w-fit"
                       >
                         Pilih Foto
-                        <Icon icon="mynaui:image-solid" width={20} height={20} />
+                        <Icon
+                          icon="mynaui:image-solid"
+                          width={20}
+                          height={20}
+                        />
                       </label>
                       {avatarFile && (
                         <p className="text-sm text-green-600">
@@ -478,7 +498,7 @@ export default function Profile() {
                 />
               </div>
             </div>
-            <button 
+            <button
               onClick={handleSubmit}
               disabled={saving || loading}
               className="flex hover:opacity-80 cursor-pointer items-center justify-center gap-2.5 w-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white font-semibold py-2.5 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"

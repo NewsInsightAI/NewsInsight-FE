@@ -11,11 +11,11 @@ interface MFAManagerProps {
   onSetupClick: () => void;
 }
 
-export default function MFAManager({ 
-  isEnabled, 
-  enabledMethods, 
+export default function MFAManager({
+  isEnabled,
+  enabledMethods,
   onStatusChange,
-  onSetupClick 
+  onSetupClick,
 }: MFAManagerProps) {
   const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -24,7 +24,11 @@ export default function MFAManager({
 
   const disableMethod = async (method: string) => {
     if (enabledMethods.length === 1) {
-      if (!confirm("Ini adalah metode MFA terakhir Anda. Menonaktifkannya akan menghapus seluruh perlindungan MFA. Lanjutkan?")) {
+      if (
+        !confirm(
+          "Ini adalah metode MFA terakhir Anda. Menonaktifkannya akan menghapus seluruh perlindungan MFA. Lanjutkan?"
+        )
+      ) {
         return;
       }
     }
@@ -39,7 +43,7 @@ export default function MFAManager({
       });
 
       const result = await response.json();
-      
+
       if (response.ok && result.status === "success") {
         onStatusChange(result.data.isEnabled, result.data.enabledMethods);
         showToast(`MFA ${method} berhasil dinonaktifkan`, "success");
@@ -65,7 +69,7 @@ export default function MFAManager({
       });
 
       const result = await response.json();
-      
+
       if (response.ok && result.status === "success") {
         setBackupCodes(result.data.backupCodes || []);
         setShowBackupCodes(true);
@@ -95,7 +99,7 @@ export default function MFAManager({
       });
 
       const result = await response.json();
-      
+
       if (response.ok && result.status === "success") {
         setBackupCodes(result.data.backupCodes || []);
         showToast("Backup codes baru berhasil dibuat", "success");
@@ -193,14 +197,22 @@ export default function MFAManager({
         <div className="space-y-3">
           <h4 className="font-medium text-gray-700">Metode Aktif:</h4>
           {enabledMethods.map((method) => (
-            <div key={method} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+            <div
+              key={method}
+              className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+            >
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
-                  <Icon icon={getMethodIcon(method)} className="text-blue-600" />
+                  <Icon
+                    icon={getMethodIcon(method)}
+                    className="text-blue-600"
+                  />
                 </div>
                 <div>
                   <h5 className="font-medium">{getMethodName(method)}</h5>
-                  <p className="text-sm text-gray-500">Aktif dan terkonfigurasi</p>
+                  <p className="text-sm text-gray-500">
+                    Aktif dan terkonfigurasi
+                  </p>
                 </div>
               </div>
               <button
@@ -222,7 +234,7 @@ export default function MFAManager({
           >
             Tambah Metode MFA
           </button>
-          
+
           <div className="flex gap-2">
             <button
               onClick={viewBackupCodes}
@@ -230,7 +242,10 @@ export default function MFAManager({
               className="flex-1 border border-gray-300 text-gray-700 font-semibold py-2 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
             >
               {isLoading ? (
-                <Icon icon="eos-icons:loading" className="animate-spin mx-auto" />
+                <Icon
+                  icon="eos-icons:loading"
+                  className="animate-spin mx-auto"
+                />
               ) : (
                 "Lihat Backup Codes"
               )}
@@ -276,7 +291,8 @@ export default function MFAManager({
                     </span>
                   </div>
                   <p className="text-sm text-yellow-700">
-                    Simpan kode-kode ini di tempat yang aman. Setiap kode hanya dapat digunakan sekali.
+                    Simpan kode-kode ini di tempat yang aman. Setiap kode hanya
+                    dapat digunakan sekali.
                   </p>
                 </div>
 
@@ -284,7 +300,10 @@ export default function MFAManager({
                   <>
                     <div className="grid grid-cols-2 gap-2 p-4 bg-gray-50 rounded-lg">
                       {backupCodes.map((code, index) => (
-                        <div key={index} className="font-mono text-sm text-center py-2 bg-white rounded border">
+                        <div
+                          key={index}
+                          className="font-mono text-sm text-center py-2 bg-white rounded border"
+                        >
                           {code}
                         </div>
                       ))}
@@ -309,7 +328,10 @@ export default function MFAManager({
                   </>
                 ) : (
                   <div className="text-center py-8 text-gray-500">
-                    <Icon icon="mdi:key-off" className="text-4xl mb-2 mx-auto" />
+                    <Icon
+                      icon="mdi:key-off"
+                      className="text-4xl mb-2 mx-auto"
+                    />
                     <p>Tidak ada backup codes tersedia</p>
                   </div>
                 )}

@@ -8,7 +8,8 @@ import { useSearchParams } from "next/navigation";
 
 function AuthErrorContent() {
   const searchParams = useSearchParams();
-  const error = searchParams.get("error");  const getErrorMessage = (error: string | null) => {
+  const error = searchParams.get("error");
+  const getErrorMessage = (error: string | null) => {
     switch (error) {
       case "Configuration":
         return "Ada masalah dengan konfigurasi server";
@@ -75,16 +76,21 @@ function AuthErrorContent() {
 
 export default function AuthErrorPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-pink-100">
-        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4">
-          <div className="text-center">
-            <Icon icon="line-md:loading-loop" className="text-4xl text-blue-500 mx-auto animate-spin" />
-            <p className="mt-4 text-gray-600">Memuat halaman error...</p>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-pink-100">
+          <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4">
+            <div className="text-center">
+              <Icon
+                icon="line-md:loading-loop"
+                className="text-4xl text-blue-500 mx-auto animate-spin"
+              />
+              <p className="mt-4 text-gray-600">Memuat halaman error...</p>
+            </div>
           </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <AuthErrorContent />
     </Suspense>
   );

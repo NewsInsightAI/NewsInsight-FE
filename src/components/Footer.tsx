@@ -42,14 +42,19 @@ const menuItems = [
 
 export default function Footer() {
   const pathname = usePathname();
-  const isShowFooter =
-    !pathname.includes("/dashboard") &&
-    !pathname.includes("/login") &&
-    !pathname.includes("/register") &&
-    !pathname.includes("/dashboard") &&
-    !pathname.includes("/news") &&
-    !pathname.includes("/profile") &&
-    !pathname.includes("/reset-password");
+  const hideFooterRoutes = [
+    "/dashboard",
+    "/login",
+    "/register",
+    "/news",
+    "/profile",
+    "/reset-password",
+    "/settings/profile",
+    "/settings/personal-data",
+    "/settings/account-security",
+  ];
+
+  const isShowFooter = !hideFooterRoutes.includes(pathname);
 
   if (!isShowFooter) return null;
 
@@ -115,15 +120,26 @@ export default function Footer() {
               className={`flex flex-col gap-2 md:gap-3 items-start font-medium ${manropeFont.className}`}
             >
               <li className="flex items-center gap-3 md:gap-4 text-sm md:text-base cursor-pointer hover:underline">
-                <Icon icon="ic:round-email" className="text-xl md:text-2xl flex-shrink-0" />
-                <p className="break-all md:break-normal">helpdesk@newsinsight.id</p>
+                <Icon
+                  icon="ic:round-email"
+                  className="text-xl md:text-2xl flex-shrink-0"
+                />
+                <p className="break-all md:break-normal">
+                  helpdesk@newsinsight.id
+                </p>
               </li>
               <li className="flex items-center gap-3 md:gap-4 text-sm md:text-base cursor-pointer hover:underline">
-                <Icon icon="ic:round-phone" className="text-xl md:text-2xl flex-shrink-0" />
+                <Icon
+                  icon="ic:round-phone"
+                  className="text-xl md:text-2xl flex-shrink-0"
+                />
                 <p>+62 81234567890</p>
               </li>
               <li className="flex items-start gap-3 md:gap-4 text-sm md:text-base cursor-pointer hover:underline">
-                <Icon icon="ph:map-pin-fill" className="text-xl md:text-2xl flex-shrink-0 mt-0.5" />
+                <Icon
+                  icon="ph:map-pin-fill"
+                  className="text-xl md:text-2xl flex-shrink-0 mt-0.5"
+                />
                 <p>Jl. Contoh No. 88, Jakarta Pusat</p>
               </li>
             </ul>
@@ -154,13 +170,13 @@ export default function Footer() {
               icon="ri:instagram-fill"
               className="text-xl md:text-2xl cursor-pointer hover:scale-110 transition-transform"
             />
-            <Icon 
-              icon="ri:linkedin-fill" 
-              className="text-xl md:text-2xl cursor-pointer hover:scale-110 transition-transform" 
+            <Icon
+              icon="ri:linkedin-fill"
+              className="text-xl md:text-2xl cursor-pointer hover:scale-110 transition-transform"
             />
-            <Icon 
-              icon="ri:youtube-fill" 
-              className="text-xl md:text-2xl cursor-pointer hover:scale-110 transition-transform" 
+            <Icon
+              icon="ri:youtube-fill"
+              className="text-xl md:text-2xl cursor-pointer hover:scale-110 transition-transform"
             />
           </div>
         </div>

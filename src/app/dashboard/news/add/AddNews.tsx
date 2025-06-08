@@ -130,10 +130,6 @@ export default function AddNews() {
     };
   }, [imageUrl, newsImage]);
 
-  // useEffect(() => {
-  //   console.log("Konten berubah:", newsContent);
-  // }, [newsContent]);
-
   return (
     <div className="flex flex-col w-full h-full gap-6">
       <div className="flex items-center justify-between w-full pb-2.5 border-b border-[#E2E2E2]">

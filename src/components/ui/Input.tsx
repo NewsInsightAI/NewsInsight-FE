@@ -20,7 +20,8 @@ interface InputProps
   icon?: string;
   disabled?: boolean;
   error?: boolean;
-  errorMessage?: string;  selectOptions?: OptionType[];
+  errorMessage?: string;
+  selectOptions?: OptionType[];
   onSelectChange?: (
     option: SingleValue<OptionType> | OptionType[] | null
   ) => void;
@@ -54,7 +55,9 @@ const Input: React.FC<InputProps> = ({
   onInputChange,
   value,
   onChangeValue,
-  onDateChange,  onFileChange,  accept,
+  onDateChange,
+  onFileChange,
+  accept,
   multiple = false,
   currentFileName,
   isLoading = false,
@@ -81,14 +84,16 @@ const Input: React.FC<InputProps> = ({
   }, [value, type]);
   const fileExtension =
     selectedFiles && selectedFiles.length > 0
-      ? selectedFiles[0].name.split(".").pop()?.toUpperCase() ?? ""
+      ? (selectedFiles[0].name.split(".").pop()?.toUpperCase() ?? "")
       : currentFileName
-      ? currentFileName.split(".").pop()?.toUpperCase() ?? ""
-      : "";
+        ? (currentFileName.split(".").pop()?.toUpperCase() ?? "")
+        : "";
 
   const getCurrentFileName = () => {
     if (selectedFiles && selectedFiles.length > 0) {
-      return Array.from(selectedFiles).map((f) => f.name).join(", ");
+      return Array.from(selectedFiles)
+        .map((f) => f.name)
+        .join(", ");
     }
     if (currentFileName) {
       return currentFileName;
@@ -105,12 +110,12 @@ const Input: React.FC<InputProps> = ({
       ? extension === "PDF"
         ? "bg-red-500"
         : extension === "DOCX" || extension === "DOC"
-        ? "bg-blue-500"
-        : extension === "XLSX" || extension === "XLS"
-        ? "bg-green-500"
-        : extension === "PNG" || extension === "JPG" || extension === "JPEG"
-        ? "bg-yellow-500"
-        : "bg-gray-600"
+          ? "bg-blue-500"
+          : extension === "XLSX" || extension === "XLS"
+            ? "bg-green-500"
+            : extension === "PNG" || extension === "JPG" || extension === "JPEG"
+              ? "bg-yellow-500"
+              : "bg-gray-600"
       : "bg-gray-200";
 
     return (
@@ -136,17 +141,18 @@ const Input: React.FC<InputProps> = ({
           </div>
         )}
 
-        
         {isFileType ? (
           <div
             className={`w-full border rounded-xl overflow-hidden transition-all focus-within:ring-2 ${
               disabled
                 ? "border-gray-200 bg-gray-100"
                 : error
-                ? "border-red-500 focus-within:ring-red-300"
-                : "border-gray-300 focus-within:ring-blue-300"
+                  ? "border-red-500 focus-within:ring-red-300"
+                  : "border-gray-300 focus-within:ring-blue-300"
             }`}
-          >            <div className="flex items-center">
+          >
+            {" "}
+            <div className="flex items-center">
               {(selectedFiles && selectedFiles.length > 0) || currentFileName
                 ? fileBadge(fileExtension)
                 : fileBadge("")}
@@ -168,7 +174,8 @@ const Input: React.FC<InputProps> = ({
                 {...props}
               />
             </div>
-          </div>        ) : isSelectType && selectOptions ? (
+          </div>
+        ) : isSelectType && selectOptions ? (
           <ClientOnlySelect
             classNamePrefix="react-select"
             options={selectOptions}
@@ -210,7 +217,7 @@ const Input: React.FC<InputProps> = ({
               option: (base, { isFocused, isDisabled: optDisabled }) => ({
                 ...base,
                 backgroundColor: isFocused ? "#F0F0F0" : "white",
-                color: "#374151",
+                color: optDisabled ? "#98A2B3" : "#374151",
                 paddingLeft: "12px",
                 paddingTop: "8px",
                 paddingBottom: "8px",
@@ -275,8 +282,8 @@ const Input: React.FC<InputProps> = ({
                 disabled
                   ? "bg-[#E9ECEF] text-[#98A2B3] cursor-not-allowed"
                   : error
-                  ? "border-red-500 focus:border-red-500"
-                  : "border-gray-300 focus:border-blue-500"
+                    ? "border-red-500 focus:border-red-500 text-gray-700"
+                    : "border-gray-300 focus:border-blue-500 text-gray-700"
               }`}
             />
           </div>
@@ -308,8 +315,8 @@ const Input: React.FC<InputProps> = ({
                 disabled
                   ? "bg-[#E9ECEF] text-[#98A2B3] cursor-not-allowed"
                   : error
-                  ? "border-red-500 focus:border-red-500"
-                  : "border-gray-300 focus:border-blue-500"
+                    ? "border-red-500 focus:border-red-500 text-gray-700"
+                    : "border-gray-300 focus:border-blue-500 text-gray-700"
               }`}
             />
           </div>
@@ -327,13 +334,12 @@ const Input: React.FC<InputProps> = ({
               disabled
                 ? "bg-[#E9ECEF] text-[#98A2B3] cursor-not-allowed"
                 : error
-                ? "border-red-500 focus:border-red-500"
-                : "border-gray-300 focus:border-blue-500"
+                  ? "border-red-500 focus:border-red-500 text-red-600"
+                  : "border-gray-300 focus:border-blue-500 text-gray-700"
             } ${type === "password" ? "pr-10" : ""}`}
           />
         )}
 
-        
         {type === "password" && !selectOptions && (
           <button
             type="button"
@@ -349,7 +355,6 @@ const Input: React.FC<InputProps> = ({
         )}
       </div>
 
-      
       {error ||
         errorMessage ||
         (helperText && (

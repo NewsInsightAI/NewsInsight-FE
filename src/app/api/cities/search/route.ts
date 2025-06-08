@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000";
-
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get('search');
-    
+    const search = searchParams.get("search");
+
     if (!search || search.trim().length < 2) {
       return NextResponse.json(
         {
@@ -17,9 +17,9 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
-    
+
     const response = await fetch(
-      `${BACKEND_URL}/api/v1/cities/search?search=${encodeURIComponent(search)}`,
+      `${API_URL}/cities/search?search=${encodeURIComponent(search)}`,
       {
         method: "GET",
         headers: {

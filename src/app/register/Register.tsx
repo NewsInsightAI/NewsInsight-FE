@@ -43,7 +43,8 @@ export default function Register() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username, email, password }),
-        });        const data = await res.json().catch(() => ({}));
+        });
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           throw new Error(data?.message || "Registrasi gagal.");
         }
@@ -61,37 +62,44 @@ export default function Register() {
       }
     );
     setIsLoading(false);
-  };  const handleGoogleSignUp = async () => {
+  };
+  const handleGoogleSignUp = async () => {
     setIsLoading(true);
     try {
-      // Get the current origin for callback URL
-      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://newsinsight.space';
+      const currentOrigin =
+        typeof window !== "undefined"
+          ? window.location.origin
+          : "https://newsinsight.space";
       const callbackUrl = `${currentOrigin}/dashboard`;
-      
+
       const result = await signIn("google", {
         redirect: false,
         callbackUrl: callbackUrl,
       });
 
       if (result?.ok) {
-        
         const session = await getSession();
         if (session) {
-          
-          const message = session.isNewUser 
-            ? "Selamat datang di NewsInsight! Akun Anda berhasil didaftarkan." 
+          const message = session.isNewUser
+            ? "Selamat datang di NewsInsight! Akun Anda berhasil didaftarkan."
             : "Anda sudah terdaftar sebelumnya. Selamat datang kembali!";
           showToast(message, "success");
           router.push("/dashboard");
         } else {
-          showToast("Terjadi kesalahan saat menyimpan data akun. Silakan coba lagi.", "error");
+          showToast(
+            "Terjadi kesalahan saat menyimpan data akun. Silakan coba lagi.",
+            "error"
+          );
         }
       } else if (result?.error) {
         console.error("Google sign up error:", result.error);
         if (result.error === "AccessDenied") {
           showToast("Registrasi dengan Google dibatalkan.", "error");
         } else {
-          showToast("Gagal mendaftar dengan Google. Silakan coba lagi.", "error");
+          showToast(
+            "Gagal mendaftar dengan Google. Silakan coba lagi.",
+            "error"
+          );
         }
       }
     } catch (error) {
@@ -116,7 +124,7 @@ export default function Register() {
     };
 
     window.addEventListener("resize", handleResize);
-    
+
     let observer: ResizeObserver | null = null;
     if (navbar && typeof ResizeObserver !== "undefined") {
       observer = new ResizeObserver(() => {
@@ -149,7 +157,9 @@ export default function Register() {
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.3 }}
               className="w-full h-full inset-0 flex items-center justify-center"
-            >              <VerifyEmail
+            >
+              {" "}
+              <VerifyEmail
                 onClose={() => setShowVerifyEmail(false)}
                 {...(verifyEmailData
                   ? {

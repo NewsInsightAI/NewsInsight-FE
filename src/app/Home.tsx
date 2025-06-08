@@ -55,7 +55,6 @@ export default function Home() {
     };
   }, [imageUrl, newsImage]);
 
-  
   const newsCategory = "Teknologi";
   const newsAuthor = "Reuters";
   const newsPublishDate = "4 jam lalu";
@@ -65,7 +64,10 @@ export default function Home() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollRefTech = useRef<HTMLDivElement>(null);
 
-  const scroll = (direction: "left" | "right", scrollElement: HTMLDivElement | null) => {
+  const scroll = (
+    direction: "left" | "right",
+    scrollElement: HTMLDivElement | null
+  ) => {
     if (scrollElement) {
       scrollElement.scrollBy({
         left: direction === "right" ? 300 : -300,

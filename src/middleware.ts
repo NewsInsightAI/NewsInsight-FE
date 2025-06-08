@@ -1,13 +1,25 @@
 import { withAuth } from "next-auth/middleware";
 
 export default withAuth(
-  function middleware() {
-    
+  function middleware(req) {
+    const { pathname } = req.nextUrl;
+    const token = req.nextauth.token;
+
+    if (
+      pathname.startsWith("/dashboard") &&
+      token?.backendUser?.role === "user"
+    ) {
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: "/",
+        },
+      });
+    }
   },
   {
     callbacks: {
       authorized: ({ token, req }) => {
-        
         const { pathname } = req.nextUrl;
 
         if (
@@ -19,13 +31,11 @@ export default withAuth(
           pathname === "/"
         ) {
           return true;
-        }        
+        }
         if (pathname.startsWith("/dashboard")) {
-          
-          return !!token;
+          return !!token && token.backendUser?.role !== "user";
         }
 
-        
         if (pathname.startsWith("/profile")) {
           return !!token;
         }

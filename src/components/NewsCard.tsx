@@ -26,11 +26,10 @@ export default function NewsCard({
   });
   const router = useRouter();
 
-  
   const customFormattedTimestamp = formattedTimestamp
     .replace("sekitar ", "")
     .replace("dalam waktu ", "")
-    .replace("dulu", "lalu"); 
+    .replace("dulu", "lalu");
 
   return (
     <div onClick={() => router.push(link)} className="cursor-pointer w-full">

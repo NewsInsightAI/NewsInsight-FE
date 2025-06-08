@@ -16,7 +16,7 @@ function MFAVerifyContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [mfaData, setMFAData] = useState<MFAData | null>(null);
-  
+
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -150,12 +150,14 @@ function MFAVerifyContent() {
           Masukkan kode verifikasi untuk melanjutkan
         </p>
       </div>
-
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleVerifyMFA}>
             <div>
-              <label htmlFor="method" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="method"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Metode Verifikasi
               </label>
               <select
@@ -173,7 +175,10 @@ function MFAVerifyContent() {
             </div>
 
             <div>
-              <label htmlFor="code" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="code"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Kode Verifikasi
               </label>
               <input
@@ -181,7 +186,11 @@ function MFAVerifyContent() {
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                placeholder={method === "totp" ? "Masukkan 6 digit kode" : "Masukkan kode verifikasi"}
+                placeholder={
+                  method === "totp"
+                    ? "Masukkan 6 digit kode"
+                    : "Masukkan kode verifikasi"
+                }
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 maxLength={method === "totp" ? 6 : 10}
                 required
@@ -225,7 +234,8 @@ function MFAVerifyContent() {
             </button>
           </div>
         </div>
-      </div>    </div>
+      </div>{" "}
+    </div>
   );
 }
 

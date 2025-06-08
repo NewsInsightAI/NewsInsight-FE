@@ -71,4 +71,4 @@ export const listNews = [
     timestamp: "2025-04-28T00:00:00Z",
     link: "https://www.youtube.com/",
   },
-]
+];

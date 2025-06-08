@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
           message: "Data tidak lengkap",
           data: null,
           error: { code: "MISSING_REQUIRED_FIELDS" },
-          metadata: null
+          metadata: null,
         },
         { status: 400 }
       );
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
         message: "Internal server error",
         data: null,
         error: { code: "SERVER_ERROR" },
-        metadata: null
+        metadata: null,
       },
       { status: 500 }
     );

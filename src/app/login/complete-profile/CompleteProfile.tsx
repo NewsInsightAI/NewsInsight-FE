@@ -24,6 +24,7 @@ interface City {
   id: string;
   name: string;
   province_id: string;
+  province_name?: string;
 }
 
 export default function CompleteProfile() {
@@ -45,7 +46,6 @@ export default function CompleteProfile() {
   const [shortBio, setShortBio] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  
   const [avatar, setAvatar] = useState<string>("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>("");
@@ -72,7 +72,6 @@ export default function CompleteProfile() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  
   useEffect(() => {
     if (session?.user?.email) {
       setEmail(session.user.email);
@@ -83,25 +82,21 @@ export default function CompleteProfile() {
     setShowSummary(true);
   };
 
-  
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      
-      if (!file.type.startsWith('image/')) {
-        showToast('Mohon pilih file gambar yang valid', 'error');
+      if (!file.type.startsWith("image/")) {
+        showToast("Mohon pilih file gambar yang valid", "error");
         return;
       }
-      
-      
+
       if (file.size > 2 * 1024 * 1024) {
-        showToast('Ukuran file harus kurang dari 2MB', 'error');
+        showToast("Ukuran file harus kurang dari 2MB", "error");
         return;
       }
-      
+
       setAvatarFile(file);
-      
-      
+
       const previewUrl = URL.createObjectURL(file);
       setAvatarPreview(previewUrl);
     }
@@ -112,21 +107,20 @@ export default function CompleteProfile() {
     try {
       let avatarUrl = avatar;
 
-      
       if (avatarFile) {
         const formData = new FormData();
-        formData.append('avatar', avatarFile);
-        
+        formData.append("avatar", avatarFile);
+
         const uploadResponse = await fetch("/api/upload/avatar", {
           method: "POST",
           body: formData,
         });
-        
+
         const uploadResult = await uploadResponse.json();
-        
+
         if (uploadResponse.ok && uploadResult.status === "success") {
           avatarUrl = uploadResult.data.avatar;
-          setAvatar(avatarUrl); 
+          setAvatar(avatarUrl);
         } else {
           throw new Error(uploadResult.message || "Gagal mengupload avatar");
         }
@@ -135,7 +129,7 @@ export default function CompleteProfile() {
       const profileData = {
         full_name: fullName,
         gender: gender,
-        date_of_birth: dateOfBirth?.toISOString().split('T')[0],
+        date_of_birth: dateOfBirth?.toISOString().split("T")[0],
         phone_number: phoneNumber,
         domicile: domicile?.name || "",
         news_interest: JSON.stringify(newsInterest),
@@ -153,14 +147,17 @@ export default function CompleteProfile() {
       });
 
       const result = await response.json();
-
       if (response.ok && result.status === "success") {
         showToast("Profil berhasil dilengkapi!", "success");
-        
-        
+
         setShowSummary(false);
         setTimeout(() => {
-          router.push("/dashboard");
+          const userRole = session?.user?.role;
+          if (userRole === "user") {
+            router.push("/");
+          } else {
+            router.push("/dashboard");
+          }
         }, 1000);
       } else {
         throw new Error(result.message || "Gagal menyimpan profil");
@@ -178,69 +175,28 @@ export default function CompleteProfile() {
     }
   };
 
-  const handleRemoveCategory = (category: {
-    value: string;
-    label: string;
-  }) => {
+  const handleRemoveCategory = (category: { value: string; label: string }) => {
     setNewsInterest((prevInterest) =>
       prevInterest.filter((interest) => interest.value !== category.value)
     );
   };
-
   useEffect(() => {
     const fetchAllCities = async () => {
       try {
-        const provinceIds = [
-          "11",
-          "12",
-          "13",
-          "14",
-          "15",
-          "16",
-          "17",
-          "18",
-          "19",
-          "21",
-          "31",
-          "32",
-          "33",
-          "34",
-          "35",
-          "36",
-          "51",
-          "52",
-          "53",
-          "61",
-          "62",
-          "63",
-          "64",
-          "65",
-          "71",
-          "72",
-          "73",
-          "74",
-          "75",
-          "76",
-          "81",
-          "82",
-          "91",
-          "94",
-        ];
-        let allCitiesData: City[] = [];
-        for (const id of provinceIds) {
-          const response = await fetch(
-            `https://www.emsifa.com/api-wilayah-indonesia/api/regencies/${id}.json`
+        const response = await fetch("/api/cities/regencies");
+        const result = await response.json();
+
+        if (response.ok && result.status === "success" && result.data) {
+          const formattedOptions = result.data.map(
+            (city: City & { province_name: string }) => ({
+              value: city.name,
+              label: `${city.name}, ${city.province_name}`,
+            })
           );
-          const data: City[] = await response.json();
-          allCitiesData = [...allCitiesData, ...data];
+          setOptions(formattedOptions);
+        } else {
+          console.error("Failed to fetch cities:", result.message);
         }
-
-        const formattedOptions = allCitiesData.map((city) => ({
-          value: city.name,
-          label: city.name,
-        }));
-
-        setOptions(formattedOptions);
       } catch (error) {
         console.error("Gagal mengambil data kota/kabupaten:", error);
       }
@@ -338,7 +294,9 @@ export default function CompleteProfile() {
           <form className="flex flex-col gap-5 w-full">
             {/* Profile Picture Upload */}
             <div className="flex flex-col gap-2.5 w-full">
-              <p className="font-medium text-gray-800">Foto Profil (Opsional)</p>
+              <p className="font-medium text-gray-800">
+                Foto Profil (Opsional)
+              </p>
               <div className="flex items-center justify-start gap-3">
                 <Image
                   src={avatarPreview || getAvatarUrl(avatar)}
@@ -368,7 +326,8 @@ export default function CompleteProfile() {
                     </p>
                   )}
                   <p className="text-sm text-gray-500">
-                    Gambar profil sebaiknya memiliki rasio 1:1 dan berukuran tidak lebih dari 2MB.
+                    Gambar profil sebaiknya memiliki rasio 1:1 dan berukuran
+                    tidak lebih dari 2MB.
                   </p>
                 </div>
               </div>

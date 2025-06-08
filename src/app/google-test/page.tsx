@@ -10,11 +10,13 @@ export default function GoogleAuthTest() {
   const handleGoogleSignIn = async () => {
     try {
       console.log("Starting Google sign in...");
-      
-      // Get the current origin for callback URL
-      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://newsinsight.space';
+
+      const currentOrigin =
+        typeof window !== "undefined"
+          ? window.location.origin
+          : "https://newsinsight.space";
       const callbackUrl = `${currentOrigin}/dashboard`;
-      
+
       const result = await signIn("google", {
         redirect: false,
         callbackUrl: callbackUrl,
@@ -49,7 +51,9 @@ export default function GoogleAuthTest() {
         </h1>
 
         {session ? (
-          <div className="text-center">            <div className="mb-4">
+          <div className="text-center">
+            {" "}
+            <div className="mb-4">
               <Image
                 src={session.user?.image || "/default-avatar.png"}
                 alt="Profile"

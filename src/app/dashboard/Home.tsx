@@ -1,4 +1,3 @@
-// app/Home.tsx
 "use client";
 import React, { useState, useEffect } from "react";
 import TodayVisitCard from "@/components/admin/home/TodayVisitCard";
@@ -12,7 +11,6 @@ const popularNews = [
   "Alibaba Rilis Model AI QwQ-32B, Diklaim Ungguli OpenAI dan DeepSeek",
   "Apple mengatakan beberapa peningkatan AI pada Siri ditunda hingga 2026",
   "Alibaba Rilis Model AI QwQ-32B, Diklaim Ungguli OpenAI dan DeepSeek",
-  // "TSMC tawarkan usaha patungan Intel ke Nvidia, AMD dan Broadcom",
 ];
 
 const popularCategory = ["AI", "Teknologi", "Gaya Hidup", "Otomotif", "Gadget"];
