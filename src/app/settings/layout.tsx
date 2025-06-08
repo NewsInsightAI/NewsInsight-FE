@@ -88,7 +88,7 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
               </h1>
             </div>
             <div className="overflow-x-auto no-scrollbar rounded-full">
-              <div className="flex gap-2 min-w-max">
+              <div className="flex gap-3 min-w-max">
                 {listSettings.map((menu) => {
                   const isDashboard = menu.href === basePath;
                   const isActive = isDashboard
@@ -99,7 +99,7 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
                     <Link
                       key={menu.href}
                       href={menu.href}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap transition-all duration-200 ${
+                      className={`flex items-center gap-2 px-4 py-3 rounded-full whitespace-nowrap transition-all duration-200 ${
                         isActive
                           ? "bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] text-white shadow-md"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"

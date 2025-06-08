@@ -17,9 +17,7 @@ export const getAvatarUrl = (
   }
 
   if (avatarPath.startsWith("/uploads/")) {
-    const backendUrl =
-      process.env.NEXT_PUBLIC_API_URL?.replace("/api/v1", "") ||
-      "http://localhost:5000";
+    const backendUrl = "https://api.newsinsight.space";
     return `${backendUrl}${avatarPath}`;
   }
 
