@@ -13,6 +13,7 @@ import SummaryProfile from "@/components/SummaryProfile";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import ListNewsCategory from "@/components/popup/ListNewsCategory";
 import { getAvatarUrl } from "@/utils/avatarUtils";
+import { ClipLoader } from "react-spinners";
 
 const breadcrumbsItems = [
   { label: "Beranda", href: "/" },
@@ -55,6 +56,7 @@ export default function CompleteProfile() {
   const [options, setOptions] = useState<{ value: string; label: string }[]>(
     []
   );
+  const [isLoadingCities, setIsLoadingCities] = useState(true);
 
   useEffect(() => {
     const navbar = document.querySelector("nav");
@@ -183,6 +185,7 @@ export default function CompleteProfile() {
   useEffect(() => {
     const fetchAllCities = async () => {
       try {
+        setIsLoadingCities(true);
         const response = await fetch("/api/cities/regencies");
         const result = await response.json();
 
@@ -199,6 +202,8 @@ export default function CompleteProfile() {
         }
       } catch (error) {
         console.error("Gagal mengambil data kota/kabupaten:", error);
+      } finally {
+        setIsLoadingCities(false);
       }
     };
 
@@ -273,92 +278,110 @@ export default function CompleteProfile() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex w-full items-start">
-            <Breadcrumbs items={breadcrumbsItems} />
-          </div>
-          <div className="flex items-center justify-between w-full bg-gradient-to-br from-[#2FAACC] to-[#2B62C2] pl-14 p-6 rounded-3xl">
-            <div className="flex flex-col gap-2.5 w-full">
-              <p className="text-white text-3xl font-bold font-['Inter']">
-                Lengkapi Data Diri Anda
-              </p>
-              <p className="text-white text-xl font-normal font-['Inter']">
-                Untuk mulai mengatur personalisasi berita Anda
-              </p>
+          {isLoadingCities ? (
+            <div className="flex items-center justify-center flex-1 w-full">
+              <ClipLoader
+                color="#367AF2"
+                size={50}
+                cssOverride={{
+                  borderWidth: "4px",
+                }}
+              />
             </div>
-            <img
-              src="/images/personal_info.svg"
-              alt="Personal Info"
-              className="h-[183px] w-auto"
-            />
-          </div>
-          <form className="flex flex-col gap-5 w-full">
-            {/* Profile Picture Upload */}
-            <div className="flex flex-col gap-2.5 w-full">
-              <p className="font-medium text-gray-800">
-                Foto Profil (Opsional)
-              </p>
-              <div className="flex items-center justify-start gap-3">
-                <Image
-                  src={avatarPreview || getAvatarUrl(avatar)}
-                  alt="Profile Preview"
-                  width={80}
-                  height={80}
-                  className="rounded-full border border-gray-300 bg-gray-200 object-cover"
-                />
-                <div className="flex flex-col items-start gap-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                    className="hidden"
-                    id="avatar-upload"
-                  />
-                  <label
-                    htmlFor="avatar-upload"
-                    className="px-4 py-2 rounded-xl bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white font-medium hover:opacity-80 transition cursor-pointer flex items-center justify-center gap-2 w-fit"
-                  >
-                    Pilih Foto
-                    <Icon icon="mynaui:image-solid" width={16} height={16} />
-                  </label>
-                  {avatarFile && (
-                    <p className="text-sm text-green-600">
-                      File terpilih: {avatarFile.name}
-                    </p>
-                  )}
-                  <p className="text-sm text-gray-500">
-                    Gambar profil sebaiknya memiliki rasio 1:1 dan berukuran
-                    tidak lebih dari 2MB.
+          ) : (
+            <>
+              <div className="flex w-full items-start">
+                <Breadcrumbs items={breadcrumbsItems} />
+              </div>
+              <div className="flex items-center justify-between w-full bg-gradient-to-br from-[#2FAACC] to-[#2B62C2] pl-14 p-6 rounded-3xl">
+                <div className="flex flex-col gap-2.5 w-full">
+                  <p className="text-white text-3xl font-bold font-['Inter']">
+                    Lengkapi Data Diri Anda
+                  </p>
+                  <p className="text-white text-xl font-normal font-['Inter']">
+                    Untuk mulai mengatur personalisasi berita Anda
                   </p>
                 </div>
+                <img
+                  src="/images/personal_info.svg"
+                  alt="Personal Info"
+                  className="h-[183px] w-auto"
+                />
               </div>
-            </div>
+              <form className="flex flex-col gap-5 w-full">
+                {/* Profile Picture Upload */}
+                <div className="flex flex-col gap-2.5 w-full">
+                  <p className="font-medium text-gray-800">
+                    Foto Profil (Opsional)
+                  </p>
+                  <div className="flex items-center justify-start gap-3">
+                    <div className="w-20 h-20 rounded-full border border-gray-300 bg-gray-200 overflow-hidden">
+                      <Image
+                        src={avatarPreview || getAvatarUrl(avatar)}
+                        alt="Profile Preview"
+                        width={80}
+                        height={80}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex flex-col items-start gap-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                        id="avatar-upload"
+                      />
+                      <label
+                        htmlFor="avatar-upload"
+                        className="px-4 py-2 rounded-xl bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white font-medium hover:opacity-80 transition cursor-pointer flex items-center justify-center gap-2 w-fit"
+                      >
+                        Pilih Foto
+                        <Icon
+                          icon="mynaui:image-solid"
+                          width={16}
+                          height={16}
+                        />
+                      </label>
+                      {avatarFile && (
+                        <p className="text-sm text-green-600">
+                          File terpilih: {avatarFile.name}
+                        </p>
+                      )}
+                      <p className="text-sm text-gray-500">
+                        Gambar profil sebaiknya memiliki rasio 1:1 dan berukuran
+                        tidak lebih dari 2MB.
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-            <Input
-              label="Email"
-              placeholder="Masukkan email..."
-              type="email"
-              disabled
-              icon="mage:email-fill"
-              value={email}
-              onChangeValue={setEmail}
-            />
-            <Input
-              label="Nama Lengkap"
-              placeholder="Masukkan nama lengkap..."
-              type="text"
-              icon="fluent:person-28-filled"
-              value={fullName}
-              onChangeValue={setFullName}
-            />
-            <div className="flex flex-col gap-2.5 w-full">
-              <p className="font-medium text-gray-800">Jenis Kelamin</p>
-              <div className="flex flex-row gap-4 w-full">
-                {["Laki-laki", "Perempuan"].map((g) => (
-                  <button
-                    key={g}
-                    type="button"
-                    onClick={() => setGender(g)}
-                    className={`flex items-center justify-center gap-2 flex-1 rounded-xl px-4 py-3 border font-medium transition-all duration-200 ease-in-out
+                <Input
+                  label="Email"
+                  placeholder="Masukkan email..."
+                  type="email"
+                  disabled
+                  icon="mage:email-fill"
+                  value={email}
+                  onChangeValue={setEmail}
+                />
+                <Input
+                  label="Nama Lengkap"
+                  placeholder="Masukkan nama lengkap..."
+                  type="text"
+                  icon="fluent:person-28-filled"
+                  value={fullName}
+                  onChangeValue={setFullName}
+                />
+                <div className="flex flex-col gap-2.5 w-full">
+                  <p className="font-medium text-gray-800">Jenis Kelamin</p>
+                  <div className="flex flex-row gap-4 w-full">
+                    {["Laki-laki", "Perempuan"].map((g) => (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => setGender(g)}
+                        className={`flex items-center justify-center gap-2 flex-1 rounded-xl px-4 py-3 border font-medium transition-all duration-200 ease-in-out
           ${
             gender === g
               ? g === "Laki-laki"
@@ -367,153 +390,159 @@ export default function CompleteProfile() {
               : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100 cursor-pointer"
           }
         `}
-                  >
-                    <Icon
-                      icon={
-                        g === "Laki-laki"
-                          ? "ph:gender-male-bold"
-                          : "ph:gender-female-bold"
-                      }
-                      className="w-5 h-5"
-                    />
-                    {g}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <Input
-              label="Tanggal Lahir"
-              type="date"
-              value={dateOfBirth}
-              onDateChange={(date) => setDateOfBirth(date)}
-              placeholder="HH/BB/TTTT"
-              icon="lets-icons:date-today"
-            />
-            <Input
-              label="Nomor Telepon"
-              placeholder="Masukkan nomor telepon..."
-              type="text"
-              icon="ic:round-phone"
-              value={phoneNumber}
-              onChangeValue={setPhoneNumber}
-            />
-            <Input
-              label="Kota Domisili"
-              placeholder="Masukkan kota domisili..."
-              type="select"
-              selectOptions={[...options]}
-              icon="ph:city-fill"
-              value={
-                options.find((opt) => opt.value === domicile?.name) || null
-              }
-              onSelectChange={(option) => {
-                if (Array.isArray(option) || !option) {
-                  setDomicile(null);
-                } else {
-                  setDomicile((prev) => {
-                    const selectedCity = options.find(
-                      (opt) => opt.value === option.value
-                    );
-                    if (selectedCity) {
-                      return prev && prev.name === selectedCity.value
-                        ? prev
-                        : { id: "", name: selectedCity.value, province_id: "" };
-                    }
-                    return null;
-                  });
-                }
-              }}
-            />
-            <div className="flex flex-col gap-2.5 w-full">
-              <div className="flex items-center gap-2">
-                <p className="font-medium text-gray-800">Minat Berita</p>
-                <div className="font-medium bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] px-2 py-1 rounded-full text-xs text-white">
-                  Maks. 5
+                      >
+                        <Icon
+                          icon={
+                            g === "Laki-laki"
+                              ? "ph:gender-male-bold"
+                              : "ph:gender-female-bold"
+                          }
+                          className="w-5 h-5"
+                        />
+                        {g}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex flex-col gap-2.5 w-full">
-                {newsInterest.length === 0 ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowListNewsCategory(true)}
-                    className="px-4 py-2 rounded-xl border border-blue-500 text-blue-500 font-medium hover:bg-blue-50 transition cursor-pointer w-full"
-                  >
-                    Pilih Minat Berita
-                  </button>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
-                      {newsInterest.map((interest) => (
-                        <div
-                          key={interest.value}
-                          className="flex items-center justify-center gap-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] px-4 py-2 rounded-xl text-base text-white"
-                        >
-                          <p className="truncate">{interest.label}</p>
-
-                          <button
-                            onClick={() => handleRemoveCategory(interest)}
-                            className="text-white ml-2 rounded-full p-1 hover:bg-white/20 transition cursor-pointer"
-                          >
-                            <Icon icon="mdi:close" />
-                          </button>
-                        </div>
-                      ))}
-
-                      {newsInterest.length < 5 && (
-                        <button
-                          type="button"
-                          onClick={() => setShowListNewsCategory(true)}
-                          className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-blue-500 text-blue-500 font-medium hover:bg-blue-50 transition cursor-pointer w-full"
-                        >
-                          <Icon icon="mdi:plus" />
-                          Tambah Kategori
-                        </button>
-                      )}
+                <Input
+                  label="Tanggal Lahir"
+                  type="date"
+                  value={dateOfBirth}
+                  onDateChange={(date) => setDateOfBirth(date)}
+                  placeholder="HH/BB/TTTT"
+                  icon="lets-icons:date-today"
+                />
+                <Input
+                  label="Nomor Telepon"
+                  placeholder="Masukkan nomor telepon..."
+                  type="text"
+                  icon="ic:round-phone"
+                  value={phoneNumber}
+                  onChangeValue={setPhoneNumber}
+                />
+                <Input
+                  label="Kota Domisili"
+                  placeholder="Masukkan kota domisili..."
+                  type="select"
+                  selectOptions={[...options]}
+                  icon="ph:city-fill"
+                  value={
+                    options.find((opt) => opt.value === domicile?.name) || null
+                  }
+                  onSelectChange={(option) => {
+                    if (Array.isArray(option) || !option) {
+                      setDomicile(null);
+                    } else {
+                      setDomicile((prev) => {
+                        const selectedCity = options.find(
+                          (opt) => opt.value === option.value
+                        );
+                        if (selectedCity) {
+                          return prev && prev.name === selectedCity.value
+                            ? prev
+                            : {
+                                id: "",
+                                name: selectedCity.value,
+                                province_id: "",
+                              };
+                        }
+                        return null;
+                      });
+                    }
+                  }}
+                />
+                <div className="flex flex-col gap-2.5 w-full">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-gray-800">Minat Berita</p>
+                    <div className="font-medium bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] px-2 py-1 rounded-full text-xs text-white">
+                      Maks. 5
                     </div>
-                  </>
-                )}
-              </div>
-            </div>
+                  </div>
 
-            <Input
-              label="Headline"
-              placeholder="Masukkan headline..."
-              type="text"
-              value={headline}
-              onChangeValue={setHeadline}
-              icon="material-symbols:view-headline-rounded"
-            />
-            <Input
-              label="Biografi Singkat"
-              placeholder="Masukkan biografi singkat..."
-              type="text"
-              value={shortBio}
-              onChangeValue={setShortBio}
-              icon="material-symbols:short-text-rounded"
-            />
-          </form>
+                  <div className="flex flex-col gap-2.5 w-full">
+                    {newsInterest.length === 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowListNewsCategory(true)}
+                        className="px-4 py-2 rounded-xl border border-blue-500 text-blue-500 font-medium hover:bg-blue-50 transition cursor-pointer w-full"
+                      >
+                        Pilih Minat Berita
+                      </button>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
+                          {newsInterest.map((interest) => (
+                            <div
+                              key={interest.value}
+                              className="flex items-center justify-center gap-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] px-4 py-2 rounded-xl text-base text-white"
+                            >
+                              <p className="truncate">{interest.label}</p>
 
-          <motion.button
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.99 }}
-            onClick={showProfileSummary}
-            disabled={
-              !email ||
-              !fullName ||
-              !gender ||
-              !dateOfBirth ||
-              !phoneNumber ||
-              !domicile ||
-              newsInterest.length === 0 ||
-              !headline ||
-              !shortBio
-            }
-            className="cursor-pointer text-white rounded-lg px-5 py-3 w-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] transition duration-300 ease-in-out hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Lanjutkan
-          </motion.button>
+                              <button
+                                onClick={() => handleRemoveCategory(interest)}
+                                className="text-white ml-2 rounded-full p-1 hover:bg-white/20 transition cursor-pointer"
+                              >
+                                <Icon icon="mdi:close" />
+                              </button>
+                            </div>
+                          ))}
+
+                          {newsInterest.length < 5 && (
+                            <button
+                              type="button"
+                              onClick={() => setShowListNewsCategory(true)}
+                              className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-blue-500 text-blue-500 font-medium hover:bg-blue-50 transition cursor-pointer w-full"
+                            >
+                              <Icon icon="mdi:plus" />
+                              Tambah Kategori
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <Input
+                  label="Headline"
+                  placeholder="Masukkan headline..."
+                  type="text"
+                  value={headline}
+                  onChangeValue={setHeadline}
+                  icon="material-symbols:view-headline-rounded"
+                />
+                <Input
+                  label="Biografi Singkat"
+                  placeholder="Masukkan biografi singkat..."
+                  type="text"
+                  value={shortBio}
+                  onChangeValue={setShortBio}
+                  icon="material-symbols:short-text-rounded"
+                />
+              </form>
+
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                onClick={showProfileSummary}
+                disabled={
+                  !email ||
+                  !fullName ||
+                  !gender ||
+                  !dateOfBirth ||
+                  !phoneNumber ||
+                  !domicile ||
+                  newsInterest.length === 0 ||
+                  !headline ||
+                  !shortBio
+                }
+                className="cursor-pointer text-white rounded-lg px-5 py-3 w-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] transition duration-300 ease-in-out hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Lanjutkan
+              </motion.button>
+            </>
+          )}
         </motion.div>
       </div>
     </>

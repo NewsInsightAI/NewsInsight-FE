@@ -19,7 +19,8 @@ export default function Register() {
   const [navbarHeight, setNavbarHeight] = useState(0);
   const [showVerifyEmail, setShowVerifyEmail] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isRegisterLoading, setIsRegisterLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const { promise, showToast } = useToast();
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -36,56 +37,92 @@ export default function Register() {
       showToast("Konfirmasi password tidak cocok.", "error");
       return;
     }
-    setIsLoading(true);
-    await promise(
-      (async () => {
-        const res = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, email, password }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error(data?.message || "Registrasi gagal.");
+    setIsRegisterLoading(true);
+    try {
+      await promise(
+        (async () => {
+          const res = await fetch("/api/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, email, password }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(data?.message || "Registrasi gagal.");
+          }
+          setVerifyEmailData({ email: email, userId: data.data?.id });
+          setShowVerifyEmail(true);
+          return data;
+        })(),
+        {
+          loading: "Mendaftarkan akun...",
+          success: () => "Registrasi berhasil! Silakan verifikasi email Anda.",
+          error: (err) =>
+            err instanceof Error
+              ? err.message
+              : "Terjadi kesalahan. Silakan coba lagi.",
         }
-        setVerifyEmailData({ email: email, userId: data.data?.id });
-        setShowVerifyEmail(true);
-        return data;
-      })(),
-      {
-        loading: "Mendaftarkan akun...",
-        success: () => "Registrasi berhasil! Silakan verifikasi email Anda.",
-        error: (err) =>
-          err instanceof Error
-            ? err.message
-            : "Terjadi kesalahan. Silakan coba lagi.",
-      }
-    );
-    setIsLoading(false);
+      );
+    } catch (error) {
+      console.error("Registration error:", error);
+    } finally {
+      setIsRegisterLoading(false);
+    }
   };
   const handleGoogleSignUp = async () => {
-    setIsLoading(true);
+    setIsGoogleLoading(true);
     try {
-      const currentOrigin =
-        typeof window !== "undefined"
-          ? window.location.origin
-          : "https://newsinsight.space";
-      const callbackUrl = `${currentOrigin}/dashboard`;
+      console.log("Starting Google sign up from register page...");
 
       const result = await signIn("google", {
         redirect: false,
-        callbackUrl: callbackUrl,
       });
 
-      if (result?.ok) {
-        const session = await getSession();
-        if (session) {
+      console.log("Google sign up result:", result);
+
+      if (result?.ok && !result?.error) {
+        console.log("Google sign up successful, fetching session...");
+
+        // Wait for session to be established
+        let retries = 0;
+        let session = null;
+
+        while (retries < 5 && !session) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          session = await getSession();
+          retries++;
+          console.log(
+            `Session check attempt ${retries}:`,
+            session ? "found" : "not found"
+          );
+        }
+
+        if (session && session.backendToken) {
+          console.log("Session established successfully:", {
+            email: session.user?.email,
+            isNewUser: session.isNewUser,
+            isProfileComplete: session.isProfileComplete,
+          });
+
           const message = session.isNewUser
             ? "Selamat datang di NewsInsight! Akun Anda berhasil didaftarkan."
             : "Anda sudah terdaftar sebelumnya. Selamat datang kembali!";
-          showToast(message, "success");
-          router.push("/dashboard");
+
+          showToast(message, "success"); // Redirect based on profile completion
+          if (session.isNewUser && !session.isProfileComplete) {
+            console.log("New user, redirecting to complete profile");
+            router.push("/login/complete-profile");
+          } else {
+            console.log("Redirecting based on user role");
+            const userRole = session?.backendUser?.role;
+            if (userRole === "user") {
+              router.push("/"); // User biasa ke homepage
+            } else {
+              router.push("/dashboard"); // Admin/Editor/Contributor ke dashboard
+            }
+          }
         } else {
+          console.error("No valid session found after Google sign up");
           showToast(
             "Terjadi kesalahan saat menyimpan data akun. Silakan coba lagi.",
             "error"
@@ -95,18 +132,23 @@ export default function Register() {
         console.error("Google sign up error:", result.error);
         if (result.error === "AccessDenied") {
           showToast("Registrasi dengan Google dibatalkan.", "error");
-        } else {
+        } else if (result.error === "Callback") {
           showToast(
-            "Gagal mendaftar dengan Google. Silakan coba lagi.",
+            "Terjadi kesalahan dalam proses autentikasi. Silakan coba lagi.",
             "error"
           );
+        } else {
+          showToast(`Gagal mendaftar dengan Google: ${result.error}`, "error");
         }
+      } else {
+        console.error("Unknown error during Google sign up");
+        showToast("Terjadi kesalahan yang tidak diketahui.", "error");
       }
     } catch (error) {
       console.error("Error during Google sign up:", error);
       showToast("Terjadi kesalahan saat mendaftar dengan Google.", "error");
     } finally {
-      setIsLoading(false);
+      setIsGoogleLoading(false);
     }
   };
 
@@ -161,6 +203,7 @@ export default function Register() {
               {" "}
               <VerifyEmail
                 onClose={() => setShowVerifyEmail(false)}
+                isFromRegister={true}
                 {...(verifyEmailData
                   ? {
                       email: verifyEmailData.email,
@@ -255,7 +298,7 @@ export default function Register() {
                     className="w-full border border-gray-300 rounded-lg py-2 px-3 pl-10 text-gray-700 focus:outline-none focus:border-blue-500"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    disabled={isLoading}
+                    disabled={isRegisterLoading}
                   />
                 </div>
               </div>
@@ -274,7 +317,7 @@ export default function Register() {
                     className="w-full border border-gray-300 rounded-lg py-2 px-3 pl-10 text-gray-700 focus:outline-none focus:border-blue-500"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    disabled={isLoading}
+                    disabled={isRegisterLoading}
                   />
                 </div>
               </div>
@@ -296,8 +339,8 @@ export default function Register() {
                     className="w-full border border-gray-300 rounded-lg py-2 px-3 pl-10 pr-10 text-gray-700 focus:outline-none focus:border-blue-500"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    disabled={isLoading}
-                  />
+                    disabled={isRegisterLoading}
+                  />{" "}
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
@@ -332,13 +375,13 @@ export default function Register() {
                     className="w-full border border-gray-300 rounded-lg py-2 px-3 pl-10 pr-10 text-gray-700 focus:outline-none focus:border-blue-500"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={isLoading}
+                    disabled={isRegisterLoading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
-                    disabled={isLoading}
+                    disabled={isRegisterLoading}
                   >
                     {showPassword ? (
                       <Icon icon="lucide:eye-off" />
@@ -360,9 +403,9 @@ export default function Register() {
               <motion.button
                 onClick={handleSubmit}
                 className="cursor-pointer text-white rounded-lg px-5 py-3 w-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] transition duration-300 ease-in-out hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isLoading}
+                disabled={isRegisterLoading}
               >
-                {isLoading ? (
+                {isRegisterLoading ? (
                   <Icon
                     icon="line-md:loading-loop"
                     className="text-xl animate-spin mx-auto"
@@ -380,10 +423,10 @@ export default function Register() {
             <motion.button
               className="w-full"
               onClick={handleGoogleSignUp}
-              disabled={isLoading}
+              disabled={isGoogleLoading}
             >
               <div className="flex flex-row gap-2 items-center justify-center w-full bg-white border border-gray-300 rounded-lg px-5 py-3 transition duration-300 ease-in-out hover:opacity-80 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                {isLoading ? (
+                {isGoogleLoading ? (
                   <Icon
                     icon="line-md:loading-loop"
                     className="text-2xl animate-spin"

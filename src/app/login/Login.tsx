@@ -19,7 +19,8 @@ export default function Login() {
   const [showMFAVerification, setShowMFAVerification] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoginLoading, setIsLoginLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [highlightGoogleSignIn, setHighlightGoogleSignIn] = useState(false);
   const { promise, showToast } = useToast();
   const router = useRouter();
@@ -68,104 +69,106 @@ export default function Login() {
     "Bookmark berita favorit",
     "Personalisasi kategori berita",
   ];
-
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    setIsLoading(true);
-    await promise(
-      (async () => {
-        const result = await signIn("credentials", {
-          identifier: email,
-          password: password,
-          redirect: false,
-        });
-        if (result?.ok) {
-          const session = await getSession();
-          if (session?.backendUser) {
-            try {
-              const profileCheckRes = await fetch("/api/profile/me");
-              const profileData = await profileCheckRes.json();
+    setIsLoginLoading(true);
+    try {
+      await promise(
+        (async () => {
+          const result = await signIn("credentials", {
+            identifier: email,
+            password: password,
+            redirect: false,
+          });
+          if (result?.ok) {
+            const session = await getSession();
+            if (session?.backendUser) {
+              try {
+                const profileCheckRes = await fetch("/api/profile/me");
+                const profileData = await profileCheckRes.json();
 
-              let isProfileComplete = false;
-              if (profileData.status === "success" && profileData.data) {
-                const profile = profileData.data;
-                isProfileComplete = !!(
-                  profile.full_name &&
-                  profile.gender &&
-                  profile.date_of_birth &&
-                  profile.phone_number &&
-                  profile.domicile &&
-                  profile.news_interest &&
-                  profile.headline &&
-                  profile.biography
-                );
-              }
-
-              if (!isProfileComplete) {
-                router.push("/login/complete-profile");
-              } else {
-                
-                const userRole = session.backendUser.role;
-                if (userRole === "user") {
-                  router.push("/");
-                } else {
-                  router.push("/dashboard");
+                let isProfileComplete = false;
+                if (profileData.status === "success" && profileData.data) {
+                  const profile = profileData.data;
+                  isProfileComplete = !!(
+                    profile.full_name &&
+                    profile.gender &&
+                    profile.date_of_birth &&
+                    profile.phone_number &&
+                    profile.domicile &&
+                    profile.news_interest &&
+                    profile.headline &&
+                    profile.biography
+                  );
                 }
+
+                if (!isProfileComplete) {
+                  router.push("/login/complete-profile");
+                } else {
+                  const userRole = session.backendUser.role;
+                  if (userRole === "user") {
+                    router.push("/");
+                  } else {
+                    router.push("/dashboard");
+                  }
+                }
+              } catch (error) {
+                console.error("Error checking profile completion:", error);
+                router.push("/dashboard");
               }
-            } catch (error) {
-              console.error("Error checking profile completion:", error);
-
-              router.push("/dashboard");
+            } else {
+              throw new Error("Gagal mendapatkan data sesi.");
             }
+          } else if (result?.error) {
+            if (result.error.includes("EMAIL_UNVERIFIED:")) {
+              const errorData = JSON.parse(
+                result.error.replace("EMAIL_UNVERIFIED:", "")
+              );
+              setVerifyEmailData({
+                email: errorData.email,
+                userId: errorData.userId,
+              });
+              setShowVerifyEmail(true);
+              return;
+            }
+            if (result.error.includes("MFA_REQUIRED:")) {
+              const errorData = JSON.parse(
+                result.error.replace("MFA_REQUIRED:", "")
+              );
+              setMfaData({
+                email: errorData.email,
+                tempToken: errorData.tempToken,
+                userId: errorData.userId,
+                availableMethods: errorData.availableMethods,
+              });
+              setShowMFAVerification(true);
+              return;
+            }
+
+            if (result.error.includes("Akun ini terdaftar melalui Google")) {
+              setHighlightGoogleSignIn(true);
+              setTimeout(() => setHighlightGoogleSignIn(false), 5000);
+            }
+
+            throw new Error(result.error);
           } else {
-            throw new Error("Gagal mendapatkan data sesi.");
+            throw new Error("Login gagal. Silakan coba lagi.");
           }
-        } else if (result?.error) {
-          if (result.error.includes("EMAIL_UNVERIFIED:")) {
-            const errorData = JSON.parse(
-              result.error.replace("EMAIL_UNVERIFIED:", "")
-            );
-            setVerifyEmailData({
-              email: errorData.email,
-              userId: errorData.userId,
-            });
-            setShowVerifyEmail(true);
-            return;
-          }
-          if (result.error.includes("MFA_REQUIRED:")) {
-            const errorData = JSON.parse(
-              result.error.replace("MFA_REQUIRED:", "")
-            );
-            setMfaData({
-              email: errorData.email,
-              tempToken: errorData.tempToken,
-              userId: errorData.userId,
-              availableMethods: errorData.availableMethods,
-            });
-            setShowMFAVerification(true);
-            return;
-          }
-
-          if (result.error.includes("Akun ini terdaftar melalui Google")) {
-            setHighlightGoogleSignIn(true);
-            setTimeout(() => setHighlightGoogleSignIn(false), 5000);
-          }
-
-          throw new Error(result.error);
-        } else {
-          throw new Error("Login gagal. Silakan coba lagi.");
+        })(),
+        {
+          loading: "Sedang login...",
+          success: () => "Login berhasil!",
+          error: (err) =>
+            err instanceof Error
+              ? err.message
+              : "Terjadi kesalahan. Silakan coba lagi.",
         }
-      })(),
-      {
-        loading: "Sedang login...",
-        success: () => "Login berhasil!",
-        error: (err) =>
-          err instanceof Error
-            ? err.message
-            : "Terjadi kesalahan. Silakan coba lagi.",
-      }
-    );
-    setIsLoading(false);
+      );
+    } catch (error) {
+      console.error("Login error:", error);
+    } finally {
+      setIsLoginLoading(false);
+    }
   };
 
   const handleMFASuccess = async () => {
@@ -197,7 +200,6 @@ export default function Login() {
         if (!isProfileComplete) {
           router.push("/login/complete-profile");
         } else {
-          
           const userRole = session.backendUser.role;
           if (userRole === "user") {
             router.push("/");
@@ -208,7 +210,7 @@ export default function Login() {
       } catch (error) {
         console.error("Error checking profile completion:", error);
         showToast("Login berhasil!", "success");
-        
+
         const userRole = session?.backendUser?.role;
         if (userRole === "user") {
           router.push("/");
@@ -219,14 +221,13 @@ export default function Login() {
     }
   };
   const handleGoogleSignIn = async () => {
-    setIsLoading(true);
+    setIsGoogleLoading(true);
     try {
-      
       const currentOrigin =
         typeof window !== "undefined"
           ? window.location.origin
           : "https://newsinsight.space";
-      const callbackUrl = `${currentOrigin}/dashboard`;
+      const callbackUrl = `${currentOrigin}/`;
 
       const result = await signIn("google", {
         redirect: false,
@@ -254,35 +255,33 @@ export default function Login() {
                 profile.biography
               );
             }
-
             const message = session.isNewUser
               ? "Akun berhasil dibuat dan Anda telah masuk. Selamat datang di NewsInsight!"
               : "Selamat datang kembali!";
             showToast(message, "success");
+
             if (!isProfileComplete) {
               router.push("/login/complete-profile");
             } else {
-              
               const userRole = session?.backendUser?.role;
               if (userRole === "user") {
-                router.push("/");
+                router.push("/"); // User biasa ke homepage
               } else {
-                router.push("/dashboard");
+                router.push("/dashboard"); // Admin/Editor/Contributor ke dashboard
               }
             }
           } catch (error) {
             console.error("Error checking profile completion:", error);
-
             const message = session.isNewUser
               ? "Akun berhasil dibuat dan Anda telah masuk. Selamat datang di NewsInsight!"
               : "Selamat datang kembali!";
             showToast(message, "success");
-            
+
             const userRole = session?.backendUser?.role;
             if (userRole === "user") {
-              router.push("/");
+              router.push("/"); // User biasa ke homepage
             } else {
-              router.push("/dashboard");
+              router.push("/dashboard"); // Admin/Editor/Contributor ke dashboard
             }
           }
         } else {
@@ -303,7 +302,7 @@ export default function Login() {
       console.error("Error during Google sign in:", error);
       showToast("Terjadi kesalahan saat masuk dengan Google.", "error");
     } finally {
-      setIsLoading(false);
+      setIsGoogleLoading(false);
     }
   };
 
@@ -405,12 +404,20 @@ export default function Login() {
                 icon="material-symbols:password-rounded"
                 value={password}
                 onChangeValue={setPassword}
-              />
+              />{" "}
               <button
                 type="submit"
-                className="cursor-pointer text-white rounded-lg px-5 py-3 w-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] transition duration-300 ease-in-out hover:opacity-80"
+                className="cursor-pointer text-white rounded-lg px-5 py-3 w-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] transition duration-300 ease-in-out hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isLoginLoading}
               >
-                Masuk
+                {isLoginLoading ? (
+                  <Icon
+                    icon="line-md:loading-loop"
+                    className="text-xl animate-spin mx-auto"
+                  />
+                ) : (
+                  "Masuk"
+                )}
               </button>
             </form>
             <div className="flex flex-col gap-2.5 items-end w-full">
@@ -425,12 +432,11 @@ export default function Login() {
               <hr className="border-t border-black w-full" />
               <p className="text-black text-sm">atau</p>
               <hr className="border-t border-black w-full" />
-            </div>
-
+            </div>{" "}
             <button
               className="w-full"
               onClick={handleGoogleSignIn}
-              disabled={isLoading}
+              disabled={isGoogleLoading}
             >
               <div
                 className={`flex flex-row gap-2 items-center justify-center w-full rounded-lg px-5 py-3 transition-all duration-300 ease-in-out cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
@@ -439,7 +445,7 @@ export default function Login() {
                     : "bg-white border border-gray-300 hover:opacity-80"
                 }`}
               >
-                {isLoading ? (
+                {isGoogleLoading ? (
                   <Icon
                     icon="line-md:loading-loop"
                     className="text-2xl animate-spin"

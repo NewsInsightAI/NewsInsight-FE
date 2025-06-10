@@ -90,7 +90,10 @@ export default function SummaryProfile(
     },
   ];
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 flex items-center justify-center p-6 text-black"
+      style={{ zIndex: 1000 }}
+    >
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-[700px] max-h-[90vh] overflow-hidden">
         {/* Header with gradient */}
         <div className="bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] p-6 text-white relative overflow-hidden">
@@ -112,17 +115,19 @@ export default function SummaryProfile(
 
         {/* Content */}
         <div className="p-6">
-          {/* Avatar Section */}
+          {/* Avatar Section */}{" "}
           <div className="flex flex-col items-center mb-6 -mt-12 relative z-10">
             {props.avatar ? (
               <div className="relative">
-                <Image
-                  src={getAvatarUrl(props.avatar)}
-                  alt="Profile Picture"
-                  width={100}
-                  height={100}
-                  className="rounded-full border-4 border-white shadow-lg bg-gray-100 object-cover"
-                />
+                <div className="w-[100px] h-[100px] rounded-full border-4 border-white shadow-lg bg-gray-100 overflow-hidden">
+                  <Image
+                    src={getAvatarUrl(props.avatar)}
+                    alt="Profile Picture"
+                    width={100}
+                    height={100}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
                 <div className="absolute -bottom-2 -right-2 bg-green-500 rounded-full p-2">
                   <Icon
                     icon="material-symbols:check"
@@ -143,7 +148,6 @@ export default function SummaryProfile(
             </h3>
             <p className="text-gray-500 text-sm">{props.email}</p>
           </div>
-
           {/* Info Cards Grid */}
           <div className="max-h-[50vh] overflow-y-auto space-y-4 pr-2 custom-scrollbar">
             {/* Personal Info Section */}
@@ -245,7 +249,6 @@ export default function SummaryProfile(
               </div>
             </div>
           </div>
-
           {/* Action Buttons */}
           <div className="flex gap-3 mt-6">
             <button

@@ -48,6 +48,7 @@ export default function Footer() {
     "/register",
     "/news",
     "/profile",
+    "/login/complete-profile",
     "/reset-password",
     "/settings/profile",
     "/settings/personal-data",

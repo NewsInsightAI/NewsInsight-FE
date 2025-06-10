@@ -2,12 +2,14 @@
 import { Icon } from "@iconify/react";
 import React, { useRef, useState } from "react";
 import { useToast } from "@/context/ToastProvider";
+import { useRouter } from "next/navigation";
 
 interface VerifyEmailProps {
   onClose: () => void;
   email?: string;
   userId?: number;
   onVerificationComplete?: () => void;
+  isFromRegister?: boolean;
 }
 
 export default function VerifyEmail(props: VerifyEmailProps) {
@@ -16,6 +18,7 @@ export default function VerifyEmail(props: VerifyEmailProps) {
   const [resendLoading, setResendLoading] = useState(false);
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
   const { showToast } = useToast();
+  const router = useRouter();
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     index: number
@@ -102,11 +105,19 @@ export default function VerifyEmail(props: VerifyEmailProps) {
         showToast(data?.message || "Verifikasi gagal.", "error");
         return;
       }
-
       if (props.onVerificationComplete) {
         props.onVerificationComplete();
       } else {
         showToast("Email berhasil diverifikasi! Silakan login.", "success");
+
+        // Jika dari register page, redirect ke login page
+        if (props.isFromRegister) {
+          handleClose();
+          setTimeout(() => {
+            router.push("/login");
+          }, 1000); // Delay untuk memberi waktu toast muncul
+          return;
+        }
       }
 
       handleClose();

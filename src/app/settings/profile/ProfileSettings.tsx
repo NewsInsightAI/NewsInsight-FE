@@ -26,6 +26,7 @@ export default function Profile() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [isGoogleUser, setIsGoogleUser] = useState<boolean>(false);
 
   const convertValueToCategory = (value: string) => {
     const categoryMap: { [key: string]: { label: string } } = {
@@ -74,13 +75,26 @@ export default function Profile() {
       prevInterest.filter((interest) => interest.value !== category.value)
     );
   };
-
   const fetchProfile = React.useCallback(async () => {
     if (status !== "authenticated") return;
 
     try {
       setLoading(true);
       setError(null);
+
+      // Fetch user info untuk check apakah Google user
+      const userInfoResponse = await fetch("/api/auth/user-info", {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (userInfoResponse.ok) {
+        const userInfoResult = await userInfoResponse.json();
+        if (userInfoResult.status === "success" && userInfoResult.data) {
+          setIsGoogleUser(!!userInfoResult.data.google_id);
+        }
+      }
 
       const response = await fetch("/api/profile/me", {
         headers: {
@@ -201,11 +215,10 @@ export default function Profile() {
       ) {
         currentProfile = currentProfileResult.data;
       }
-
       const profileData = {
         ...currentProfile,
         full_name: fullName,
-        username: username,
+        ...(isGoogleUser ? {} : { username: username }), // Hanya include username jika bukan Google user
         headline: headline,
         biography: about,
         news_interest: JSON.stringify(newsInterest),
@@ -384,7 +397,7 @@ export default function Profile() {
                       </p>
                     </div>
                   </div>
-                </div>
+                </div>{" "}
                 <Input
                   label="Nama Lengkap"
                   type="text"
@@ -394,15 +407,17 @@ export default function Profile() {
                   onChangeValue={setFullName}
                   required
                 />
-                <Input
-                  label="Username"
-                  type="text"
-                  icon="gridicons:nametag"
-                  placeholder="Masukkan username..."
-                  value={username}
-                  onChangeValue={setUsername}
-                  required
-                />
+                {!isGoogleUser && (
+                  <Input
+                    label="Username"
+                    type="text"
+                    icon="gridicons:nametag"
+                    placeholder="Masukkan username..."
+                    value={username}
+                    onChangeValue={setUsername}
+                    required
+                  />
+                )}
                 <Input
                   label="Email"
                   type="email"

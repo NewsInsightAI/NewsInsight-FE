@@ -21,11 +21,7 @@ const categories: Category[] = [
   { label: "Sains & Kesehatan", value: "sains-kesehatan" },
   { label: "Olahraga", value: "olahraga" },
   { label: "Hiburan & Selebriti", value: "hiburan-selebriti" },
-  { label: "Gaya Hidup", value: "gaya-hidup" },
-  ...Array.from({ length: 100 }, (_, i) => ({
-    label: `Category ${i + 1}`,
-    value: `category-${i + 1}`,
-  })),
+  { label: "Gaya Hidup", value: "gaya-hidup" }
 ];
 
 export default function ListNewsCategory({

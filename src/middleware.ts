@@ -5,23 +5,28 @@ export default withAuth(
     const { pathname } = req.nextUrl;
     const token = req.nextauth.token;
 
-    if (
-      pathname.startsWith("/dashboard") &&
-      token?.backendUser?.role === "user"
-    ) {
-      return new Response(null, {
-        status: 302,
-        headers: {
-          Location: "/",
-        },
-      });
-    }
+    console.log("Middleware executing:", {
+      pathname,
+      hasToken: !!token,
+      userRole: token?.backendUser?.role,
+      email: token?.email,
+    });
+
+    // Remove the redirect for user role accessing dashboard
+    // All authenticated users should be able to access dashboard
   },
   {
     callbacks: {
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl;
 
+        console.log("Authorization check:", {
+          pathname,
+          hasToken: !!token,
+          userRole: token?.backendUser?.role,
+        });
+
+        // Allow access to public routes
         if (
           pathname.startsWith("/auth") ||
           pathname.startsWith("/api/auth") ||
@@ -32,11 +37,17 @@ export default withAuth(
         ) {
           return true;
         }
+
+        // Allow access to dashboard for all authenticated users
         if (pathname.startsWith("/dashboard")) {
-          return !!token && token.backendUser?.role !== "user";
+          return !!token;
         }
 
-        if (pathname.startsWith("/profile")) {
+        // Allow access to profile routes for authenticated users
+        if (
+          pathname.startsWith("/profile") ||
+          pathname.startsWith("/settings")
+        ) {
           return !!token;
         }
 

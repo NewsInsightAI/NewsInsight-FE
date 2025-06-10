@@ -159,52 +159,65 @@ export const authOptions: AuthOptions = {
             }),
           });
 
-          if (response.ok) {
-            const result = await response.json();
-            console.log("Backend response:", result);
-            if (result.status === "success" && result.data) {
-              account.backendToken = result.data.token;
-              account.backendUser = result.data.account;
-              account.isNewUser = result.data.isNewUser;
-              account.backendMessage = result.message;
-              console.log(
-                "Google sign-in successful with backend integration for:",
-                user.email
-              );
-              return true;
-            } else {
-              console.error("Backend auth failed:", result.message);
-              return false;
-            }
+          console.log("Backend response status:", response.status);
+          const result = await response.json();
+          console.log("Backend response data:", result);
+
+          if (response.ok && result.status === "success" && result.data) {
+            // Store backend data in account for JWT callback
+            account.backendToken = result.data.token;
+            account.backendUser = result.data.account;
+            account.isNewUser = result.data.isNewUser;
+            account.backendMessage = result.message;
+
+            console.log("Google sign-in successful, stored data:", {
+              token: result.data.token ? "present" : "missing",
+              user: result.data.account?.id ? "present" : "missing",
+              isNewUser: result.data.isNewUser,
+            });
+
+            return true;
           } else {
-            console.error(
-              "Backend request failed with status:",
-              response.status
-            );
+            console.error("Backend auth failed:", {
+              status: response.status,
+              result: result,
+            });
             return false;
           }
         } catch (error) {
           console.error("Error during backend authentication:", error);
-
           return false;
         }
       }
 
       if (account?.provider === "credentials") {
+        console.log("Credentials provider sign in");
         return true;
       }
 
+      console.log("Unknown provider, allowing sign in");
       return true;
     },
     async jwt({ token, account, user }) {
-      if (account?.backendToken) {
+      console.log("JWT callback triggered:", {
+        hasAccount: !!account,
+        provider: account?.provider,
+        hasBackendToken: !!account?.backendToken,
+        hasUser: !!user,
+      });
+
+      // Handle Google provider data
+      if (account?.provider === "google" && account?.backendToken) {
+        console.log("Setting JWT token data from Google account");
         token.backendToken = account.backendToken;
         token.backendUser = account.backendUser;
         token.isNewUser = account.isNewUser;
         token.backendMessage = account.backendMessage;
       }
 
+      // Handle credentials provider data
       if (account?.provider === "credentials" && user) {
+        console.log("Setting JWT token data from credentials");
         const credentialsUser = user as {
           backendToken?: string;
           backendUser?: {
@@ -213,6 +226,7 @@ export const authOptions: AuthOptions = {
             name: string;
             role?: string;
             username?: string;
+            isProfileComplete?: boolean;
           };
           isProfileComplete?: boolean;
         };
@@ -222,9 +236,23 @@ export const authOptions: AuthOptions = {
         token.isProfileComplete = credentialsUser.isProfileComplete;
       }
 
+      console.log("JWT token final state:", {
+        hasBackendToken: !!token.backendToken,
+        hasBackendUser: !!token.backendUser,
+        isNewUser: token.isNewUser,
+        userRole: token.backendUser?.role,
+      });
+
       return token;
     },
     async session({ session, token }) {
+      console.log("Session callback triggered:", {
+        hasToken: !!token,
+        hasBackendToken: !!token.backendToken,
+        hasBackendUser: !!token.backendUser,
+        userEmail: session.user?.email,
+      });
+
       session.backendToken = token.backendToken as string;
       session.backendUser = token.backendUser;
       session.isNewUser = token.isNewUser;
@@ -234,12 +262,24 @@ export const authOptions: AuthOptions = {
         session.user.role = token.backendUser.role;
       }
 
+      // Add isProfileComplete to session
+      if (token.backendUser?.isProfileComplete !== undefined) {
+        session.isProfileComplete = token.backendUser.isProfileComplete;
+      }
+
+      console.log("Final session state:", {
+        hasBackendToken: !!session.backendToken,
+        userRole: session.user?.role,
+        isNewUser: session.isNewUser,
+        isProfileComplete: session.isProfileComplete,
+      });
+
       return session;
     },
   },
   pages: {
-    signIn: "/auth/signin",
-    error: "/auth/error",
+    signIn: "/login",
+    error: "/login",
   },
   session: {
     strategy: "jwt",
