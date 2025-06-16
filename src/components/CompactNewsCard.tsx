@@ -36,7 +36,7 @@ export default function CompactNewsCard({
   return (
     <div onClick={() => router.push(link)} className="cursor-pointer w-full">
       <div
-        className={`flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center justify-start w-full ${isDark ? "bg-gray-800" : "bg-white"} transition-colors duration-300`}
+        className={`flex flex-col sm:flex-row gap-3 sm:gap-4 items-start rounded-xl sm:items-center justify-start w-full ${isDark ? "bg-gray-800" : "bg-white"} transition-colors duration-300`}
       >
         <img
           src={imageUrl}

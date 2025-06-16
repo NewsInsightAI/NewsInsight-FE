@@ -366,13 +366,98 @@ export const Navbar = () => {
                     <Icon icon="mynaui:home-solid" fontSize={20} />
                     <p>Dashboard</p>
                   </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-2 border border-gray-300 text-gray-700 rounded-3xl px-4 md:px-5 py-2 md:py-2.5 hover:bg-gray-50 transition duration-300 ease-in-out cursor-pointer text-sm md:text-base"
-                  >
-                    <Icon icon="solar:logout-2-bold" fontSize={20} />
-                    <p>Keluar</p>
-                  </button>
+                  <div className="relative" ref={dropdownRef}>
+                    <div
+                      className="flex items-center gap-2 cursor-pointer"
+                      onClick={() => setShowDropdown(!showDropdown)}
+                    >
+                      <img
+                        src={getAvatarSource()}
+                        alt="Profile"
+                        className="w-10 h-10 rounded-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "/images/default_profile.png";
+                        }}
+                      />
+                      <div className="hidden md:flex flex-col items-start">
+                        <p className="text-sm font-semibold">
+                          {shortenName(
+                            profileData?.full_name ||
+                              profileData?.username ||
+                              session?.user?.name ||
+                              session?.user?.email ||
+                              "User"
+                          )}
+                        </p>
+                      </div>
+                      <Icon
+                        icon="majesticons:chevron-down-line"
+                        fontSize={16}
+                        className={
+                          showDropdown
+                            ? "-rotate-180 transition-transform"
+                            : "transition-transform"
+                        }
+                      />
+                    </div>
+
+                    <AnimatePresence>
+                      {showDropdown && (
+                        <motion.div
+                          key="admin-profile-dropdown"
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.2 }}
+                          className={`absolute right-0 mt-3 w-56 ${isDark ? "bg-[#1A1A1A] shadow-2xl shadow-blue-500/20" : "bg-white"} rounded-xl shadow-xl py-3 z-50`}
+                        >
+                          <ul
+                            className={`text-sm ${isDark ? "text-white" : "text-black"} flex flex-col`}
+                          >
+                            <Link
+                              href="/profile"
+                              className={`px-5 py-2 ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"} cursor-pointer flex items-center gap-2`}
+                            >
+                              <Icon
+                                icon="iconamoon:profile-fill"
+                                fontSize={18}
+                              />
+                              Profil Saya
+                            </Link>
+                            <Link
+                              href="/settings"
+                              className={`px-5 py-2 ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"} cursor-pointer flex items-center gap-2`}
+                            >
+                              <Icon icon="solar:settings-bold" fontSize={18} />
+                              Pengaturan
+                            </Link>
+                            <button
+                              onClick={toggleDark}
+                              className={`px-5 py-2 ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"} cursor-pointer flex items-center gap-2 w-full text-left`}
+                            >
+                              <Icon
+                                icon={
+                                  isDark
+                                    ? "material-symbols:light-mode-rounded"
+                                    : "ic:round-dark-mode"
+                                }
+                                fontSize={18}
+                              />
+                              {isDark ? "Mode Terang" : "Mode Gelap"}
+                            </button>
+                            <button
+                              onClick={handleLogout}
+                              className={`px-5 py-2 ${isDark ? "hover:bg-red-900/50" : "hover:bg-red-100"} text-red-500 cursor-pointer flex items-center gap-2 w-full text-left`}
+                            >
+                              <Icon icon="solar:logout-2-bold" fontSize={18} />
+                              Keluar
+                            </button>
+                          </ul>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
               )}{" "}
             </>

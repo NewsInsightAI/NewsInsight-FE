@@ -177,13 +177,16 @@ export default function CommentForm({
             onDateChange={setDateTime}
             required
             disabled
-          />
-
+          />{" "}
           <div className="flex items-center w-full gap-2 mt-5">
             <button
               type="button"
               onClick={onClose}
-              className="w-full border border-[#E2E2E2] text-[#5D6383] py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition cursor-pointer"
+              className={`w-full border py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition cursor-pointer ${
+                isDark
+                  ? "border-gray-600 text-gray-300 hover:bg-gray-700"
+                  : "border-[#E2E2E2] text-[#5D6383] hover:bg-gray-50"
+              }`}
             >
               Batal
             </button>

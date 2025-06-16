@@ -6,6 +6,7 @@ import Footer from "../components/Footer";
 import { ToastProvider } from "@/context/ToastProvider";
 import NextAuthSessionProvider from "@/components/SessionProvider";
 import { DarkModeProvider } from "@/context/DarkModeContext";
+import ScrollbarStyles from "@/components/ScrollbarStyles";
 
 const interFont = Inter({
   subsets: ["latin"],
@@ -33,6 +34,7 @@ export default function RootLayout({
               <Navbar />
               <main className="flex-1 w-full">{children}</main>
               <Footer />
+              <ScrollbarStyles />
             </ToastProvider>
           </DarkModeProvider>
         </NextAuthSessionProvider>
