@@ -4,6 +4,7 @@ import React from "react";
 import { formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
 import { useRouter } from "next/navigation";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface NewsCard {
   source: string;
@@ -20,6 +21,7 @@ export default function NewsCard({
   timestamp,
   link,
 }: NewsCard) {
+  const { isDark } = useDarkMode();
   const formattedTimestamp = formatDistanceToNow(new Date(timestamp), {
     addSuffix: true,
     locale: id,
@@ -33,7 +35,9 @@ export default function NewsCard({
 
   return (
     <div onClick={() => router.push(link)} className="cursor-pointer w-full">
-      <div className="flex flex-col items-start justify-start w-full bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-[#E1E1E1] transition-shadow hover:shadow-md">
+      <div
+        className={`flex flex-col items-start justify-start w-full ${isDark ? "bg-gray-800 border-gray-600" : "bg-white border-[#E1E1E1]"} rounded-xl sm:rounded-2xl overflow-hidden border transition-all duration-300 hover:shadow-md`}
+      >
         <img
           src={imageUrl}
           alt={title}
@@ -43,13 +47,19 @@ export default function NewsCard({
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-xs sm:text-sm font-bold bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text">
               {source}
-            </p>
-            <div className="h-1 w-1 bg-gray-400 rounded-full" />
-            <p className="text-xs sm:text-sm text-gray-500">
+            </p>{" "}
+            <div
+              className={`h-1 w-1 ${isDark ? "bg-gray-500" : "bg-gray-400"} rounded-full`}
+            />
+            <p
+              className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
+            >
               {customFormattedTimestamp}
             </p>
           </div>
-          <p className="text-black font-medium text-sm sm:text-base leading-tight">
+          <p
+            className={`${isDark ? "text-white" : "text-black"} font-medium text-sm sm:text-base leading-tight`}
+          >
             {title}
           </p>
         </div>

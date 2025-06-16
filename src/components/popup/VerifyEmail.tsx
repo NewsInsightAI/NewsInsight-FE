@@ -110,12 +110,11 @@ export default function VerifyEmail(props: VerifyEmailProps) {
       } else {
         showToast("Email berhasil diverifikasi! Silakan login.", "success");
 
-        // Jika dari register page, redirect ke login page
         if (props.isFromRegister) {
           handleClose();
           setTimeout(() => {
             router.push("/login");
-          }, 1000); // Delay untuk memberi waktu toast muncul
+          }, 1000);
           return;
         }
       }

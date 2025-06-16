@@ -11,6 +11,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { motion } from "framer-motion";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 const rawData = {
   "7D": [
@@ -33,6 +34,7 @@ const rawData = {
 };
 
 export default function VisitChartCard() {
+  const { isDark } = useDarkMode();
   const [selected, setSelected] = useState<"7D" | "14D" | "30D">("7D");
   const data = rawData[selected];
 
@@ -41,7 +43,9 @@ export default function VisitChartCard() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="col-span-4 w-full rounded-3xl bg-white p-6 border border-zinc-300 flex flex-col gap-4"
+      className={`col-span-4 w-full rounded-3xl p-6 border flex flex-col gap-4 transition-colors duration-300 ${
+        isDark ? "bg-gray-800 border-gray-600" : "bg-white border-gray-300"
+      }`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -51,8 +55,12 @@ export default function VisitChartCard() {
           <p className="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text font-semibold text-xl">
             Grafik Kunjungan
           </p>
-        </div>
-        <div className="flex items-center bg-gray-100 rounded-full">
+        </div>{" "}
+        <div
+          className={`flex items-center rounded-full ${
+            isDark ? "bg-gray-700" : "bg-gray-100"
+          }`}
+        >
           {["7D", "14D", "30D"].map((option) => (
             <button
               key={option}
@@ -60,7 +68,9 @@ export default function VisitChartCard() {
               className={`text-sm px-4 py-2 rounded-full transition ${
                 selected === option
                   ? "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white"
-                  : "text-gray-600 hover:bg-gray-200 cursor-pointer"
+                  : isDark
+                    ? "text-gray-300 hover:bg-gray-600 cursor-pointer"
+                    : "text-gray-600 hover:bg-gray-200 cursor-pointer"
               }`}
             >
               {option}
@@ -77,10 +87,27 @@ export default function VisitChartCard() {
               selected === "7D" ? 20 : selected === "14D" ? 10 : 5
             }
           >
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="name" stroke="#94a3b8" />
-            <YAxis stroke="#FFF" hide domain={[0, 150]} />
-            <Tooltip cursor={{ fill: "#f0f0f0" }} />
+            {" "}
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke={isDark ? "#4B5563" : "#E5E7EB"}
+            />
+            <XAxis dataKey="name" stroke={isDark ? "#9CA3AF" : "#6B7280"} />
+            <YAxis
+              stroke={isDark ? "#9CA3AF" : "#6B7280"}
+              hide
+              domain={[0, 150]}
+            />
+            <Tooltip
+              cursor={{ fill: isDark ? "#374151" : "#F3F4F6" }}
+              contentStyle={{
+                backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
+                border: `1px solid ${isDark ? "#4B5563" : "#E5E7EB"}`,
+                borderRadius: "8px",
+                color: isDark ? "#F9FAFB" : "#111827",
+              }}
+            />
             <Bar
               dataKey="value"
               radius={[20, 20, 20, 20]}
@@ -99,7 +126,6 @@ export default function VisitChartCard() {
                 </text>
               )}
             />
-
             <defs>
               <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#3BD5FF" stopOpacity={1} />

@@ -1,6 +1,7 @@
 import { Icon } from "@iconify/react";
 import React, { useEffect, useRef, useState } from "react";
 import Input from "../ui/Input";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface CommentFormProps {
   mode: "add" | "edit";
@@ -28,6 +29,7 @@ export default function CommentForm({
   onClose,
   onSubmit,
 }: CommentFormProps) {
+  const { isDark } = useDarkMode();
   const [readerName, setReaderName] = useState(initialReaderName);
   const [newsTitle, setNewsTitle] = useState(initialNewsTitle);
   const [comment, setComment] = useState(initialComment);
@@ -86,30 +88,44 @@ export default function CommentForm({
         );
     }
   };
-
   return (
     <div
-      className={`fixed inset-0 flex items-center justify-center p-4 text-black`}
+      className={`fixed inset-0 flex items-center justify-center p-4 transition-colors duration-300 ${
+        isDark ? "text-white" : "text-black"
+      }`}
       style={{ zIndex: 1000 }}
     >
       <div
         ref={popUpRef}
-        className="flex flex-col items-start gap-3 bg-white rounded-2xl shadow-xl p-5 max-w-[95%]"
+        className={`flex flex-col items-start gap-3 rounded-2xl shadow-xl p-5 max-w-[95%] transition-colors duration-300 ${
+          isDark ? "bg-gray-800" : "bg-white"
+        }`}
         style={{ width: `calc(40%)` }}
       >
-        <div className="flex items-center gap-4 pb-4 border-b border-[#E2E2E2] w-full">
+        <div
+          className={`flex items-center gap-4 pb-4 border-b w-full transition-colors duration-300 ${
+            isDark ? "border-gray-600" : "border-[#E2E2E2]"
+          }`}
+        >
           <div className="flex items-center justify-center p-2.5 rounded-[30%] bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]">
             <Icon
               icon="fluent:chat-24-filled"
               className="text-4xl text-white"
             />
-          </div>
-
+          </div>{" "}
           <div className="flex flex-col items-start">
-            <h2 className="text-xl font-bold">
+            <h2
+              className={`text-xl font-bold transition-colors duration-300 ${
+                isDark ? "text-white" : "text-black"
+              }`}
+            >
               {mode === "add" ? "Tambah Komentar" : "Edit Komentar"}
             </h2>
-            <p className="opacity-50 text-sm">
+            <p
+              className={`text-sm transition-colors duration-300 ${
+                isDark ? "text-gray-400" : "text-black/50"
+              }`}
+            >
               {mode === "add"
                 ? "Masukkan komentar secara manual. Komentar akan diperiksa otomatis oleh AI sebelum dipublikasikan"
                 : "Perbarui isi komentar. Sistem akan mengevaluasi ulang status dengan AI saat perubahan disimpan."}

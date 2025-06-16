@@ -3,6 +3,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { ReactNode, useEffect, useState } from "react";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface SettingsLayoutProps {
   children: ReactNode;
@@ -29,6 +30,7 @@ const listSettings = [
 ];
 
 export default function SettingsLayout({ children }: SettingsLayoutProps) {
+  const { isDark } = useDarkMode();
   const [navbarHeight, setNavbarHeight] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
@@ -68,11 +70,13 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
     };
   }, []);
   return (
-    <div className="bg-white text-black min-h-screen">
+    <div
+      className={`${isDark ? "bg-[#1A1A1A] text-white" : "bg-white text-black"} min-h-screen transition-colors duration-300`}
+    >
       {/* Mobile Horizontal Tabs */}
       {isMobile && (
         <div
-          className="md:hidden bg-white border-b border-gray-200 sticky top-0 z-20"
+          className={`md:hidden ${isDark ? "bg-[#1A1A1A] border-gray-600" : "bg-white border-gray-200"} border-b sticky top-0 z-20 transition-colors duration-300`}
           style={{ top: `${navbarHeight}px` }}
         >
           <div className="px-4 py-3">
@@ -81,9 +85,11 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
                 icon="material-symbols:settings-rounded"
                 width={20}
                 height={20}
-                className="text-gray-700"
+                className={`${isDark ? "text-gray-300" : "text-gray-700"}`}
               />
-              <h1 className="text-lg font-semibold text-gray-900">
+              <h1
+                className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+              >
                 Pengaturan
               </h1>
             </div>
@@ -102,7 +108,9 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
                       className={`flex items-center gap-2 px-4 py-3 rounded-full whitespace-nowrap transition-all duration-200 ${
                         isActive
                           ? "bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] text-white shadow-md"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          : isDark
+                            ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
                     >
                       <Icon icon={menu.icon} fontSize={16} />
@@ -133,14 +141,17 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
             top: `${navbarHeight + 24}px`,
           }}
         >
+          {" "}
           <div
-            className="bg-gradient-to-br from-[#2FAACC] to-[#2B62C2] p-4 rounded-2xl min-w-[240px] lg:min-w-[280px]"
+            className={`${isDark ? "bg-gradient-to-br from-[#2C2C2C] to-[#1A1A1A]" : "bg-gradient-to-br from-[#2FAACC] to-[#2B62C2]"} p-4 rounded-2xl min-w-[240px] lg:min-w-[280px] transition-all duration-300`}
             style={{
               maxHeight: `calc(100vh - ${navbarHeight + 88}px)`,
               overflowY: "auto",
             }}
           >
-            <div className="flex items-center w-full gap-2.5 text-white pb-3 border-b border-white/30">
+            <div
+              className={`flex items-center w-full gap-2.5 text-white pb-3 border-b ${isDark ? "border-gray-600" : "border-white/30"}`}
+            >
               <Icon
                 icon="material-symbols:settings-rounded"
                 width={28}
@@ -162,8 +173,12 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
                         href={menu.href}
                         className={`flex items-center gap-3 px-5 py-3 rounded-xl transition duration-300 ease-in-out ${
                           isActive
-                            ? "bg-white font-bold text-[#2B62C2]"
-                            : "hover:bg-white/20 text-white"
+                            ? isDark
+                              ? "bg-gray-700 font-bold text-white"
+                              : "bg-white font-bold text-[#2B62C2]"
+                            : isDark
+                              ? "hover:bg-gray-600/50 text-gray-200"
+                              : "hover:bg-white/20 text-white"
                         }`}
                       >
                         <Icon icon={menu.icon} fontSize={20} />

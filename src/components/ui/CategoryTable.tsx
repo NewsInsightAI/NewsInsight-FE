@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Icon } from "@iconify/react";
 import { AnimatePresence, motion } from "framer-motion";
 import CategoryForm from "../popup/AddEditCategory";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface CategoryData {
   id: number;
@@ -18,6 +19,7 @@ interface CategoryTableProps {
 }
 
 export default function CategoryTable({ datas }: CategoryTableProps) {
+  const { isDark } = useDarkMode();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<CategoryData | null>(
     null
@@ -66,10 +68,20 @@ export default function CategoryTable({ datas }: CategoryTableProps) {
           </div>
         )}
       </AnimatePresence>
-      <div className="bg-white overflow-x-auto w-full">
-        <table className="min-w-full bg-white">
-          <thead className="rounded-xl">
-            <tr className="bg-[#367AF2]/12 border-b border-gray-200">
+      <div
+        className={`overflow-hidden rounded-xl w-full transition-colors duration-300 border ${
+          isDark ? "bg-gray-800 border-gray-600" : "bg-white border-gray-200"
+        }`}
+      >
+        <table className={`min-w-full ${isDark ? "bg-gray-800" : "bg-white"}`}>
+          <thead>
+            <tr
+              className={`border-b transition-colors duration-300 ${
+                isDark
+                  ? "bg-blue-600/20 border-gray-600"
+                  : "bg-[#367AF2]/12 border-gray-200"
+              }`}
+            >
               <th className="py-3 px-4 relative flex items-center justify-center">
                 <input
                   type="checkbox"
@@ -86,26 +98,55 @@ export default function CategoryTable({ datas }: CategoryTableProps) {
                   />
                 )}
               </th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
+              <th
+                className={`py-3 px-4 text-left text-xs font-medium uppercase tracking-wider ${
+                  isDark ? "text-gray-300" : "text-black"
+                }`}
+              >
                 No
               </th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
+              <th
+                className={`py-3 px-4 text-left text-xs font-medium uppercase tracking-wider ${
+                  isDark ? "text-gray-300" : "text-black"
+                }`}
+              >
                 Nama Kategori
               </th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
+              <th
+                className={`py-3 px-4 text-left text-xs font-medium uppercase tracking-wider ${
+                  isDark ? "text-gray-300" : "text-black"
+                }`}
+              >
                 Deskripsi Singkat
               </th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
-                Jumlah Berita
+              <th
+                className={`py-3 px-4 text-left text-xs font-medium uppercase tracking-wider ${
+                  isDark ? "text-gray-300" : "text-black"
+                }`}
+              >
+                Jumlah Berita{" "}
               </th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-black uppercase tracking-wider">
+              <th
+                className={`py-3 px-4 text-left text-xs font-medium uppercase tracking-wider ${
+                  isDark ? "text-gray-300" : "text-black"
+                }`}
+              >
                 Aksi
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody
+            className={`divide-y transition-colors duration-300 ${
+              isDark ? "divide-gray-600" : "divide-gray-200"
+            }`}
+          >
             {datas.map((report, index) => (
-              <tr key={report.id} className="hover:bg-gray-50">
+              <tr
+                key={report.id}
+                className={`transition-colors duration-300 ${
+                  isDark ? "hover:bg-gray-700" : "hover:bg-gray-50"
+                } ${index === datas.length - 1 ? "last:rounded-b-xl" : ""}`}
+              >
                 <td className="py-4 px-4">
                   <div className="relative flex items-center justify-center">
                     <input
@@ -122,14 +163,32 @@ export default function CategoryTable({ datas }: CategoryTableProps) {
                     )}
                   </div>
                 </td>
-                <td className="py-4 px-4 text-sm text-gray-900">{index + 1}</td>
-                <td className="py-4 px-4 text-sm text-gray-900">
-                  {report.name}
+                <td
+                  className={`py-4 px-4 text-sm ${
+                    isDark ? "text-gray-300" : "text-gray-900"
+                  }`}
+                >
+                  {index + 1}
                 </td>
-                <td className="py-4 px-4 text-sm text-gray-900">
+                <td
+                  className={`py-4 px-4 text-sm ${
+                    isDark ? "text-gray-300" : "text-gray-900"
+                  }`}
+                >
+                  {report.name}{" "}
+                </td>
+                <td
+                  className={`py-4 px-4 text-sm ${
+                    isDark ? "text-gray-300" : "text-gray-900"
+                  }`}
+                >
                   {report.description}
                 </td>
-                <td className="py-4 px-4 text-sm text-gray-900">
+                <td
+                  className={`py-4 px-4 text-sm ${
+                    isDark ? "text-gray-300" : "text-gray-900"
+                  }`}
+                >
                   {report.totalNews}
                 </td>
                 <td className="py-4 px-4 text-sm space-x-2">

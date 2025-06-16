@@ -2,6 +2,7 @@
 "use client";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import React from "react";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface Editor {
   profile: string;
@@ -14,8 +15,14 @@ interface Props {
 }
 
 export default function TopEditorsCard({ editors }: Props) {
+  const { isDark } = useDarkMode();
+
   return (
-    <div className="col-span-4 flex flex-col justify-center items-start border border-zinc-300 rounded-3xl p-5 w-full">
+    <div
+      className={`col-span-4 flex flex-col justify-center items-start border rounded-3xl p-5 w-full transition-colors duration-300 ${
+        isDark ? "border-gray-600 bg-gray-800" : "border-gray-300 bg-white"
+      }`}
+    >
       <div className="flex items-center gap-3">
         <div className="flex justify-center items-center bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white rounded-2xl p-2.5">
           <Icon icon="icon-park-outline:editor" className="text-2xl" />
@@ -28,7 +35,9 @@ export default function TopEditorsCard({ editors }: Props) {
         {editors.map((editor, index) => (
           <div
             key={index}
-            className="flex items-center justify-between gap-3 border-t border-black/15 py-4 w-full"
+            className={`flex items-center justify-between gap-3 border-t py-4 w-full ${
+              isDark ? "border-gray-600" : "border-gray-300"
+            }`}
           >
             <div className="flex items-center gap-3 h-full">
               <img
@@ -37,7 +46,13 @@ export default function TopEditorsCard({ editors }: Props) {
                 className="rounded-full object-cover h-12 w-12"
               />
               <div className="flex flex-col justify-center items-start">
-                <p className="text-base font-bold">{editor.name}</p>
+                <p
+                  className={`text-base font-bold ${
+                    isDark ? "text-white" : "text-black"
+                  }`}
+                >
+                  {editor.name}
+                </p>
               </div>
             </div>
             <p className="text-sm bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-full px-3 py-1 text-white">

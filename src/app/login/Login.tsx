@@ -265,9 +265,9 @@ export default function Login() {
             } else {
               const userRole = session?.backendUser?.role;
               if (userRole === "user") {
-                router.push("/"); // User biasa ke homepage
+                router.push("/"); 
               } else {
-                router.push("/dashboard"); // Admin/Editor/Contributor ke dashboard
+                router.push("/dashboard"); 
               }
             }
           } catch (error) {
@@ -279,9 +279,9 @@ export default function Login() {
 
             const userRole = session?.backendUser?.role;
             if (userRole === "user") {
-              router.push("/"); // User biasa ke homepage
+              router.push("/"); 
             } else {
-              router.push("/dashboard"); // Admin/Editor/Contributor ke dashboard
+              router.push("/dashboard"); 
             }
           }
         } else {

@@ -1,6 +1,7 @@
 import { Icon } from "@iconify/react";
 import React, { useEffect, useRef, useState } from "react";
 import Input from "../ui/Input";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface UserFormProps {
   mode: "add" | "edit";
@@ -29,6 +30,7 @@ export default function UserForm({
   onClose,
   onSubmit,
 }: UserFormProps) {
+  const { isDark } = useDarkMode();
   const [fullName, setFullName] = useState(initialFullName);
   const [username, setUsername] = useState(initialUsername);
   const [email, setEmail] = useState(initialEmail);
@@ -76,30 +78,44 @@ export default function UserForm({
     { value: "active", label: "Aktif" },
     { value: "inactive", label: "Nonaktif" },
   ];
-
   return (
     <div
-      className={`fixed inset-0 flex items-center justify-center p-4 text-black`}
+      className={`fixed inset-0 flex items-center justify-center p-4 transition-colors duration-300 ${
+        isDark ? "text-white" : "text-black"
+      }`}
       style={{ zIndex: 1000 }}
     >
       <div
         ref={popUpRef}
-        className="flex flex-col items-start gap-3 bg-white rounded-2xl shadow-xl p-5 max-w-[95%]"
+        className={`flex flex-col items-start gap-3 rounded-2xl shadow-xl p-5 max-w-[95%] transition-colors duration-300 ${
+          isDark ? "bg-gray-800" : "bg-white"
+        }`}
         style={{ width: `calc(40%)` }}
       >
-        <div className="flex items-center gap-4 pb-4 border-b border-[#E2E2E2] w-full">
+        <div
+          className={`flex items-center gap-4 pb-4 border-b w-full transition-colors duration-300 ${
+            isDark ? "border-gray-600" : "border-[#E2E2E2]"
+          }`}
+        >
           <div className="flex items-center justify-center p-2.5 rounded-[30%] bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]">
             <Icon
               icon="fluent:person-28-filled"
               className="text-4xl text-white"
             />
-          </div>
-
+          </div>{" "}
           <div className="flex flex-col items-start">
-            <h2 className="text-xl font-bold">
+            <h2
+              className={`text-xl font-bold transition-colors duration-300 ${
+                isDark ? "text-white" : "text-black"
+              }`}
+            >
               {mode === "add" ? "Tambah Pengguna" : "Edit Pengguna"}
             </h2>
-            <p className="opacity-50 text-sm">
+            <p
+              className={`text-sm transition-colors duration-300 ${
+                isDark ? "text-gray-400" : "text-black/50"
+              }`}
+            >
               {mode === "add"
                 ? "Lengkapi informasi pengguna untuk memberikan akses ke dashboard."
                 : "Ubah informasi pengguna jika diperlukan"}
@@ -156,7 +172,6 @@ export default function UserForm({
             }}
             required
           />
-
           <Input
             id="status"
             type="select"
@@ -172,13 +187,16 @@ export default function UserForm({
                 setStatus(option.value);
               }
             }}
-          />
-
+          />{" "}
           <div className="flex items-center w-full gap-2 mt-5">
             <button
               type="button"
               onClick={onClose}
-              className="w-full border border-[#E2E2E2] text-[#5D6383] py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition cursor-pointer"
+              className={`w-full border py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition cursor-pointer ${
+                isDark
+                  ? "border-gray-600 text-gray-300 hover:bg-gray-700"
+                  : "border-[#E2E2E2] text-[#5D6383] hover:bg-gray-50"
+              }`}
             >
               Batal
             </button>

@@ -11,9 +11,6 @@ export default withAuth(
       userRole: token?.backendUser?.role,
       email: token?.email,
     });
-
-    // Remove the redirect for user role accessing dashboard
-    // All authenticated users should be able to access dashboard
   },
   {
     callbacks: {
@@ -26,7 +23,6 @@ export default withAuth(
           userRole: token?.backendUser?.role,
         });
 
-        // Allow access to public routes
         if (
           pathname.startsWith("/auth") ||
           pathname.startsWith("/api/auth") ||
@@ -38,12 +34,10 @@ export default withAuth(
           return true;
         }
 
-        // Allow access to dashboard for all authenticated users
         if (pathname.startsWith("/dashboard")) {
           return !!token;
         }
 
-        // Allow access to profile routes for authenticated users
         if (
           pathname.startsWith("/profile") ||
           pathname.startsWith("/settings")

@@ -5,6 +5,7 @@ import { SingleValue } from "react-select";
 import ClientOnlySelect from "@/components/ClientOnlySelect";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface OptionType {
   value: string;
@@ -66,6 +67,7 @@ const Input: React.FC<InputProps> = ({
   isSearchable = true,
   ...props
 }) => {
+  const { isDark } = useDarkMode();
   const [showPassword, setShowPassword] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const toggleShowPassword = () => setShowPassword(!showPassword);
@@ -129,37 +131,49 @@ const Input: React.FC<InputProps> = ({
       </div>
     );
   };
-
   return (
     <div className="w-full">
-      {label && <label className="font-medium text-gray-800">{label}</label>}
+      {label && (
+        <label
+          className={`font-medium ${isDark ? "text-gray-200" : "text-gray-800"}`}
+        >
+          {label}
+        </label>
+      )}
 
       <div className="relative mt-1.5">
+        {" "}
         {icon && (
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-[#98A2B3] z-10">
+          <div
+            className={`absolute inset-y-0 left-0 flex items-center pl-3 ${isDark ? "text-gray-400" : "text-[#98A2B3]"} z-10`}
+          >
             <Icon icon={icon} width={20} height={20} />
           </div>
         )}
-
         {isFileType ? (
           <div
             className={`w-full border rounded-xl overflow-hidden transition-all focus-within:ring-2 ${
               disabled
-                ? "border-gray-200 bg-gray-100"
+                ? isDark
+                  ? "border-gray-600 bg-gray-800"
+                  : "border-gray-200 bg-gray-100"
                 : error
                   ? "border-red-500 focus-within:ring-red-300"
-                  : "border-gray-300 focus-within:ring-blue-300"
+                  : isDark
+                    ? "border-gray-600 focus-within:ring-blue-300 bg-gray-800"
+                    : "border-gray-300 focus-within:ring-blue-300 bg-white"
             }`}
           >
             {" "}
             <div className="flex items-center">
               {(selectedFiles && selectedFiles.length > 0) || currentFileName
                 ? fileBadge(fileExtension)
-                : fileBadge("")}
-              <div className="flex-1 px-4 py-2 text-gray-700 truncate">
+                : fileBadge("")}{" "}
+              <div
+                className={`flex-1 px-4 py-2 ${isDark ? "text-gray-200" : "text-gray-700"} truncate`}
+              >
                 {getCurrentFileName()}
               </div>
-
               <input
                 type="file"
                 accept={accept}
@@ -198,9 +212,15 @@ const Input: React.FC<InputProps> = ({
               control: (base) => ({
                 ...base,
                 paddingLeft: icon ? "1.8rem" : "0.75rem",
-                borderColor: error ? "#EF4444" : "#CED4DA",
+                borderColor: error ? "#EF4444" : isDark ? "#4B5563" : "#CED4DA",
                 boxShadow: "none",
-                backgroundColor: disabled ? "#E9ECEF" : "white",
+                backgroundColor: disabled
+                  ? isDark
+                    ? "#374151"
+                    : "#E9ECEF"
+                  : isDark
+                    ? "#374151"
+                    : "white",
                 borderRadius: "12px",
                 paddingRight: "12px",
                 paddingTop: "4px",
@@ -209,6 +229,7 @@ const Input: React.FC<InputProps> = ({
               }),
               menu: (base) => ({
                 ...base,
+                backgroundColor: isDark ? "#374151" : "white",
                 borderRadius: "8px",
                 zIndex: 20,
                 paddingLeft: 0,
@@ -216,8 +237,14 @@ const Input: React.FC<InputProps> = ({
               }),
               option: (base, { isFocused, isDisabled: optDisabled }) => ({
                 ...base,
-                backgroundColor: isFocused ? "#F0F0F0" : "white",
-                color: optDisabled ? "#98A2B3" : "#374151",
+                backgroundColor: isFocused
+                  ? isDark
+                    ? "#4B5563"
+                    : "#F0F0F0"
+                  : isDark
+                    ? "#374151"
+                    : "white",
+                color: optDisabled ? "#98A2B3" : isDark ? "#E5E7EB" : "#374151",
                 paddingLeft: "12px",
                 paddingTop: "8px",
                 paddingBottom: "8px",
@@ -225,12 +252,12 @@ const Input: React.FC<InputProps> = ({
               }),
               singleValue: (base) => ({
                 ...base,
-                color: disabled ? "#98A2B3" : "#374151",
+                color: disabled ? "#98A2B3" : isDark ? "#E5E7EB" : "#374151",
                 cursor: disabled ? "not-allowed" : "default",
               }),
               placeholder: (base) => ({
                 ...base,
-                color: "#98A2B3",
+                color: isDark ? "#9CA3AF" : "#98A2B3",
                 cursor: disabled ? "not-allowed" : "default",
               }),
               multiValue: (base) => ({
@@ -276,14 +303,18 @@ const Input: React.FC<InputProps> = ({
               maxDate={new Date()}
               dropdownMode="select"
               wrapperClassName="w-full"
-              className={`w-full border border-[#CED4DA] rounded-xl py-2 px-3 ${
+              className={`w-full border rounded-xl py-2 px-3 ${
                 icon ? "pl-10" : ""
               } focus:outline-none transition-all ${
                 disabled
-                  ? "bg-[#E9ECEF] text-[#98A2B3] cursor-not-allowed"
+                  ? isDark
+                    ? "bg-gray-800 text-gray-400 cursor-not-allowed border-gray-600"
+                    : "bg-[#E9ECEF] text-[#98A2B3] cursor-not-allowed border-[#CED4DA]"
                   : error
-                    ? "border-red-500 focus:border-red-500 text-gray-700"
-                    : "border-gray-300 focus:border-blue-500 text-gray-700"
+                    ? "border-red-500 focus:border-red-500 text-red-600"
+                    : isDark
+                      ? "border-gray-600 focus:border-blue-500 text-gray-200 bg-gray-800"
+                      : "border-gray-300 focus:border-blue-500 text-gray-700 bg-white"
               }`}
             />
           </div>
@@ -309,14 +340,18 @@ const Input: React.FC<InputProps> = ({
               maxDate={new Date()}
               dropdownMode="select"
               wrapperClassName="w-full"
-              className={`w-full border border-[#CED4DA] rounded-xl py-2 px-3 ${
+              className={`w-full border rounded-xl py-2 px-3 ${
                 icon ? "pl-10" : ""
               } focus:outline-none transition-all ${
                 disabled
-                  ? "bg-[#E9ECEF] text-[#98A2B3] cursor-not-allowed"
+                  ? isDark
+                    ? "bg-gray-800 text-gray-400 cursor-not-allowed border-gray-600"
+                    : "bg-[#E9ECEF] text-[#98A2B3] cursor-not-allowed border-[#CED4DA]"
                   : error
-                    ? "border-red-500 focus:border-red-500 text-gray-700"
-                    : "border-gray-300 focus:border-blue-500 text-gray-700"
+                    ? "border-red-500 focus:border-red-500 text-red-600"
+                    : isDark
+                      ? "border-gray-600 focus:border-blue-500 text-gray-200 bg-gray-800"
+                      : "border-gray-300 focus:border-blue-500 text-gray-700 bg-white"
               }`}
             />
           </div>
@@ -328,18 +363,21 @@ const Input: React.FC<InputProps> = ({
             placeholder={placeholder}
             disabled={disabled}
             {...props}
-            className={`w-full border border-[#CED4DA] rounded-xl py-2 px-3 placeholder:text-[#98A2B3] ${
+            className={`w-full border rounded-xl py-2 px-3 ${
               icon ? "pl-10" : ""
             } focus:outline-none transition-all ${
               disabled
-                ? "bg-[#E9ECEF] text-[#98A2B3] cursor-not-allowed"
+                ? isDark
+                  ? "bg-gray-800 text-gray-400 cursor-not-allowed border-gray-600 placeholder:text-gray-500"
+                  : "bg-[#E9ECEF] text-[#98A2B3] cursor-not-allowed border-[#CED4DA] placeholder:text-[#98A2B3]"
                 : error
                   ? "border-red-500 focus:border-red-500 text-red-600"
-                  : "border-gray-300 focus:border-blue-500 text-gray-700"
+                  : isDark
+                    ? "border-gray-600 focus:border-blue-500 text-gray-200 bg-gray-800 placeholder:text-gray-400"
+                    : "border-gray-300 focus:border-blue-500 text-gray-700 bg-white placeholder:text-[#98A2B3]"
             } ${type === "password" ? "pr-10" : ""}`}
           />
         )}
-
         {type === "password" && !selectOptions && (
           <button
             type="button"
@@ -348,7 +386,7 @@ const Input: React.FC<InputProps> = ({
               showPassword ? "Sembunyikan Password" : "Tampilkan Password"
             }
             title={showPassword ? "Sembunyikan Password" : "Tampilkan Password"}
-            className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition"
+            className={`absolute inset-y-0 right-0 flex items-center pr-3 ${isDark ? "text-gray-400 hover:text-gray-200" : "text-gray-400 hover:text-gray-600"} transition`}
           >
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
@@ -359,10 +397,15 @@ const Input: React.FC<InputProps> = ({
         errorMessage ||
         (helperText && (
           <div className="min-h-[20px] transition-all mt-1">
+            {" "}
             {error && errorMessage ? (
               <p className="text-sm text-red-500">{errorMessage}</p>
             ) : helperText ? (
-              <p className="text-sm text-gray-500">{helperText}</p>
+              <p
+                className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
+              >
+                {helperText}
+              </p>
             ) : null}
           </div>
         ))}

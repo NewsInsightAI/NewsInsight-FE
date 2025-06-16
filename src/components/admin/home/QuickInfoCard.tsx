@@ -1,6 +1,7 @@
 "use client";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import React from "react";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface FastInfo {
   totalPublishedArticles: number;
@@ -14,8 +15,14 @@ interface Props {
 }
 
 export default function QuickInfoCard({ info }: Props) {
+  const { isDark } = useDarkMode();
+
   return (
-    <div className="col-span-4 flex flex-col justify-center items-start border border-zinc-300 rounded-3xl p-5 w-full">
+    <div
+      className={`col-span-4 flex flex-col justify-center items-start border rounded-3xl p-5 w-full transition-colors duration-300 ${
+        isDark ? "border-gray-600 bg-gray-800" : "border-gray-300 bg-white"
+      }`}
+    >
       <div className="flex items-center gap-3">
         <div className="flex justify-center items-center bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white rounded-2xl p-2.5">
           <Icon icon="fluent:calendar-info-20-filled" className="text-2xl" />
@@ -59,13 +66,25 @@ function InfoRow({
   label: string;
   value: number;
 }) {
+  const { isDark } = useDarkMode();
+  
   return (
-    <div className="flex items-center justify-between gap-3 border-t border-black/15 py-3 w-full">
+    <div
+      className={`flex items-center justify-between gap-3 border-t py-3 w-full ${
+        isDark ? "border-gray-600" : "border-gray-300"
+      }`}
+    >
       <div className="flex items-center gap-3">
         <div className="flex justify-center items-center bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white rounded-2xl p-2.5">
           <Icon icon={icon} className="text-2xl" />
         </div>
-        <p className="text-black font-medium text-base">{label}</p>
+        <p
+          className={`font-medium text-base ${
+            isDark ? "text-white" : "text-black"
+          }`}
+        >
+          {label}
+        </p>
       </div>
       <p className="text-sm bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] rounded-full px-3 py-1 text-white font-bold">
         {value}

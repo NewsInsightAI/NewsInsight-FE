@@ -5,6 +5,7 @@ import { Inter } from "next/font/google";
 import Footer from "../components/Footer";
 import { ToastProvider } from "@/context/ToastProvider";
 import NextAuthSessionProvider from "@/components/SessionProvider";
+import { DarkModeProvider } from "@/context/DarkModeContext";
 
 const interFont = Inter({
   subsets: ["latin"],
@@ -24,14 +25,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${interFont.className} antialiased bg-white min-h-screen flex flex-col overflow-x-hidden`}
+        className={`${interFont.className} antialiased min-h-screen flex flex-col overflow-x-hidden`}
       >
         <NextAuthSessionProvider>
-          <ToastProvider>
-            <Navbar />
-            <main className="flex-1 w-full bg-white">{children}</main>
-            <Footer />
-          </ToastProvider>
+          <DarkModeProvider>
+            <ToastProvider>
+              <Navbar />
+              <main className="flex-1 w-full">{children}</main>
+              <Footer />
+            </ToastProvider>
+          </DarkModeProvider>
         </NextAuthSessionProvider>
       </body>
     </html>

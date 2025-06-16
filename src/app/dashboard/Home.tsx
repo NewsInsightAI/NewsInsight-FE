@@ -5,6 +5,7 @@ import PopularNewsCard from "@/components/admin/home/PopularNewsCard";
 import TopEditorsCard from "@/components/admin/home/TopEditorsCard";
 import QuickInfoCard from "@/components/admin/home/QuickInfoCard";
 import VisitChartCard from "@/components/admin/home/VisitChartCard";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 const popularNews = [
   "Manus AI Bikin Heboh, Lebih Hebat dari DeepSeek dan ChatGPT?",
@@ -41,6 +42,7 @@ const fastInfo = {
 };
 
 export default function Home() {
+  const { isDark } = useDarkMode();
   const [navbarDashboardHeight, setNavbarDashboardHeight] = useState(0);
 
   useEffect(() => {
@@ -54,10 +56,11 @@ export default function Home() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [navbarDashboardHeight]);
-
   return (
     <div
-      className="flex flex-col gap-6 justify-start items-start bg-white text-black rounded-4xl w-full h-full p-6"
+      className={`flex flex-col gap-6 justify-start items-start ${
+        isDark ? "bg-[#1A1A1A] text-white" : "bg-white text-black"
+      } rounded-4xl w-full h-full p-6 transition-colors duration-300`}
       style={{ height: `calc(100vh - ${navbarDashboardHeight}px)` }}
     >
       <div className="grid grid-cols-10 gap-6 w-full h-full">

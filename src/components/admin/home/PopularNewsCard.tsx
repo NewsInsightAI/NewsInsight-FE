@@ -1,6 +1,7 @@
 "use client";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import React from "react";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface Props {
   newsList: string[];
@@ -8,8 +9,16 @@ interface Props {
 }
 
 export default function PopularNewsCard({ newsList, category }: Props) {
+  const { isDark } = useDarkMode();
+
   return (
-    <div className="col-span-4 flex flex-col flex-1 min-h-0 w-full gap-2.5 bg-gradient-to-br from-[#2996b3] to-[#2555aa] rounded-3xl p-7">
+    <div
+      className={`col-span-4 flex flex-col flex-1 min-h-0 w-full gap-2.5 rounded-3xl p-7 border transition-colors duration-300 ${
+        isDark
+          ? "bg-gradient-to-br from-[#2996b3] to-[#2555aa] border-gray-600"
+          : "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] border-blue-300"
+      }`}
+    >
       <div className="flex items-center gap-2 text-white">
         <Icon icon="solar:graph-bold" className="text-3xl" />
         <p className="font-semibold text-xl">Berita Populer</p>

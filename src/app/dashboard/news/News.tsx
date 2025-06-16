@@ -5,8 +5,10 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 export default function News() {
+  const { isDark } = useDarkMode();
   const [navbarDashboardHeight, setNavbarDashboardHeight] = useState(0);
 
   useEffect(() => {
@@ -39,15 +41,22 @@ export default function News() {
         <div className="flex items-center gap-2">
           <div className="flex items-center justify-center max-w-52 mx-auto">
             <div className={`relative w-full `}>
+              {" "}
               <input
                 type="text"
                 placeholder="Cari berita..."
-                className={`w-full px-6 py-3 border border-[#E2E2E2] rounded-full placeholder:text-[#818181] bg-white`}
+                className={`w-full px-6 py-3 border rounded-full transition-colors duration-300 ${
+                  isDark
+                    ? "border-gray-600 bg-gray-800 text-white placeholder:text-gray-400"
+                    : "border-[#E2E2E2] bg-white text-black placeholder:text-[#818181]"
+                }`}
               />
               <Icon
                 icon="material-symbols:search-rounded"
                 fontSize={24}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-black"
+                className={`absolute right-4 top-1/2 transform -translate-y-1/2 ${
+                  isDark ? "text-gray-400" : "text-black"
+                }`}
               />
             </div>
           </div>

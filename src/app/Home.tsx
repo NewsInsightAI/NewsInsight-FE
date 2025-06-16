@@ -6,8 +6,10 @@ import { listNews } from "@/utils/listNews";
 import { Vibrant } from "node-vibrant/browser";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import CompactNewsCard from "@/components/CompactNewsCard";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 export default function Home() {
+  const { isDark } = useDarkMode();
   const [navbarHeight, setNavbarHeight] = useState(0);
 
   useEffect(() => {
@@ -25,11 +27,10 @@ export default function Home() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
   const [gradient, setGradient] = useState(
-    "linear-gradient(to top, #367AF2CC, transparent)"
+    "linear-gradient(to top, transparent, transparent)"
   );
-  const [vibrantColor, setVibrantColor] = useState<string>("#bbc57b");
+  const [vibrantColor, setVibrantColor] = useState<string>("#6B7280");
 
   const [newsImage] = useState<string | null>("/images/main_news.png");
 
@@ -46,8 +47,8 @@ export default function Home() {
         setGradient(`linear-gradient(to top, ${hex}CC, transparent)`);
       })
       .catch(() => {
-        setVibrantColor("#367AF2");
-        setGradient("linear-gradient(to top, #367AF2CC, transparent)");
+        setVibrantColor("#6B7280");
+        setGradient("linear-gradient(to top, #6B7280CC, transparent)");
       });
 
     return () => {
@@ -75,15 +76,22 @@ export default function Home() {
       });
     }
   };
-
   return (
     <div
-      className="bg-white text-black min-h-screen w-full px-3 sm:px-6"
+      className={`${isDark ? "bg-[#1A1A1A] text-white" : "bg-white text-black"} min-h-screen w-full px-3 sm:px-6 transition-colors duration-300`}
       style={{ paddingTop: navbarHeight + 24 }}
     >
       <div className="w-full mx-auto">
+        {" "}
         {/* Hero Section */}
-        <div className="relative w-full h-[300px] sm:h-[400px] lg:h-[550px] rounded-2xl sm:rounded-3xl overflow-hidden">
+        <div
+          className={`relative w-full h-[300px] sm:h-[400px] lg:h-[550px] rounded-2xl sm:rounded-3xl overflow-hidden group ${isDark ? "shadow-2xl news-glow-pulse" : ""}`}
+          style={{
+            boxShadow: isDark
+              ? `0 25px 50px -12px ${vibrantColor}33`
+              : undefined,
+          }}
+        >
           <img
             alt="Preview"
             src={imageUrl}
@@ -97,11 +105,11 @@ export default function Home() {
                 })
                 .catch(() => {
                   setGradient(
-                    "linear-gradient(to top, #367AF2CC, transparent)"
+                    "linear-gradient(to top, #6B7280CC, transparent)"
                   );
                 });
             }}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover news-image-float group-hover:scale-105 transition-all duration-700 ease-out"
             crossOrigin="anonymous"
           />
 
@@ -133,17 +141,29 @@ export default function Home() {
             </div>
           </div>
         </div>
-
         {/* Rekomendasi untuk Anda */}
         <div className="w-full pt-4 sm:pt-6">
+          {" "}
           <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <p className="font-semibold text-lg sm:text-xl lg:text-[22px]">
+            {" "}
+            <p
+              className={`font-semibold text-lg sm:text-xl lg:text-[22px] ${isDark ? "text-white" : ""}`}
+              style={{
+                textShadow: isDark ? `0 0 10px ${vibrantColor}80` : undefined,
+              }}
+            >
               Rekomendasi untuk Anda
             </p>
             <div className="flex gap-1 sm:gap-2">
+              {" "}
               <button
                 onClick={() => scroll("left", scrollRef.current)}
-                className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-[#367AF2]/15 hover:bg-[#367AF2]/60 hover:text-white cursor-pointer transition-colors"
+                className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${isDark ? "bg-gray-600/20 hover:bg-gray-600/60" : "bg-gray-500/15 hover:bg-gray-500/60"} hover:text-white cursor-pointer transition-all duration-300`}
+                style={{
+                  boxShadow: isDark
+                    ? `0 4px 15px ${vibrantColor}33`
+                    : undefined,
+                }}
               >
                 <Icon
                   icon="material-symbols:chevron-left"
@@ -153,7 +173,12 @@ export default function Home() {
               </button>
               <button
                 onClick={() => scroll("right", scrollRef.current)}
-                className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-[#367AF2]/15 hover:bg-[#367AF2]/60 hover:text-white cursor-pointer transition-colors"
+                className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${isDark ? "bg-gray-600/20 hover:bg-gray-600/60" : "bg-gray-500/15 hover:bg-gray-500/60"} hover:text-white cursor-pointer transition-all duration-300`}
+                style={{
+                  boxShadow: isDark
+                    ? `0 4px 15px ${vibrantColor}33`
+                    : undefined,
+                }}
               >
                 <Icon
                   icon="material-symbols:chevron-right"
@@ -162,13 +187,16 @@ export default function Home() {
                 />
               </button>
             </div>
-          </div>
+          </div>{" "}
           <div
             ref={scrollRef}
             className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-2"
           >
             {listNews.map((news, index) => (
-              <div key={index} className="w-72 sm:w-80 lg:w-96 flex-shrink-0">
+              <div
+                key={index}
+                className="w-72 sm:w-80 lg:w-96 flex-shrink-0 cursor-pointer"
+              >
                 <NewsCard
                   source={news.source}
                   title={news.title}
@@ -180,17 +208,28 @@ export default function Home() {
             ))}
           </div>
         </div>
-
         {/* Teknologi Section */}
         <div className="w-full pt-4 sm:pt-6">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <p className="font-semibold text-lg sm:text-xl lg:text-[22px]">
+            {" "}
+            <p
+              className={`font-semibold text-lg sm:text-xl lg:text-[22px] ${isDark ? "text-white" : ""}`}
+              style={{
+                textShadow: isDark ? `0 0 10px ${vibrantColor}80` : undefined,
+              }}
+            >
               Teknologi
             </p>
             <div className="flex gap-1 sm:gap-2">
+              {" "}
               <button
                 onClick={() => scroll("left", scrollRefTech.current)}
-                className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-[#367AF2]/15 hover:bg-[#367AF2]/60 hover:text-white cursor-pointer transition-colors"
+                className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${isDark ? "bg-gray-600/20 hover:bg-gray-600/60" : "bg-gray-500/15 hover:bg-gray-500/60"} hover:text-white cursor-pointer transition-all duration-300`}
+                style={{
+                  boxShadow: isDark
+                    ? `0 4px 15px ${vibrantColor}33`
+                    : undefined,
+                }}
               >
                 <Icon
                   icon="material-symbols:chevron-left"
@@ -200,7 +239,12 @@ export default function Home() {
               </button>
               <button
                 onClick={() => scroll("right", scrollRefTech.current)}
-                className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-[#367AF2]/15 hover:bg-[#367AF2]/60 hover:text-white cursor-pointer transition-colors"
+                className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${isDark ? "bg-gray-600/20 hover:bg-gray-600/60" : "bg-gray-500/15 hover:bg-gray-500/60"} hover:text-white cursor-pointer transition-all duration-300`}
+                style={{
+                  boxShadow: isDark
+                    ? `0 4px 15px ${vibrantColor}33`
+                    : undefined,
+                }}
               >
                 <Icon
                   icon="material-symbols:chevron-right"
@@ -209,13 +253,16 @@ export default function Home() {
                 />
               </button>
             </div>
-          </div>
+          </div>{" "}
           <div
             ref={scrollRefTech}
             className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-2"
           >
             {listNews.map((news, index) => (
-              <div key={index} className="w-72 sm:w-80 lg:w-96 flex-shrink-0">
+              <div
+                key={index}
+                className="w-72 sm:w-80 lg:w-96 flex-shrink-0 cursor-pointer"
+              >
                 <NewsCard
                   source={news.source}
                   title={news.title}
@@ -227,15 +274,20 @@ export default function Home() {
             ))}
           </div>
         </div>
-
         {/* News Feed */}
         <div className="flex flex-col w-full pt-4 sm:pt-6 pb-6">
-          <p className="font-semibold text-lg sm:text-xl lg:text-[22px] mb-3 sm:mb-4">
+          {" "}
+          <p
+            className={`font-semibold text-lg sm:text-xl lg:text-[22px] mb-3 sm:mb-4 ${isDark ? "text-white" : ""}`}
+            style={{
+              textShadow: isDark ? `0 0 10px ${vibrantColor}80` : undefined,
+            }}
+          >
             News Feed
-          </p>
+          </p>{" "}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {listNews.slice(0, 8).map((news, index) => (
-              <div key={index} className="w-full">
+              <div key={index} className="w-full cursor-pointer">
                 <CompactNewsCard
                   source={news.source}
                   title={news.title}

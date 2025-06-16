@@ -1,11 +1,13 @@
 "use client";
 import React, { ReactNode, useEffect, useState } from "react";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface CommentsLayoutProps {
   children: ReactNode;
 }
 
 export default function CommentsLayout({ children }: CommentsLayoutProps) {
+  const { isDark } = useDarkMode();
   const [navbarHeight, setNavbarHeight] = useState(0);
 
   useEffect(() => {
@@ -17,10 +19,11 @@ export default function CommentsLayout({ children }: CommentsLayoutProps) {
     window.addEventListener("resize", updateHeight);
     return () => window.removeEventListener("resize", updateHeight);
   }, []);
-
   return (
     <div
-      className="flex flex-col gap-6 justify-center items-start bg-white text-black rounded-4xl w-full p-6"
+      className={`flex flex-col gap-6 justify-center items-start rounded-4xl w-full p-6 transition-colors duration-300 ${
+        isDark ? "bg-[#1A1A1A] text-white" : "bg-white text-black"
+      }`}
       style={{ height: `calc(100vh - ${navbarHeight}px)` }}
     >
       {children}

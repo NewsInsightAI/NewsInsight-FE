@@ -22,7 +22,7 @@ export default function TestGoogleAuth() {
 
       if (result?.ok && !result?.error) {
         console.log("✅ Google auth successful!");
-        // Force refresh session
+
         window.location.reload();
       } else {
         console.error("❌ Google auth failed:", result?.error);

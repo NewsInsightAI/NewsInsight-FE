@@ -5,6 +5,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useToast } from "@/context/ToastProvider";
 import CvPreview from "@/components/popup/CvPreview";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface City {
   id: string;
@@ -39,6 +40,7 @@ const listLastEducation = [
 export default function PersonalDataSettings() {
   const { status } = useSession();
   const { showToast } = useToast();
+  const { isDark } = useDarkMode();
   const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
   const [domicile, setDomicile] = useState<City | null>(null);
   const [phoneNumber, setPhoneNumber] = useState<string>("");
@@ -234,7 +236,9 @@ export default function PersonalDataSettings() {
     }
   };
   return (
-    <div className="w-full h-full flex flex-col items-center rounded-xl border border-[#CFCFCF] p-3 md:p-5 gap-2.5">
+    <div
+      className={`w-full h-full flex flex-col items-center rounded-xl border ${isDark ? "border-gray-600 bg-[#1A1A1A]" : "border-[#CFCFCF] bg-white"} p-3 md:p-5 gap-2.5 transition-colors duration-300`}
+    >
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
@@ -242,32 +246,49 @@ export default function PersonalDataSettings() {
               icon="line-md:loading-loop"
               className="text-4xl text-blue-500"
             />
-            <p className="text-gray-600">Memuat data pribadi...</p>
+            <p className={`${isDark ? "text-gray-300" : "text-gray-600"}`}>
+              Memuat data pribadi...
+            </p>
           </div>
         </div>
       ) : (
         <>
+          {" "}
           {error && (
-            <div className="w-full p-3 bg-red-50 border border-red-200 rounded-lg mb-2.5">
+            <div
+              className={`w-full p-3 ${isDark ? "bg-red-900/30 border-red-600" : "bg-red-50 border-red-200"} border rounded-lg mb-2.5`}
+            >
               <div className="flex items-center gap-2">
                 <Icon icon="material-symbols:error" className="text-red-500" />
-                <p className="text-red-700 text-sm">{error}</p>
+                <p
+                  className={`text-sm ${isDark ? "text-red-300" : "text-red-700"}`}
+                >
+                  {error}
+                </p>
               </div>
             </div>
           )}
           {success && (
-            <div className="w-full p-3 bg-green-50 border border-green-200 rounded-lg mb-2.5">
+            <div
+              className={`w-full p-3 ${isDark ? "bg-green-900/30 border-green-600" : "bg-green-50 border-green-200"} border rounded-lg mb-2.5`}
+            >
               <div className="flex items-center gap-2">
                 <Icon
                   icon="material-symbols:check-circle"
                   className="text-green-500"
                 />
-                <p className="text-green-700 text-sm">{success}</p>
+                <p
+                  className={`text-sm ${isDark ? "text-green-300" : "text-green-700"}`}
+                >
+                  {success}
+                </p>
               </div>
             </div>
-          )}
+          )}{" "}
           <div className="flex flex-col items-start w-full h-full gap-2.5 overflow-y-auto">
-            <div className="flex items-center justify-start w-full gap-3 pb-2.5 border-b border-[#CFCFCF]">
+            <div
+              className={`flex items-center justify-start w-full gap-3 pb-2.5 border-b ${isDark ? "border-gray-600" : "border-[#CFCFCF]"}`}
+            >
               <div className="flex items-center justify-center p-2.5 rounded-[30%] bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]">
                 <Icon
                   icon="solar:document-bold"
@@ -275,7 +296,11 @@ export default function PersonalDataSettings() {
                 />
               </div>
               <div className="w-full flex flex-col items-start">
-                <h1 className="text-xl font-bold">Data Pribadi</h1>
+                <h1
+                  className={`text-xl font-bold ${isDark ? "text-white" : "text-black"}`}
+                >
+                  Data Pribadi
+                </h1>
                 <p className="text-sm text-[#A0A0A0]">
                   Isi informasi tambahan untuk melengkapi profil Anda. Data ini
                   hanya digunakan untuk keperluan internal dan tidak ditampilkan
@@ -397,11 +422,15 @@ export default function PersonalDataSettings() {
                     />
                     Lihat CV
                   </button>
-                )}
+                )}{" "}
                 {cvFile && (
-                  <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+                  <div
+                    className={`flex items-center gap-2 p-2 ${isDark ? "bg-green-900/30 border-green-600" : "bg-green-50 border-green-200"} border rounded-lg`}
+                  >
                     <Icon icon="mdi:file-pdf" className="text-red-600" />
-                    <span className="text-sm text-green-700">
+                    <span
+                      className={`text-sm ${isDark ? "text-green-300" : "text-green-700"}`}
+                    >
                       CV baru: {cvFile.name}
                     </span>
                   </div>

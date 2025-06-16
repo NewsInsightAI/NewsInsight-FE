@@ -29,11 +29,11 @@ export default function RootLayout({
   }, [navbarDashboardHeight]);
   return (
     <div
-      className={`${interFont.className} antialiased bg-[#1A1A1A] min-w-screen`}
+      className={`${interFont.className} antialiased bg-[#1A1A1A] text-white min-w-screen`}
     >
       <NavbarDashboard />
       <div
-        className="bg-[#1A1A1A] rounded-4xl"
+        className={`bg-[#1A1A1A] rounded-4xl`}
         style={{ paddingTop: `${navbarDashboardHeight}px` }}
       >
         <main className="flex flex-col items-center justify-center h-full">

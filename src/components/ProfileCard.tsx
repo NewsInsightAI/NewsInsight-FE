@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { Icon } from "@iconify/react/dist/iconify.js";
 import React, { useEffect, useState } from "react";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface NewsInterest {
   label: string;
@@ -27,6 +28,7 @@ export default function ProfileCard({
 }: ProfileCardProps) {
   const [navbarHeight, setNavbarHeight] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const { isDark } = useDarkMode();
 
   const formatJoinedDate = (dateString?: string) => {
     if (!dateString) return "Bergabung sejak 19 Maret 2025";
@@ -77,7 +79,11 @@ export default function ProfileCard({
   }, []);
   if (isMobile) {
     return (
-      <div className="w-full bg-white rounded-2xl shadow-lg border-2 border-[#E1E1E1] overflow-hidden">
+      <div
+        className={`w-full rounded-2xl shadow-lg border-2 overflow-hidden ${
+          isDark ? "bg-gray-800 border-gray-600" : "bg-white border-[#E1E1E1]"
+        }`}
+      >
         <div
           className="w-full h-20 relative"
           style={{
@@ -87,21 +93,37 @@ export default function ProfileCard({
             backgroundPosition: "center",
           }}
         >
+          {" "}
           <div className="absolute -bottom-8 left-6">
             <img
               src={profilePicture}
               alt="Profile"
-              className="w-16 h-16 rounded-full border-4 border-white shadow-lg"
+              className={`w-16 h-16 rounded-full border-4 shadow-lg ${
+                isDark ? "border-gray-700" : "border-white"
+              }`}
             />
           </div>
         </div>
 
         <div className="px-6 pt-10 pb-6">
           <div className="mb-4">
+            {" "}
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1">
-                <h2 className="text-lg font-bold text-black mb-1">{name}</h2>
-                <p className="text-sm text-gray-500 mb-2">{email}</p>
+                <h2
+                  className={`text-lg font-bold mb-1 ${
+                    isDark ? "text-white" : "text-black"
+                  }`}
+                >
+                  {name}
+                </h2>
+                <p
+                  className={`text-sm mb-2 ${
+                    isDark ? "text-gray-300" : "text-gray-500"
+                  }`}
+                >
+                  {email}
+                </p>
               </div>
 
               <div className="ml-4">
@@ -140,19 +162,28 @@ export default function ProfileCard({
                   </div>
                 )}
               </div>
-            </div>
-
-            <p className="text-sm text-gray-600 leading-relaxed mb-3">
+            </div>{" "}
+            <p
+              className={`text-sm leading-relaxed mb-3 ${
+                isDark ? "text-gray-300" : "text-gray-600"
+              }`}
+            >
               {shortBio}
             </p>
-
-            <p className="text-xs text-gray-400">
+            <p
+              className={`text-xs ${
+                isDark ? "text-gray-400" : "text-gray-400"
+              }`}
+            >
               {formatJoinedDate(joinedDate)}
             </p>
-          </div>
-
+          </div>{" "}
           <div className="w-full">
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">
+            <h3
+              className={`text-sm font-semibold mb-2 ${
+                isDark ? "text-gray-200" : "text-gray-700"
+              }`}
+            >
               Minat Berita
             </h3>
             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
@@ -174,7 +205,11 @@ export default function ProfileCard({
   return (
     <div className="relative">
       <div
-        className="flex flex-col items-center justify-between w-80 bg-white rounded-3xl shadow-lg border-2 border-[#E1E1E1] text-black relative z-10 overflow-hidden"
+        className={`flex flex-col items-center justify-between w-80 rounded-3xl shadow-lg border-2 text-black relative z-10 overflow-hidden ${
+          isDark
+            ? "bg-gray-800 border-gray-600 text-white"
+            : "bg-white border-[#E1E1E1] text-black"
+        }`}
         style={{ height: `calc(100vh - ${navbarHeight}px - 40px)` }}
       >
         <div
@@ -185,16 +220,29 @@ export default function ProfileCard({
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
-        />
-
+        />{" "}
         <div className="flex flex-col items-center relative z-10 pt-16 px-8">
           <img
             src={profilePicture}
             alt="Profile"
-            className="w-24 h-24 rounded-full border-4 border-white shadow-lg"
+            className={`w-24 h-24 rounded-full border-4 shadow-lg ${
+              isDark ? "border-gray-700" : "border-white"
+            }`}
           />
-          <h2 className="text-2xl text-center font-bold mt-4">{name}</h2>
-          <p className="text-base text-center opacity-40">{email}</p>
+          <h2
+            className={`text-2xl text-center font-bold mt-4 ${
+              isDark ? "text-white" : "text-black"
+            }`}
+          >
+            {name}
+          </h2>
+          <p
+            className={`text-base text-center opacity-40 ${
+              isDark ? "text-gray-300" : "text-black"
+            }`}
+          >
+            {email}
+          </p>
           {role == "reader" ? (
             <div className="flex items-center gap-2 bg-[#367AF2]/15 border border-[#367AF2] rounded-full px-4 py-2 my-2.5">
               <Icon icon="fa-solid:book-reader" fontSize={20} color="#367AF2" />
@@ -216,8 +264,12 @@ export default function ProfileCard({
               />
               <p className="text-sm font-semibold text-[#FF0000]">Admin</p>
             </div>
-          )}
-          <p className="text-base font-light opacity-40 mt-2 text-center">
+          )}{" "}
+          <p
+            className={`text-base font-light opacity-40 mt-2 text-center ${
+              isDark ? "text-gray-300" : "text-black"
+            }`}
+          >
             {shortBio}
           </p>
           <div className="mt-4 w-full">
@@ -233,8 +285,12 @@ export default function ProfileCard({
               ))}
             </div>
           </div>
-        </div>
-        <p className="opacity-30 text-sm pb-8 text-center">
+        </div>{" "}
+        <p
+          className={`opacity-30 text-sm pb-8 text-center ${
+            isDark ? "text-gray-300" : "text-black"
+          }`}
+        >
           {formatJoinedDate(joinedDate)}
         </p>
       </div>

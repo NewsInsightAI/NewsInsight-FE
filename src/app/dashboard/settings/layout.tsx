@@ -3,6 +3,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { ReactNode, useEffect, useState } from "react";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface SettingsLayoutProps {
   children: ReactNode;
@@ -29,6 +30,7 @@ const listSettings = [
 ];
 
 export default function SettingsLayout({ children }: SettingsLayoutProps) {
+  const { isDark } = useDarkMode();
   const [navbarHeight, setNavbarHeight] = useState(0);
   const pathname = usePathname();
 
@@ -41,10 +43,11 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
     window.addEventListener("resize", updateHeight);
     return () => window.removeEventListener("resize", updateHeight);
   }, []);
-
   return (
     <div
-      className="flex gap-6 justify-center items-start bg-white text-black rounded-4xl w-full p-6"
+      className={`flex gap-6 justify-center items-start rounded-4xl w-full p-6 transition-colors duration-300 ${
+        isDark ? "bg-[#1A1A1A] text-white" : "bg-white text-black"
+      }`}
       style={{ height: `calc(100vh - ${navbarHeight}px)` }}
     >
       <div className="flex flex-col justify-start items-start gap-3 h-full">

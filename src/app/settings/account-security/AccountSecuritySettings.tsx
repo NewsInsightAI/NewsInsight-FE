@@ -7,10 +7,12 @@ import { useToast } from "@/context/ToastProvider";
 import VerifyEmail from "@/components/popup/VerifyEmail";
 import MFASetup from "@/components/popup/MFASetup";
 import MFAManager from "@/components/popup/MFAManager";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 export default function AccountSecurity() {
   const { data: session } = useSession();
   const { showToast } = useToast();
+  const { isDark } = useDarkMode();
 
   const [email, setEmail] = useState<string>("");
   const [currentPassword, setCurrentPassword] = useState<string>("");
@@ -245,7 +247,9 @@ export default function AccountSecurity() {
   };
   return (
     <>
-      <div className="w-full h-full flex flex-col items-center rounded-xl border border-[#CFCFCF] p-3 md:p-5 gap-2.5">
+      <div
+        className={`w-full h-full flex flex-col items-center rounded-xl border ${isDark ? "border-gray-600 bg-[#1A1A1A]" : "border-[#CFCFCF] bg-white"} p-3 md:p-5 gap-2.5 transition-colors duration-300`}
+      >
         {loading ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="flex flex-col items-center gap-3">
@@ -253,37 +257,52 @@ export default function AccountSecurity() {
                 icon="line-md:loading-loop"
                 className="text-4xl text-blue-500"
               />
-              <p className="text-gray-600">Memuat pengaturan keamanan...</p>
+              <p className={`${isDark ? "text-gray-300" : "text-gray-600"}`}>
+                Memuat pengaturan keamanan...
+              </p>
             </div>
           </div>
         ) : (
           <div className="flex flex-col items-start w-full h-full gap-10 overflow-y-auto">
+            {" "}
             <div className="flex flex-col items-start w-full gap-2.5">
-              <div className="flex items-center justify-start w-full gap-3 pb-2.5 border-b border-[#CFCFCF]">
+              <div
+                className={`flex items-center justify-start w-full gap-3 pb-2.5 border-b ${isDark ? "border-gray-600" : "border-[#CFCFCF]"}`}
+              >
                 <div className="flex items-center justify-center p-2.5 rounded-[30%] bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]">
                   <Icon icon="mdi:email-sync" className="text-4xl text-white" />
                 </div>
                 <div className="w-full flex flex-col items-start">
-                  <h1 className="text-xl font-bold">Ubah Email</h1>
+                  <h1
+                    className={`text-xl font-bold ${isDark ? "text-white" : "text-black"}`}
+                  >
+                    Ubah Email
+                  </h1>
                   <p className="text-sm text-[#A0A0A0]">
                     Kelola email yang digunakan untuk masuk ke akun Anda
                   </p>
                   {currentUserEmail && (
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p
+                      className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"} mt-1`}
+                    >
                       Email saat ini:{" "}
                       <span className="font-medium">{currentUserEmail}</span>
                     </p>
                   )}
                 </div>
-              </div>
+              </div>{" "}
               {isGoogleUser ? (
-                <div className="w-full p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div
+                  className={`w-full p-4 ${isDark ? "bg-yellow-900/30 border-yellow-600" : "bg-yellow-50 border-yellow-200"} border rounded-lg`}
+                >
                   <div className="flex items-center gap-2">
                     <Icon
                       icon="material-symbols:email"
                       className="text-yellow-600"
                     />
-                    <p className="text-sm text-yellow-800">
+                    <p
+                      className={`text-sm ${isDark ? "text-yellow-300" : "text-yellow-800"}`}
+                    >
                       Akun Anda terdaftar melalui Google. Email tidak dapat
                       diubah.
                     </p>
@@ -328,7 +347,9 @@ export default function AccountSecurity() {
               )}
             </div>{" "}
             <div className="flex flex-col items-start w-full gap-2.5">
-              <div className="flex items-center justify-start w-full gap-3 pb-2.5 border-b border-[#CFCFCF]">
+              <div
+                className={`flex items-center justify-start w-full gap-3 pb-2.5 border-b ${isDark ? "border-gray-600" : "border-[#CFCFCF]"}`}
+              >
                 <div className="flex items-center justify-center p-2.5 rounded-[30%] bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]">
                   <Icon
                     icon="mdi:password-reset"
@@ -336,17 +357,25 @@ export default function AccountSecurity() {
                   />
                 </div>
                 <div className="w-full flex flex-col items-start">
-                  <h1 className="text-xl font-bold">Ubah Password</h1>
+                  <h1
+                    className={`text-xl font-bold ${isDark ? "text-white" : "text-black"}`}
+                  >
+                    Ubah Password
+                  </h1>
                   <p className="text-sm text-[#A0A0A0]">
                     Kelola password yang digunakan untuk masuk ke akun Anda
                   </p>
                 </div>
-              </div>
+              </div>{" "}
               {isGoogleUser ? (
-                <div className="w-full p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div
+                  className={`w-full p-4 ${isDark ? "bg-yellow-900/30 border-yellow-600" : "bg-yellow-50 border-yellow-200"} border rounded-lg`}
+                >
                   <div className="flex items-center gap-2">
                     <Icon icon="mdi:information" className="text-yellow-600" />
-                    <p className="text-sm text-yellow-800">
+                    <p
+                      className={`text-sm ${isDark ? "text-yellow-300" : "text-yellow-800"}`}
+                    >
                       Akun Anda terdaftar melalui Google. Password tidak dapat
                       diubah.
                     </p>
@@ -374,8 +403,10 @@ export default function AccountSecurity() {
                     value={newPassword}
                     onChangeValue={setNewPassword}
                     required
-                  />
-                  <div className="text-xs text-gray-600 -mt-2">
+                  />{" "}
+                  <div
+                    className={`text-xs ${isDark ? "text-gray-300" : "text-gray-600"} -mt-2`}
+                  >
                     Minimal 8 karakter dengan kombinasi huruf dan angka
                   </div>
                   <Input
@@ -412,7 +443,9 @@ export default function AccountSecurity() {
               )}
             </div>{" "}
             <div className="flex flex-col items-start w-full gap-2.5">
-              <div className="flex items-center justify-start w-full gap-3 pb-2.5 border-b border-[#CFCFCF]">
+              <div
+                className={`flex items-center justify-start w-full gap-3 pb-2.5 border-b ${isDark ? "border-gray-600" : "border-[#CFCFCF]"}`}
+              >
                 <div className="flex items-center justify-center p-2.5 rounded-[30%] bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]">
                   <Icon
                     icon="mdi:two-factor-authentication"
@@ -420,16 +453,20 @@ export default function AccountSecurity() {
                   />
                 </div>
                 <div className="w-full flex flex-col items-start">
-                  <h1 className="text-xl font-bold">
+                  <h1
+                    className={`text-xl font-bold ${isDark ? "text-white" : "text-black"}`}
+                  >
                     Multi-factor Authentication (MFA)
                   </h1>
                   <p className="text-sm text-[#A0A0A0]">
                     Tingkatkan keamanan akun dengan otentikasi multi-faktor
                   </p>
                 </div>
-              </div>
+              </div>{" "}
               {/* MFA Status Display */}
-              <div className="w-full p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <div
+                className={`w-full p-4 ${isDark ? "bg-gray-800 border-gray-600" : "bg-gray-50 border-gray-200"} border rounded-lg`}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Icon
@@ -437,11 +474,15 @@ export default function AccountSecurity() {
                       className={`text-2xl ${mfaEnabled ? "text-green-600" : "text-gray-400"}`}
                     />
                     <div>
-                      <p className="font-medium">
+                      <p
+                        className={`font-medium ${isDark ? "text-white" : "text-black"}`}
+                      >
                         Status MFA: {mfaEnabled ? "Aktif" : "Tidak Aktif"}
                       </p>
                       {mfaEnabled && enabledMethods.length > 0 && (
-                        <p className="text-sm text-gray-600">
+                        <p
+                          className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                        >
                           Metode aktif: {enabledMethods.join(", ")}
                         </p>
                       )}
@@ -451,7 +492,9 @@ export default function AccountSecurity() {
                     className={`px-3 py-1 rounded-full text-sm font-medium ${
                       mfaEnabled
                         ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-600"
+                        : isDark
+                          ? "bg-gray-700 text-gray-300"
+                          : "bg-gray-100 text-gray-600"
                     }`}
                   >
                     {mfaEnabled ? "Aman" : "Rentan"}
@@ -480,9 +523,10 @@ export default function AccountSecurity() {
                         Kelola MFA
                         <Icon icon="mdi:cog" width={20} height={20} />
                       </>
-                    </button>
-
-                    <div className="text-xs text-gray-600 text-center">
+                    </button>{" "}
+                    <div
+                      className={`text-xs ${isDark ? "text-gray-300" : "text-gray-600"} text-center`}
+                    >
                       Tambah metode baru atau kelola pengaturan MFA yang ada
                     </div>
                   </div>

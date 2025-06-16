@@ -10,6 +10,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { signOut, useSession } from "next-auth/react";
 import { getAvatarUrl } from "@/utils/avatarUtils";
 import { shortenName } from "@/utils/nameUtils";
+import { useDarkMode } from "@/context/DarkModeContext";
+import { useRefreshSession } from "@/hooks/useRefreshSession";
 
 interface ProfileData {
   id: number;
@@ -46,6 +48,8 @@ const listMenu = [
 ];
 
 export default function NavbarDashboard() {
+  const { isDark, toggleDark } = useDarkMode();
+  const { refreshUserData } = useRefreshSession();
   const pathname = usePathname();
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -107,10 +111,16 @@ export default function NavbarDashboard() {
 
     window.addEventListener("profile-updated", handleProfileUpdate);
 
+    const sessionRefreshInterval = setInterval(async () => {
+      console.log("Auto-refreshing session...");
+      await refreshUserData();
+    }, 30000);
+
     return () => {
       window.removeEventListener("profile-updated", handleProfileUpdate);
+      clearInterval(sessionRefreshInterval);
     };
-  }, [status]);
+  }, [status, refreshUserData]);
 
   const getRoleBadge = (role: string) => {
     switch (role) {
@@ -179,7 +189,6 @@ export default function NavbarDashboard() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
   return (
     <nav
       id="navbar-dashboard"
@@ -207,6 +216,7 @@ export default function NavbarDashboard() {
 
             return (
               <li key={menu.href}>
+                {" "}
                 <Link
                   href={menu.href}
                   className={`flex items-center gap-2 text-white px-5 py-3 rounded-full ${
@@ -249,16 +259,15 @@ export default function NavbarDashboard() {
               )}
             </p>
             {getRoleBadge(session?.user?.role || "user")}
-          </div>
+          </div>{" "}
           <Icon
             icon="majesticons:chevron-down-line"
             fontSize={16}
-            color="white"
-            className={
+            className={`text-white ${
               showDropdown
                 ? "-rotate-180 transition-transform"
                 : "transition-transform"
-            }
+            }`}
           />
         </div>
 
@@ -270,36 +279,53 @@ export default function NavbarDashboard() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-xl py-3 z-50"
+              className={`absolute right-0 mt-3 w-56 bg-[#1A1A1A] rounded-xl shadow-xl py-3 z-50`}
             >
-              <ul className="text-sm text-black flex flex-col">
+              <ul className={`text-sm text-white flex flex-col`}>
                 <Link
                   href="/profile"
-                  className="px-5 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+                  className={`px-5 py-2 hover:bg-gray-700 cursor-pointer flex items-center gap-2`}
                 >
                   <Icon icon="iconamoon:profile-fill" fontSize={18} />
                   Profil Saya
                 </Link>
                 <Link
                   href="/settings/profile"
-                  className="px-5 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+                  className={`px-5 py-2 hover:bg-gray-700 cursor-pointer flex items-center gap-2`}
                 >
                   <Icon
                     icon="material-symbols:settings-rounded"
                     fontSize={18}
                   />
                   Pengaturan Akun
-                </Link>
-                <Link
-                  href="#"
-                  className="px-5 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+                </Link>{" "}
+                <button
+                  onClick={toggleDark}
+                  className={`px-5 py-2 hover:bg-gray-700 cursor-pointer flex items-center gap-2 w-full text-left`}
                 >
-                  <Icon icon="ic:round-dark-mode" fontSize={18} />
-                  Mode Gelap
-                </Link>
+                  <Icon
+                    icon={
+                      isDark
+                        ? "material-symbols:light-mode-rounded"
+                        : "ic:round-dark-mode"
+                    }
+                    fontSize={18}
+                  />
+                  {isDark ? "Mode Terang" : "Mode Gelap"}
+                </button>
+                <button
+                  onClick={async () => {
+                    console.log("Manual session refresh triggered");
+                    await refreshUserData();
+                  }}
+                  className={`px-5 py-2 hover:bg-gray-700 cursor-pointer flex items-center gap-2 w-full text-left`}
+                >
+                  <Icon icon="material-symbols:refresh" fontSize={18} />
+                  Refresh Data
+                </button>
                 <button
                   onClick={handleLogout}
-                  className="px-5 py-2 hover:bg-red-100 text-red-500 cursor-pointer flex items-center gap-2 w-full text-left"
+                  className={`px-5 py-2 hover:bg-red-900/50 text-red-500 cursor-pointer flex items-center gap-2 w-full text-left`}
                 >
                   <Icon icon="solar:logout-2-bold" fontSize={18} />
                   Keluar

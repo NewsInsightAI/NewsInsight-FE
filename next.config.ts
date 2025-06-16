@@ -22,6 +22,11 @@ const nextConfig: NextConfig = {
         hostname: "api.newsinsight.space",
         pathname: "/uploads/avatars/**",
       },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+        pathname: "/**",
+      },
     ],
   },
 };

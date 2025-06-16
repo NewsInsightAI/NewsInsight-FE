@@ -9,6 +9,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useSession, signOut } from "next-auth/react";
 import { getAvatarUrl } from "@/utils/avatarUtils";
 import { shortenName } from "@/utils/nameUtils";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface ProfileData {
   id: number;
@@ -23,6 +24,7 @@ interface ProfileData {
 }
 
 export const Navbar = () => {
+  const { isDark, toggleDark } = useDarkMode();
   const pathname = usePathname();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -31,16 +33,15 @@ export const Navbar = () => {
   const [profileAvatar, setProfileAvatar] = useState<string>("");
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [isBackendConnected, setIsBackendConnected] = useState(false);
-  const [isCheckingBackend, setIsCheckingBackend] = useState(true); 
+  const [isCheckingBackend, setIsCheckingBackend] = useState(true);
   useEffect(() => {
     const checkBackendConnection = async () => {
       if (status === "authenticated") {
         try {
           setIsCheckingBackend(true);
 
-          
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5000); 
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
 
           const response = await fetch("/api/profile/me", {
             method: "GET",
@@ -59,7 +60,7 @@ export const Navbar = () => {
             } else {
               console.warn("Backend authentication failed:", result.message);
               setIsBackendConnected(false);
-              
+
               if (
                 result.message?.includes("token") ||
                 result.message?.includes("unauthorized") ||
@@ -72,7 +73,7 @@ export const Navbar = () => {
           } else {
             console.warn("Backend not accessible, status:", response.status);
             setIsBackendConnected(false);
-            
+
             if (response.status === 401 || response.status === 403) {
               console.log("Clearing unauthorized session...");
               await signOut({ redirect: false });
@@ -81,9 +82,8 @@ export const Navbar = () => {
         } catch (error: unknown) {
           console.warn("Backend connection check failed:", error);
           setIsBackendConnected(false);
-          
+
           if (error instanceof Error && error.name !== "AbortError") {
-            
             console.warn("Non-timeout error:", error.message);
           }
         } finally {
@@ -185,7 +185,6 @@ export const Navbar = () => {
     });
   };
 
-  
   const isUserAuthenticated = () => {
     return (
       status === "authenticated" &&
@@ -194,11 +193,10 @@ export const Navbar = () => {
       !isCheckingBackend
     );
   };
-
   return (
     <nav
       id="navbar"
-      className={`flex flex-col md:flex-row justify-start gap-2 md:gap-4 items-center p-4 fixed top-0 w-full px-4 md:px-8 z-50 bg-white text-black`}
+      className={`flex flex-col md:flex-row justify-start gap-2 md:gap-4 items-center p-4 fixed top-0 w-full px-4 md:px-8 z-50 ${isDark ? "bg-[#1A1A1A] text-white shadow-2xl shadow-blue-500/10" : "bg-white text-black"} transition-all duration-300`}
     >
       <div className="flex w-full justify-between items-center">
         <div className="flex items-center gap-4 md:gap-10">
@@ -251,10 +249,17 @@ export const Navbar = () => {
           <div className="hidden md:flex items-center gap-2 cursor-pointer hover:text-gray-400">
             <p>ID</p>
             <Icon icon="mingcute:down-line" className="inline-block" />
-          </div>
-          <button className="hidden md:block">
+          </div>{" "}
+          <button
+            className="hidden md:block hover:text-gray-400 transition-colors"
+            onClick={toggleDark}
+          >
             <Icon
-              icon="material-symbols:dark-mode-rounded"
+              icon={
+                isDark
+                  ? "material-symbols:light-mode-rounded"
+                  : "material-symbols:dark-mode-rounded"
+              }
               className="text-2xl"
             />
           </button>{" "}
@@ -305,34 +310,44 @@ export const Navbar = () => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.2 }}
-                        className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-xl py-3 z-50"
+                        className={`absolute right-0 mt-3 w-56 ${isDark ? "bg-[#1A1A1A] shadow-2xl shadow-blue-500/20" : "bg-white"} rounded-xl shadow-xl py-3 z-50`}
                       >
                         {" "}
-                        <ul className="text-sm text-black flex flex-col">
+                        <ul
+                          className={`text-sm ${isDark ? "text-white" : "text-black"} flex flex-col`}
+                        >
+                          {" "}
                           <Link
                             href="/profile"
-                            className="px-5 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+                            className={`px-5 py-2 ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"} cursor-pointer flex items-center gap-2`}
                           >
                             <Icon icon="iconamoon:profile-fill" fontSize={18} />
                             Profil Saya
                           </Link>
                           <Link
                             href="/settings"
-                            className="px-5 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+                            className={`px-5 py-2 ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"} cursor-pointer flex items-center gap-2`}
                           >
                             <Icon icon="solar:settings-bold" fontSize={18} />
                             Pengaturan
                           </Link>
-                          <Link
-                            href="#"
-                            className="px-5 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+                          <button
+                            onClick={toggleDark}
+                            className={`px-5 py-2 ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"} cursor-pointer flex items-center gap-2 w-full text-left`}
                           >
-                            <Icon icon="ic:round-dark-mode" fontSize={18} />
-                            Mode Gelap
-                          </Link>
+                            <Icon
+                              icon={
+                                isDark
+                                  ? "material-symbols:light-mode-rounded"
+                                  : "ic:round-dark-mode"
+                              }
+                              fontSize={18}
+                            />
+                            {isDark ? "Mode Terang" : "Mode Gelap"}
+                          </button>{" "}
                           <button
                             onClick={handleLogout}
-                            className="px-5 py-2 hover:bg-red-100 text-red-500 cursor-pointer flex items-center gap-2 w-full text-left"
+                            className={`px-5 py-2 ${isDark ? "hover:bg-red-900/50" : "hover:bg-red-100"} text-red-500 cursor-pointer flex items-center gap-2 w-full text-left`}
                           >
                             <Icon icon="solar:logout-2-bold" fontSize={18} />
                             Keluar
@@ -362,7 +377,6 @@ export const Navbar = () => {
               )}{" "}
             </>
           ) : (
-            
             <div className="flex items-center">
               {isCheckingBackend ? (
                 <div className="flex items-center justify-center w-20 h-10">
@@ -397,12 +411,13 @@ export const Navbar = () => {
             className="fixed inset-0 top-[64px] z-40 bg-black/40 md:hidden"
             onClick={() => setShowMobileMenu(false)}
           >
+            {" "}
             <motion.div
               initial={{ y: -30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -30, opacity: 0 }}
               transition={{ duration: 0.25, type: "spring", bounce: 0.2 }}
-              className="absolute left-0 right-0 top-0 bg-white text-black shadow-lg rounded-b-2xl flex flex-col gap-2 py-4 px-6"
+              className={`absolute left-0 right-0 top-0 ${isDark ? "bg-[#1A1A1A] text-white" : "bg-white text-black"} shadow-lg rounded-b-2xl flex flex-col gap-2 py-4 px-6`}
               onClick={(e) => e.stopPropagation()}
             >
               <Link
@@ -431,17 +446,16 @@ export const Navbar = () => {
       {/* Search bar: mobile di bawah, desktop di tengah */}
       <div className="w-full md:w-[280px] mx-auto mt-2 md:mt-0 order-2 md:order-none">
         <div className="relative w-full">
+          {" "}
           <input
             type="text"
             placeholder="Cari berita..."
-            className={`w-full px-5 md:px-6 py-2.5 md:py-3 border border-[#E2E2E2] rounded-full placeholder:text-[#818181] focus:outline-[#367AF2] text-sm md:text-base ${
-              pathname === "/profile" ? "bg-white" : ""
-            }`}
+            className={`w-full px-5 md:px-6 py-2.5 md:py-3 border ${isDark ? "border-gray-600 bg-[#1A1A1A] text-white placeholder:text-gray-400 shadow-lg shadow-blue-500/10" : "border-[#E2E2E2] bg-white text-black placeholder:text-[#818181]"} rounded-full focus:outline-[#367AF2] text-sm md:text-base transition-all duration-300`}
           />
           <Icon
             icon="material-symbols:search-rounded"
             fontSize={22}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-black"
+            className={`absolute right-4 top-1/2 transform -translate-y-1/2 ${isDark ? "text-gray-300" : "text-black"}`}
           />
         </div>
       </div>

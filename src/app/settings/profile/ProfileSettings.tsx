@@ -7,9 +7,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { getAvatarUrl } from "@/utils/avatarUtils";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 export default function Profile() {
   const { status } = useSession();
+  const { isDark } = useDarkMode();
   const [fullName, setFullName] = useState<string>("");
   const [username, setUsername] = useState<string>("");
   const [email, setEmail] = useState<string>("");
@@ -82,7 +84,6 @@ export default function Profile() {
       setLoading(true);
       setError(null);
 
-      // Fetch user info untuk check apakah Google user
       const userInfoResponse = await fetch("/api/auth/user-info", {
         headers: {
           "Content-Type": "application/json",
@@ -218,7 +219,7 @@ export default function Profile() {
       const profileData = {
         ...currentProfile,
         full_name: fullName,
-        ...(isGoogleUser ? {} : { username: username }), // Hanya include username jika bukan Google user
+        ...(isGoogleUser ? {} : { username: username }),
         headline: headline,
         biography: about,
         news_interest: JSON.stringify(newsInterest),
@@ -304,9 +305,10 @@ export default function Profile() {
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
-
-      <div className="w-full h-full flex flex-col items-center rounded-xl border border-[#CFCFCF] p-3 md:p-5 gap-2.5">
+      </AnimatePresence>{" "}
+      <div
+        className={`w-full h-full flex flex-col items-center rounded-xl border ${isDark ? "border-gray-600 bg-[#1A1A1A]" : "border-[#CFCFCF] bg-white"} p-3 md:p-5 gap-2.5 transition-colors duration-300`}
+      >
         {loading ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="flex flex-col items-center gap-3">
@@ -314,35 +316,52 @@ export default function Profile() {
                 icon="line-md:loading-loop"
                 className="text-4xl text-blue-500"
               />
-              <p className="text-gray-600">Memuat data profil...</p>
+              <p className={`${isDark ? "text-gray-300" : "text-gray-600"}`}>
+                Memuat data profil...
+              </p>
             </div>
           </div>
         ) : (
           <>
+            {" "}
             {error && (
-              <div className="w-full p-3 bg-red-50 border border-red-200 rounded-lg mb-2.5">
+              <div
+                className={`w-full p-3 ${isDark ? "bg-red-900/30 border-red-600" : "bg-red-50 border-red-200"} border rounded-lg mb-2.5`}
+              >
                 <div className="flex items-center gap-2">
                   <Icon
                     icon="material-symbols:error"
                     className="text-red-500"
                   />
-                  <p className="text-red-700 text-sm">{error}</p>
+                  <p
+                    className={`text-sm ${isDark ? "text-red-300" : "text-red-700"}`}
+                  >
+                    {error}
+                  </p>
                 </div>
               </div>
             )}
             {success && (
-              <div className="w-full p-3 bg-green-50 border border-green-200 rounded-lg mb-2.5">
+              <div
+                className={`w-full p-3 ${isDark ? "bg-green-900/30 border-green-600" : "bg-green-50 border-green-200"} border rounded-lg mb-2.5`}
+              >
                 <div className="flex items-center gap-2">
                   <Icon
                     icon="material-symbols:check-circle"
                     className="text-green-500"
                   />
-                  <p className="text-green-700 text-sm">{success}</p>
+                  <p
+                    className={`text-sm ${isDark ? "text-green-300" : "text-green-700"}`}
+                  >
+                    {success}
+                  </p>
                 </div>
               </div>
-            )}
+            )}{" "}
             <div className="flex flex-col items-start w-full h-full gap-2.5 overflow-y-auto">
-              <div className="flex items-center justify-start w-full gap-3 pb-2.5 border-b border-[#CFCFCF]">
+              <div
+                className={`flex items-center justify-start w-full gap-3 pb-2.5 border-b ${isDark ? "border-gray-600" : "border-[#CFCFCF]"}`}
+              >
                 <div className="flex items-center justify-center p-2.5 rounded-[30%] bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]">
                   <Icon
                     icon="fluent:person-28-filled"
@@ -350,7 +369,11 @@ export default function Profile() {
                   />
                 </div>
                 <div className="w-full flex flex-col items-start">
-                  <h1 className="text-xl font-bold">Edit Profil Pengguna</h1>
+                  <h1
+                    className={`text-xl font-bold ${isDark ? "text-white" : "text-black"}`}
+                  >
+                    Edit Profil Pengguna
+                  </h1>
                   <p className="text-sm text-[#A0A0A0]">
                     Perbarui data profil Anda
                   </p>
@@ -358,7 +381,11 @@ export default function Profile() {
               </div>
               <div className="flex flex-col items-start gap-3 w-full h-full overflow-y-auto">
                 <div className="flex flex-col items-start">
-                  <p className="font-medium text-gray-800">Foto Diri</p>
+                  <p
+                    className={`font-medium ${isDark ? "text-gray-200" : "text-gray-800"}`}
+                  >
+                    Foto Diri
+                  </p>
                   <div className="flex items-center justify-start gap-3 mt-2">
                     <Image
                       src={avatarPreview || getAvatarUrl(avatar)}
@@ -390,8 +417,10 @@ export default function Profile() {
                         <p className="text-sm text-green-600">
                           File terpilih: {avatarFile.name}
                         </p>
-                      )}
-                      <p className="text-sm text-black/50">
+                      )}{" "}
+                      <p
+                        className={`text-sm ${isDark ? "text-gray-300" : "text-black/50"}`}
+                      >
                         Gambar Profile Anda sebaiknya memiliki rasio 1:1 dan
                         berukuran tidak lebih dari 2MB.
                       </p>
@@ -429,19 +458,23 @@ export default function Profile() {
                   required
                 />
                 <div className="flex flex-col gap-2.5 w-full">
+                  {" "}
                   <div className="flex items-center gap-2">
-                    <p className="font-medium text-gray-800">Minat Berita</p>
+                    <p
+                      className={`font-medium ${isDark ? "text-gray-200" : "text-gray-800"}`}
+                    >
+                      Minat Berita
+                    </p>
                     <div className="font-medium bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] px-2 py-1 rounded-full text-xs text-white">
                       Maks. 5
                     </div>
                   </div>
-
                   <div className="flex flex-col gap-2.5 w-full">
                     {newsInterest.length === 0 ? (
                       <button
                         type="button"
                         onClick={() => setShowListNewsCategory(true)}
-                        className="px-4 py-2 rounded-xl border border-blue-500 text-blue-500 font-medium hover:bg-blue-50 transition cursor-pointer w-full"
+                        className={`px-4 py-2 rounded-xl border border-blue-500 text-blue-500 font-medium ${isDark ? "hover:bg-blue-900/30" : "hover:bg-blue-50"} transition cursor-pointer w-full`}
                       >
                         Pilih Minat Berita
                       </button>
@@ -468,7 +501,7 @@ export default function Profile() {
                             <button
                               type="button"
                               onClick={() => setShowListNewsCategory(true)}
-                              className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-blue-500 text-blue-500 font-medium hover:bg-blue-50 transition cursor-pointer w-full"
+                              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-blue-500 text-blue-500 font-medium ${isDark ? "hover:bg-blue-900/30" : "hover:bg-blue-50"} transition cursor-pointer w-full`}
                             >
                               <Icon icon="mdi:plus" />
                               Tambah Kategori

@@ -83,7 +83,6 @@ export default function Register() {
       if (result?.ok && !result?.error) {
         console.log("Google sign up successful, fetching session...");
 
-        // Wait for session to be established
         let retries = 0;
         let session = null;
 
@@ -108,7 +107,7 @@ export default function Register() {
             ? "Selamat datang di NewsInsight! Akun Anda berhasil didaftarkan."
             : "Anda sudah terdaftar sebelumnya. Selamat datang kembali!";
 
-          showToast(message, "success"); // Redirect based on profile completion
+          showToast(message, "success");
           if (session.isNewUser && !session.isProfileComplete) {
             console.log("New user, redirecting to complete profile");
             router.push("/login/complete-profile");
@@ -116,9 +115,9 @@ export default function Register() {
             console.log("Redirecting based on user role");
             const userRole = session?.backendUser?.role;
             if (userRole === "user") {
-              router.push("/"); // User biasa ke homepage
+              router.push("/");
             } else {
-              router.push("/dashboard"); // Admin/Editor/Contributor ke dashboard
+              router.push("/dashboard");
             }
           }
         } else {

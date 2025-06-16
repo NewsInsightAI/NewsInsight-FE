@@ -4,6 +4,7 @@ import React from "react";
 import { formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
 import { useRouter } from "next/navigation";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 interface CompactNewsCard {
   source: string;
@@ -20,6 +21,7 @@ export default function CompactNewsCard({
   timestamp,
   link,
 }: CompactNewsCard) {
+  const { isDark } = useDarkMode();
   const formattedTimestamp = formatDistanceToNow(new Date(timestamp), {
     addSuffix: true,
     locale: id,
@@ -33,7 +35,9 @@ export default function CompactNewsCard({
 
   return (
     <div onClick={() => router.push(link)} className="cursor-pointer w-full">
-      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center justify-start w-full bg-white">
+      <div
+        className={`flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center justify-start w-full ${isDark ? "bg-gray-800" : "bg-white"} transition-colors duration-300`}
+      >
         <img
           src={imageUrl}
           alt={title}
@@ -43,14 +47,18 @@ export default function CompactNewsCard({
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-xs sm:text-sm font-bold bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text">
               {source}
-            </p>
-            <div className="h-1 w-1 bg-gray-400 rounded-full" />
-            <p className="text-xs sm:text-sm text-gray-500">
+            </p>{" "}
+            <div
+              className={`h-1 w-1 ${isDark ? "bg-gray-500" : "bg-gray-400"} rounded-full`}
+            />
+            <p
+              className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
+            >
               {customFormattedTimestamp}
             </p>
           </div>
           <p
-            className="text-black font-medium text-sm sm:text-base line-clamp-2 sm:line-clamp-3"
+            className={`${isDark ? "text-white" : "text-black"} font-medium text-sm sm:text-base line-clamp-2 sm:line-clamp-3 transition-colors duration-300`}
             style={{
               display: "-webkit-box",
               WebkitLineClamp: 3,

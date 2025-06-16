@@ -164,7 +164,6 @@ export const authOptions: AuthOptions = {
           console.log("Backend response data:", result);
 
           if (response.ok && result.status === "success" && result.data) {
-            // Store backend data in account for JWT callback
             account.backendToken = result.data.token;
             account.backendUser = result.data.account;
             account.isNewUser = result.data.isNewUser;
@@ -197,16 +196,44 @@ export const authOptions: AuthOptions = {
 
       console.log("Unknown provider, allowing sign in");
       return true;
-    },
-    async jwt({ token, account, user }) {
+    },    async jwt({ token, account, user, trigger, session }) {
       console.log("JWT callback triggered:", {
         hasAccount: !!account,
         provider: account?.provider,
         hasBackendToken: !!account?.backendToken,
         hasUser: !!user,
+        trigger,
       });
 
-      // Handle Google provider data
+      
+      if (trigger === "update" && session?.user) {
+        console.log("JWT callback triggered by session update");
+
+        try {
+          const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/auth/user-info`;
+          const response = await fetch(backendUrl, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token.backendToken}`,
+            },
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.status === "success" && result.data) {
+              console.log("Refreshed user data:", result.data);
+              token.backendUser = {
+                ...token.backendUser,
+                ...result.data,
+              };
+            }
+          }
+        } catch (error) {
+          console.error("Error refreshing user data in JWT callback:", error);
+        }
+      }
+
       if (account?.provider === "google" && account?.backendToken) {
         console.log("Setting JWT token data from Google account");
         token.backendToken = account.backendToken;
@@ -215,7 +242,7 @@ export const authOptions: AuthOptions = {
         token.backendMessage = account.backendMessage;
       }
 
-      // Handle credentials provider data
+      
       if (account?.provider === "credentials" && user) {
         console.log("Setting JWT token data from credentials");
         const credentialsUser = user as {
@@ -262,7 +289,6 @@ export const authOptions: AuthOptions = {
         session.user.role = token.backendUser.role;
       }
 
-      // Add isProfileComplete to session
       if (token.backendUser?.isProfileComplete !== undefined) {
         session.isProfileComplete = token.backendUser.isProfileComplete;
       }
