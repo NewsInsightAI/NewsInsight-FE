@@ -7,10 +7,30 @@ import { Vibrant } from "node-vibrant/browser";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import CompactNewsCard from "@/components/CompactNewsCard";
 import { useDarkMode } from "@/context/DarkModeContext";
+import { useRouter } from "next/navigation";
+import { generateNewsUrl } from "@/utils/newsUrlGenerator";
 
 export default function Home() {
   const { isDark } = useDarkMode();
+  const router = useRouter();
   const [navbarHeight, setNavbarHeight] = useState(0);
+
+  // Data berita utama untuk hero section
+  const mainNews = {
+    id: "main-news-001",
+    category: "Teknologi",
+    author: "Reuters",
+    publishDate: "2025-04-28T00:00:00Z",
+    title:
+      "Penghargaan Teknologi Ban Internasional untuk Inovasi dan Keunggulan 2025 - pemenangnya diumumkan!",
+  };
+
+  const mainNewsUrl = generateNewsUrl(
+    mainNews.category,
+    mainNews.title,
+    mainNews.publishDate,
+    mainNews.id
+  );
 
   useEffect(() => {
     const navbar = document.querySelector("nav");
@@ -55,12 +75,10 @@ export default function Home() {
       if (newsImage) URL.revokeObjectURL(imageUrl);
     };
   }, [imageUrl, newsImage]);
-
-  const newsCategory = "Teknologi";
-  const newsAuthor = "Reuters";
+  const newsCategory = mainNews.category;
+  const newsAuthor = mainNews.author;
   const newsPublishDate = "4 jam lalu";
-  const newsTitle =
-    "Penghargaan Teknologi Ban Internasional untuk Inovasi dan Keunggulan 2025 - pemenangnya diumumkan!";
+  const newsTitle = mainNews.title;
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollRefTech = useRef<HTMLDivElement>(null);
@@ -85,12 +103,13 @@ export default function Home() {
         {" "}
         {/* Hero Section */}
         <div
-          className={`relative w-full h-[300px] sm:h-[400px] lg:h-[550px] rounded-2xl sm:rounded-3xl overflow-hidden group ${isDark ? "shadow-2xl news-glow-pulse" : ""}`}
+          className={`relative w-full h-[300px] sm:h-[400px] lg:h-[550px] rounded-2xl sm:rounded-3xl overflow-hidden group cursor-pointer ${isDark ? "shadow-2xl news-glow-pulse" : ""}`}
           style={{
             boxShadow: isDark
               ? `0 25px 50px -12px ${vibrantColor}33`
               : undefined,
           }}
+          onClick={() => router.push(mainNewsUrl)}
         >
           <img
             alt="Preview"
@@ -198,10 +217,12 @@ export default function Home() {
                 className="w-72 sm:w-80 lg:w-96 flex-shrink-0 cursor-pointer"
               >
                 <NewsCard
+                  id={news.id}
                   source={news.source}
                   title={news.title}
                   imageUrl={news.imageUrl}
                   timestamp={news.timestamp}
+                  category={news.category}
                   link={news.link}
                 />
               </div>
@@ -264,10 +285,12 @@ export default function Home() {
                 className="w-72 sm:w-80 lg:w-96 flex-shrink-0 cursor-pointer"
               >
                 <NewsCard
+                  id={news.id}
                   source={news.source}
                   title={news.title}
                   imageUrl={news.imageUrl}
                   timestamp={news.timestamp}
+                  category={news.category}
                   link={news.link}
                 />
               </div>
@@ -289,10 +312,12 @@ export default function Home() {
             {listNews.slice(0, 8).map((news, index) => (
               <div key={index} className="w-full cursor-pointer">
                 <CompactNewsCard
+                  id={news.id}
                   source={news.source}
                   title={news.title}
                   imageUrl={news.imageUrl}
                   timestamp={news.timestamp}
+                  category={news.category}
                   link={news.link}
                 />
               </div>

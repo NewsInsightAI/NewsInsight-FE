@@ -2,29 +2,35 @@
 "use client";
 import React from "react";
 import { formatDistanceToNow } from "date-fns";
-import { id } from "date-fns/locale";
+import { id as idLocale } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import { useDarkMode } from "@/context/DarkModeContext";
 
 interface CompactNewsCard {
+  id?: string;
   source: string;
   title: string;
   imageUrl: string;
   timestamp: string;
+  category?: string;
   link: string;
 }
 
 export default function CompactNewsCard({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  id,
   source,
   title,
   imageUrl,
   timestamp,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  category,
   link,
 }: CompactNewsCard) {
   const { isDark } = useDarkMode();
   const formattedTimestamp = formatDistanceToNow(new Date(timestamp), {
     addSuffix: true,
-    locale: id,
+    locale: idLocale,
   });
   const router = useRouter();
 

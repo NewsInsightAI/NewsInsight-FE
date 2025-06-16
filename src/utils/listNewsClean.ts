@@ -8,7 +8,6 @@ export interface NewsItem {
   timestamp: string;
   category: string;
   link: string;
-  content?: string; // HTML content from React Quill
 }
 
 const newsData = [
@@ -19,31 +18,6 @@ const newsData = [
     imageUrl: "/images/main_news.png",
     timestamp: "2025-04-28T00:00:00Z",
     category: "Teknologi",
-    content: `
-      <p>Google mengumumkan bahwa mereka akan memberikan akses gratis ke <strong>Gemini Advanced</strong> untuk para pelajar di Amerika Serikat. Program ini merupakan bagian dari inisiatif perusahaan untuk mendukung pendidikan dan teknologi AI.</p>
-      
-      <h2>Detail Program</h2>
-      <p>Pelajar yang memenuhi syarat akan mendapatkan:</p>
-      <ul>
-        <li>Akses penuh ke Gemini Advanced selama masa studi</li>
-        <li>Dukungan teknis khusus untuk proyek akademik</li>
-        <li>Workshop gratis tentang penggunaan AI dalam pendidikan</li>
-      </ul>
-      
-      <blockquote>
-        <p>"Kami percaya bahwa teknologi AI harus dapat diakses oleh semua kalangan, terutama generasi muda yang akan membentuk masa depan," kata CEO Google dalam konferensi pers.</p>
-      </blockquote>
-      
-      <h2>Syarat dan Ketentuan</h2>
-      <p>Program ini terbatas untuk:</p>
-      <ol>
-        <li>Mahasiswa aktif di universitas terakreditasi AS</li>
-        <li>Pelajar SMA yang terdaftar dalam program STEM</li>
-        <li>Peserta program coding bootcamp yang diakui</li>
-      </ol>
-      
-      <p>Pendaftaran dibuka mulai bulan depan melalui platform resmi Google for Education.</p>
-    `,
   },
   {
     id: "news-002",
