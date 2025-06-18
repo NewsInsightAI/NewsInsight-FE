@@ -7,15 +7,18 @@ import { Vibrant } from "node-vibrant/browser";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import CompactNewsCard from "@/components/CompactNewsCard";
 import { useDarkMode } from "@/context/DarkModeContext";
+import { useLanguage } from "@/context/LanguageContext";
+import { TranslatedText } from "@/components/TranslatedText";
 import { useRouter } from "next/navigation";
 import { generateNewsUrl } from "@/utils/newsUrlGenerator";
+import { formatTimestamp } from "@/utils/formatTimestamp";
 
 export default function Home() {
   const { isDark } = useDarkMode();
+  const { currentLanguage } = useLanguage();
   const router = useRouter();
   const [navbarHeight, setNavbarHeight] = useState(0);
 
-  // Data berita utama untuk hero section
   const mainNews = {
     id: "main-news-001",
     category: "Teknologi",
@@ -77,7 +80,11 @@ export default function Home() {
   }, [imageUrl, newsImage]);
   const newsCategory = mainNews.category;
   const newsAuthor = mainNews.author;
-  const newsPublishDate = "4 jam lalu";
+
+  const newsPublishDate = formatTimestamp(
+    mainNews.publishDate,
+    currentLanguage.code
+  );
   const newsTitle = mainNews.title;
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -103,7 +110,7 @@ export default function Home() {
         {" "}
         {/* Hero Section */}
         <div
-          className={`relative w-full h-[300px] sm:h-[400px] lg:h-[550px] rounded-2xl sm:rounded-3xl overflow-hidden group cursor-pointer ${isDark ? "shadow-2xl news-glow-pulse" : ""}`}
+          className={`relative w-full h-[300px] sm:h-[400px] lg:h-[550px] rounded-2xl sm:rounded-3xl overflow-hidden group cursor-pointer ${isDark ? "shadow-2xl" : ""}`}
           style={{
             boxShadow: isDark
               ? `0 25px 50px -12px ${vibrantColor}33`
@@ -137,13 +144,17 @@ export default function Home() {
             style={{ background: gradient }}
           >
             <div className="flex w-full justify-end">
+              {" "}
               <p
                 className="text-xs sm:text-sm lg:text-base font-bold px-2 sm:px-3 lg:px-4 py-1 sm:py-1.5 lg:py-2 bg-white rounded-full"
                 style={{ color: vibrantColor }}
               >
-                {newsCategory
-                  ? newsCategory.charAt(0).toUpperCase() + newsCategory.slice(1)
-                  : "Kategori Berita"}
+                <TranslatedText>
+                  {newsCategory
+                    ? newsCategory.charAt(0).toUpperCase() +
+                      newsCategory.slice(1)
+                    : "Kategori Berita"}
+                </TranslatedText>
               </p>
             </div>
 
@@ -155,7 +166,7 @@ export default function Home() {
                 </span>
               </p>
               <p className="text-white text-lg sm:text-2xl lg:text-[32px] font-semibold w-full sm:w-3/4 lg:w-1/2 leading-tight">
-                {newsTitle || "Judul Berita"}
+                <TranslatedText>{newsTitle || "Judul Berita"}</TranslatedText>
               </p>
             </div>
           </div>
@@ -171,7 +182,7 @@ export default function Home() {
                 textShadow: isDark ? `0 0 10px ${vibrantColor}80` : undefined,
               }}
             >
-              Rekomendasi untuk Anda
+              <TranslatedText>Rekomendasi untuk Anda</TranslatedText>
             </p>
             <div className="flex gap-1 sm:gap-2">
               {" "}
@@ -239,7 +250,7 @@ export default function Home() {
                 textShadow: isDark ? `0 0 10px ${vibrantColor}80` : undefined,
               }}
             >
-              Teknologi
+              <TranslatedText>Teknologi</TranslatedText>
             </p>
             <div className="flex gap-1 sm:gap-2">
               {" "}
@@ -306,7 +317,7 @@ export default function Home() {
               textShadow: isDark ? `0 0 10px ${vibrantColor}80` : undefined,
             }}
           >
-            News Feed
+            <TranslatedText>News Feed</TranslatedText>
           </p>{" "}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {listNews.slice(0, 8).map((news, index) => (

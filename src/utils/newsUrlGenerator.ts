@@ -1,33 +1,28 @@
-// Fungsi untuk membuat hash ID dari string (client-safe)
 export function generateHashedId(input: string): string {
-  // Simple hash function for client-side (untuk demo)
   let hash = 0;
   for (let i = 0; i < input.length; i++) {
     const char = input.charCodeAt(i);
     hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32bit integer
+    hash = hash & hash;
   }
   return Math.abs(hash).toString(16).substring(0, 8);
 }
 
-// Fungsi untuk membuat slug dari judul berita
 export function generateSlug(title: string): string {
   return title
     .toLowerCase()
-    .replace(/[^\w\s-]/g, "") // Hapus karakter khusus kecuali spasi dan dash
-    .replace(/\s+/g, "-") // Ganti spasi dengan dash
-    .replace(/-+/g, "-") // Hapus multiple dash
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
     .trim()
-    .replace(/^-+|-+$/g, ""); // Hapus dash di awal dan akhir
+    .replace(/^-+|-+$/g, "");
 }
 
-// Fungsi untuk format tanggal ke yyyy-mm-dd
 export function formatDateForUrl(dateString: string): string {
   const date = new Date(dateString);
   return date.toISOString().split("T")[0];
 }
 
-// Fungsi untuk membuat URL berita lengkap
 export function generateNewsUrl(
   category: string,
   title: string,

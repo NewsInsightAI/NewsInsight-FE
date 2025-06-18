@@ -14,6 +14,7 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import ListNewsCategory from "@/components/popup/ListNewsCategory";
 import { getAvatarUrl } from "@/utils/avatarUtils";
 import { ClipLoader } from "react-spinners";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 const breadcrumbsItems = [
   { label: "Beranda", href: "/" },
@@ -29,6 +30,7 @@ interface City {
 }
 
 export default function CompleteProfile() {
+  const { isDark } = useDarkMode();
   const router = useRouter();
   const { showToast } = useToast();
   const { data: session } = useSession();
@@ -269,11 +271,11 @@ export default function CompleteProfile() {
         )}
       </AnimatePresence>
       <div
-        className="flex flex-col min-h-screen w-full bg-white text-black p-6 overflow-hidden"
+        className={`flex flex-col min-h-screen w-full ${isDark ? "bg-gray-900 text-white" : "bg-white text-black"} p-6 overflow-hidden`}
         style={{ paddingTop: navbarHeight }}
       >
         <motion.div
-          className="flex flex-col gap-6 items-center justify-start w-full h-full bg-white rounded-lg p-6 text-black"
+          className={`flex flex-col gap-6 items-center justify-start w-full h-full ${isDark ? "text-white" : "text-black"} p-6`}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -311,11 +313,15 @@ export default function CompleteProfile() {
               <form className="flex flex-col gap-5 w-full">
                 {/* Profile Picture Upload */}
                 <div className="flex flex-col gap-2.5 w-full">
-                  <p className="font-medium text-gray-800">
+                  <p
+                    className={`font-medium ${isDark ? "text-gray-200" : "text-gray-800"}`}
+                  >
                     Foto Profil (Opsional)
                   </p>
                   <div className="flex items-center justify-start gap-3">
-                    <div className="w-20 h-20 rounded-full border border-gray-300 bg-gray-200 overflow-hidden">
+                    <div
+                      className={`w-20 h-20 rounded-full border ${isDark ? "border-gray-600 bg-gray-700" : "border-gray-300 bg-gray-200"} overflow-hidden`}
+                    >
                       <Image
                         src={avatarPreview || getAvatarUrl(avatar)}
                         alt="Profile Preview"
@@ -348,7 +354,9 @@ export default function CompleteProfile() {
                           File terpilih: {avatarFile.name}
                         </p>
                       )}
-                      <p className="text-sm text-gray-500">
+                      <p
+                        className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                      >
                         Gambar profil sebaiknya memiliki rasio 1:1 dan berukuran
                         tidak lebih dari 2MB.
                       </p>
@@ -374,7 +382,11 @@ export default function CompleteProfile() {
                   onChangeValue={setFullName}
                 />
                 <div className="flex flex-col gap-2.5 w-full">
-                  <p className="font-medium text-gray-800">Jenis Kelamin</p>
+                  <p
+                    className={`font-medium ${isDark ? "text-gray-200" : "text-gray-800"}`}
+                  >
+                    Jenis Kelamin
+                  </p>
                   <div className="flex flex-row gap-4 w-full">
                     {["Laki-laki", "Perempuan"].map((g) => (
                       <button
@@ -387,7 +399,9 @@ export default function CompleteProfile() {
               ? g === "Laki-laki"
                 ? "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white"
                 : "bg-gradient-to-br from-[#FF66C4] to-[#FF318F] text-white"
-              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100 cursor-pointer"
+              : isDark
+                ? "bg-gray-700 text-gray-200 border-gray-600 hover:bg-gray-600 cursor-pointer"
+                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100 cursor-pointer"
           }
         `}
                       >
@@ -454,7 +468,11 @@ export default function CompleteProfile() {
                 />
                 <div className="flex flex-col gap-2.5 w-full">
                   <div className="flex items-center gap-2">
-                    <p className="font-medium text-gray-800">Minat Berita</p>
+                    <p
+                      className={`font-medium ${isDark ? "text-gray-200" : "text-gray-800"}`}
+                    >
+                      Minat Berita
+                    </p>
                     <div className="font-medium bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] px-2 py-1 rounded-full text-xs text-white">
                       Maks. 5
                     </div>
@@ -465,7 +483,7 @@ export default function CompleteProfile() {
                       <button
                         type="button"
                         onClick={() => setShowListNewsCategory(true)}
-                        className="px-4 py-2 rounded-xl border border-blue-500 text-blue-500 font-medium hover:bg-blue-50 transition cursor-pointer w-full"
+                        className={`px-4 py-2 rounded-xl border font-medium transition cursor-pointer w-full ${isDark ? "border-blue-400 text-blue-400 hover:bg-blue-400/10" : "border-blue-500 text-blue-500 hover:bg-blue-50"}`}
                       >
                         Pilih Minat Berita
                       </button>
@@ -492,7 +510,7 @@ export default function CompleteProfile() {
                             <button
                               type="button"
                               onClick={() => setShowListNewsCategory(true)}
-                              className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-blue-500 text-blue-500 font-medium hover:bg-blue-50 transition cursor-pointer w-full"
+                              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl border font-medium transition cursor-pointer w-full ${isDark ? "border-blue-400 text-blue-400 hover:bg-blue-400/10" : "border-blue-500 text-blue-500 hover:bg-blue-50"}`}
                             >
                               <Icon icon="mdi:plus" />
                               Tambah Kategori

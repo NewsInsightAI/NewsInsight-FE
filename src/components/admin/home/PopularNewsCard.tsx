@@ -2,6 +2,7 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import React from "react";
 import { useDarkMode } from "@/context/DarkModeContext";
+import { TranslatedText } from "@/components/TranslatedText";
 
 interface Props {
   newsList: string[];
@@ -19,11 +20,13 @@ export default function PopularNewsCard({ newsList, category }: Props) {
           : "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] border-blue-300"
       }`}
     >
+      {" "}
       <div className="flex items-center gap-2 text-white">
         <Icon icon="solar:graph-bold" className="text-3xl" />
-        <p className="font-semibold text-xl">Berita Populer</p>
+        <p className="font-semibold text-xl">
+          <TranslatedText>Berita Populer</TranslatedText>
+        </p>
       </div>
-
       <div className="flex flex-col gap-5 flex-1 min-h-0 w-full">
         <div className="flex flex-col gap-2 overflow-y-auto pr-2 w-full flex-1 min-h-0 scrollbar-thin scrollbar-thumb-white/40 scrollbar-track-transparent">
           {newsList.map((news, index) => (
@@ -38,9 +41,12 @@ export default function PopularNewsCard({ newsList, category }: Props) {
         </div>
 
         <div className="flex flex-col justify-start items-start text-white w-full gap-2.5">
+          {" "}
           <div className="flex items-center gap-2">
             <Icon icon="solar:hashtag-square-bold" className="text-3xl" />
-            <p className="font-semibold text-xl">Kategori Populer</p>
+            <p className="font-semibold text-xl">
+              <TranslatedText>Kategori Populer</TranslatedText>
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             {category.map((tag, index) => (

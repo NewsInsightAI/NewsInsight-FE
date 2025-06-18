@@ -6,6 +6,8 @@ import Footer from "../components/Footer";
 import { ToastProvider } from "@/context/ToastProvider";
 import NextAuthSessionProvider from "@/components/SessionProvider";
 import { DarkModeProvider } from "@/context/DarkModeContext";
+import { DarkModeWrapper } from "@/components/DarkModeWrapper";
+import { LanguageProvider } from "@/context/LanguageContext";
 import ScrollbarStyles from "@/components/ScrollbarStyles";
 
 const interFont = Inter({
@@ -28,14 +30,19 @@ export default function RootLayout({
       <body
         className={`${interFont.className} antialiased min-h-screen flex flex-col overflow-x-hidden`}
       >
+        {" "}
         <NextAuthSessionProvider>
           <DarkModeProvider>
-            <ToastProvider>
-              <Navbar />
-              <main className="flex-1 w-full">{children}</main>
-              <Footer />
-              <ScrollbarStyles />
-            </ToastProvider>
+            <DarkModeWrapper>
+              <LanguageProvider>
+                <ToastProvider>
+                  <Navbar />
+                  <main className="flex-1 w-full">{children}</main>
+                  <Footer />
+                  <ScrollbarStyles />
+                </ToastProvider>
+              </LanguageProvider>
+            </DarkModeWrapper>
           </DarkModeProvider>
         </NextAuthSessionProvider>
       </body>

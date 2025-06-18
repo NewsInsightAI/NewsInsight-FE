@@ -11,15 +11,16 @@ import MFAVerification from "@/components/popup/MFAVerification";
 import { useToast } from "@/context/ToastProvider";
 import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 export default function Login() {
+  const { isDark } = useDarkMode();
   const [navbarHeight, setNavbarHeight] = useState(0);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showVerifyEmail, setShowVerifyEmail] = useState(false);
   const [showMFAVerification, setShowMFAVerification] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [highlightGoogleSignIn, setHighlightGoogleSignIn] = useState(false);
   const { promise, showToast } = useToast();
@@ -71,7 +72,6 @@ export default function Login() {
   ];
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    setIsLoginLoading(true);
     try {
       await promise(
         (async () => {
@@ -101,7 +101,6 @@ export default function Login() {
                     profile.biography
                   );
                 }
-
                 if (!isProfileComplete) {
                   router.push("/login/complete-profile");
                 } else {
@@ -112,9 +111,13 @@ export default function Login() {
                     router.push("/dashboard");
                   }
                 }
+
+                window.dispatchEvent(new CustomEvent("login-success"));
               } catch (error) {
                 console.error("Error checking profile completion:", error);
                 router.push("/dashboard");
+
+                window.dispatchEvent(new CustomEvent("login-success"));
               }
             } else {
               throw new Error("Gagal mendapatkan data sesi.");
@@ -166,8 +169,6 @@ export default function Login() {
       );
     } catch (error) {
       console.error("Login error:", error);
-    } finally {
-      setIsLoginLoading(false);
     }
   };
 
@@ -196,7 +197,6 @@ export default function Login() {
           );
         }
         showToast("Login berhasil!", "success");
-
         if (!isProfileComplete) {
           router.push("/login/complete-profile");
         } else {
@@ -207,6 +207,8 @@ export default function Login() {
             router.push("/dashboard");
           }
         }
+
+        window.dispatchEvent(new CustomEvent("login-success"));
       } catch (error) {
         console.error("Error checking profile completion:", error);
         showToast("Login berhasil!", "success");
@@ -217,6 +219,8 @@ export default function Login() {
         } else {
           router.push("/dashboard");
         }
+
+        window.dispatchEvent(new CustomEvent("login-success"));
       }
     }
   };
@@ -259,17 +263,18 @@ export default function Login() {
               ? "Akun berhasil dibuat dan Anda telah masuk. Selamat datang di NewsInsight!"
               : "Selamat datang kembali!";
             showToast(message, "success");
-
             if (!isProfileComplete) {
               router.push("/login/complete-profile");
             } else {
               const userRole = session?.backendUser?.role;
               if (userRole === "user") {
-                router.push("/"); 
+                router.push("/");
               } else {
-                router.push("/dashboard"); 
+                router.push("/dashboard");
               }
             }
+
+            window.dispatchEvent(new CustomEvent("login-success"));
           } catch (error) {
             console.error("Error checking profile completion:", error);
             const message = session.isNewUser
@@ -279,10 +284,12 @@ export default function Login() {
 
             const userRole = session?.backendUser?.role;
             if (userRole === "user") {
-              router.push("/"); 
+              router.push("/");
             } else {
-              router.push("/dashboard"); 
+              router.push("/dashboard");
             }
+
+            window.dispatchEvent(new CustomEvent("login-success"));
           }
         } else {
           showToast(
@@ -365,7 +372,7 @@ export default function Login() {
             />
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>{" "}
       <div
         style={{
           paddingTop:
@@ -373,18 +380,21 @@ export default function Login() {
               ? navbarHeight
               : navbarHeight + 20,
         }}
-        className="flex flex-col md:flex-row w-full bg-white text-black p-4 md:p-6 min-h-screen overflow-hidden"
+        className={`flex flex-col md:flex-row w-full ${isDark ? "bg-gray-900 text-white" : "bg-white text-black"} p-4 md:p-6 min-h-screen overflow-hidden`}
       >
         <div className="flex flex-1 w-full items-center justify-center min-h-full">
+          {" "}
           <motion.div
-            className="flex flex-col gap-6 items-center justify-start w-full bg-white rounded-lg px-4 md:px-8 py-6 text-black shadow-md md:shadow-none"
+            className={`flex flex-col gap-6 items-center justify-start w-full ${isDark ? "text-white" : "text-black"} px-4 md:px-8 py-6`}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
             <div className="flex flex-col items-center gap-1">
-              <h1 className="text-xl font-bold">Masuk ke Akun Anda</h1>
-              <p className="text-gray-600 text-center mb-2">
+              <h1 className="text-xl font-bold">Masuk ke Akun Anda</h1>{" "}
+              <p
+                className={`${isDark ? "text-gray-300" : "text-gray-600"} text-center mb-2`}
+              >
                 Kelola berita dan komentar Anda dengan mudah.
               </p>
             </div>
@@ -408,41 +418,45 @@ export default function Login() {
               <button
                 type="submit"
                 className="cursor-pointer text-white rounded-lg px-5 py-3 w-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] transition duration-300 ease-in-out hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isLoginLoading}
               >
-                {isLoginLoading ? (
-                  <Icon
-                    icon="line-md:loading-loop"
-                    className="text-xl animate-spin mx-auto"
-                  />
-                ) : (
-                  "Masuk"
-                )}
+                Masuk
               </button>
             </form>
             <div className="flex flex-col gap-2.5 items-end w-full">
+              {" "}
               <p
                 onClick={() => setShowForgotPassword(true)}
-                className="text-gray-500 text-sm cursor-pointer"
+                className={`${isDark ? "text-gray-400 hover:text-gray-300" : "text-gray-500 hover:text-gray-600"} text-sm cursor-pointer transition-colors duration-200`}
               >
                 Lupa password?
               </p>
-            </div>
+            </div>{" "}
             <div className="flex flex-row gap-4 items-center w-full opacity-20">
-              <hr className="border-t border-black w-full" />
-              <p className="text-black text-sm">atau</p>
-              <hr className="border-t border-black w-full" />
+              <hr
+                className={`border-t ${isDark ? "border-gray-300" : "border-black"} w-full`}
+              />
+              <p
+                className={`${isDark ? "text-gray-300" : "text-black"} text-sm`}
+              >
+                atau
+              </p>
+              <hr
+                className={`border-t ${isDark ? "border-gray-300" : "border-black"} w-full`}
+              />
             </div>{" "}
             <button
               className="w-full"
               onClick={handleGoogleSignIn}
               disabled={isGoogleLoading}
             >
+              {" "}
               <div
                 className={`flex flex-row gap-2 items-center justify-center w-full rounded-lg px-5 py-3 transition-all duration-300 ease-in-out cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                   highlightGoogleSignIn
                     ? "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white border-2 border-blue-400 shadow-lg transform scale-105"
-                    : "bg-white border border-gray-300 hover:opacity-80"
+                    : isDark
+                      ? "bg-gray-700 border border-gray-600 hover:bg-gray-600 text-white"
+                      : "bg-white border border-gray-300 hover:opacity-80 text-black"
                 }`}
               >
                 {isGoogleLoading ? (
@@ -452,8 +466,15 @@ export default function Login() {
                   />
                 ) : (
                   <>
+                    {" "}
                     <p
-                      className={`text-sm ${highlightGoogleSignIn ? "text-white" : "text-black"}`}
+                      className={`text-sm ${
+                        highlightGoogleSignIn
+                          ? "text-white"
+                          : isDark
+                            ? "text-white"
+                            : "text-black"
+                      }`}
                     >
                       Masuk dengan Google
                     </p>
@@ -461,8 +482,10 @@ export default function Login() {
                   </>
                 )}
               </div>
-            </button>
-            <p className="text-gray-500 text-sm text-center mt-4">
+            </button>{" "}
+            <p
+              className={`${isDark ? "text-gray-400" : "text-gray-500"} text-sm text-center mt-4`}
+            >
               Belum punya akun?{" "}
               <Link
                 href="/register"

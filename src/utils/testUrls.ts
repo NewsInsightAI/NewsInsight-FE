@@ -1,4 +1,3 @@
-// File untuk test URL yang dihasilkan
 import { listNews } from "./listNews";
 
 console.log("Generated URLs for news articles:");

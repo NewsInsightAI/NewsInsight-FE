@@ -1,10 +1,11 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 import React from "react";
-import { formatDistanceToNow } from "date-fns";
-import { id as idLocale } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import { useDarkMode } from "@/context/DarkModeContext";
+import { useLanguage } from "@/context/LanguageContext";
+import { TranslatedText } from "@/components/TranslatedText";
+import { formatTimestamp } from "@/utils/formatTimestamp";
 
 interface CompactNewsCard {
   id?: string;
@@ -28,16 +29,10 @@ export default function CompactNewsCard({
   link,
 }: CompactNewsCard) {
   const { isDark } = useDarkMode();
-  const formattedTimestamp = formatDistanceToNow(new Date(timestamp), {
-    addSuffix: true,
-    locale: idLocale,
-  });
+  const { currentLanguage } = useLanguage();
   const router = useRouter();
 
-  const customFormattedTimestamp = formattedTimestamp
-    .replace("sekitar ", "")
-    .replace("dalam waktu ", "")
-    .replace("dulu", "lalu");
+  const formattedTimestamp = formatTimestamp(timestamp, currentLanguage.code);
 
   return (
     <div onClick={() => router.push(link)} className="cursor-pointer w-full">
@@ -56,11 +51,11 @@ export default function CompactNewsCard({
             </p>{" "}
             <div
               className={`h-1 w-1 ${isDark ? "bg-gray-500" : "bg-gray-400"} rounded-full`}
-            />
+            />{" "}
             <p
               className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
             >
-              {customFormattedTimestamp}
+              {formattedTimestamp}
             </p>
           </div>
           <p
@@ -73,7 +68,7 @@ export default function CompactNewsCard({
               textOverflow: "ellipsis",
             }}
           >
-            {title}
+            <TranslatedText>{title}</TranslatedText>
           </p>
         </div>
       </div>

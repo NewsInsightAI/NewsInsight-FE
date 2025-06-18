@@ -5,21 +5,16 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import VerifyEmail from "../../components/popup/VerifyEmail";
-import Breadcrumbs from "@/components/Breadcrumbs";
 import { useToast } from "@/context/ToastProvider";
 import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-
-const breadcrumbsItems = [
-  { label: "Beranda", href: "/" },
-  { label: "Daftar", isActive: true },
-];
+import { useDarkMode } from "@/context/DarkModeContext";
 
 export default function Register() {
+  const { isDark } = useDarkMode();
   const [navbarHeight, setNavbarHeight] = useState(0);
   const [showVerifyEmail, setShowVerifyEmail] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isRegisterLoading, setIsRegisterLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const { promise, showToast } = useToast();
   const router = useRouter();
@@ -37,7 +32,6 @@ export default function Register() {
       showToast("Konfirmasi password tidak cocok.", "error");
       return;
     }
-    setIsRegisterLoading(true);
     try {
       await promise(
         (async () => {
@@ -65,8 +59,6 @@ export default function Register() {
       );
     } catch (error) {
       console.error("Registration error:", error);
-    } finally {
-      setIsRegisterLoading(false);
     }
   };
   const handleGoogleSignUp = async () => {
@@ -213,8 +205,7 @@ export default function Register() {
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
-
+      </AnimatePresence>{" "}
       <div
         style={{
           paddingTop:
@@ -222,59 +213,59 @@ export default function Register() {
               ? navbarHeight
               : navbarHeight + 20,
         }}
-        className="flex flex-col md:flex-row h-full w-full bg-white text-black p-4 md:p-6 overflow-y-auto"
+        className={`flex flex-col md:flex-row min-h-screen w-full ${isDark ? "bg-gray-900 text-white" : "bg-white text-black"} p-4 md:p-6 overflow-y-auto overflow-x-hidden`}
       >
-        <div className="flex flex-1 w-full md:w-auto items-center justify-center">
-          <motion.div
-            initial={{ opacity: 0, x: -40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="hidden md:flex relative text-white px-14 py-12 rounded-3xl font-normal overflow-hidden justify-center items-center w-fit h-full bg-gradient-to-br from-[#2FAACC] to-[#2B62C2]"
-          >
-            <div className="relative z-20 flex flex-col justify-between items-start w-full h-full">
-              <div className="flex flex-col gap-4 items-start">
-                <p className="font-bold text-2xl">Kenapa NewsInsight?</p>
-                <ul className="flex flex-col gap-2 font-normal text-base">
-                  {advancedFeatures.map((feature, index) => (
-                    <li key={index}>
-                      <div className="flex items-center gap-2">
-                        <Icon
-                          icon="akar-icons:check-box-fill"
-                          className="text-2xl"
-                        />
-                        <p>{feature}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Gambar dinamis, responsive */}
-              <div className="relative w-full h-40 md:h-60 lg:h-80 mt-6">
-                <Image
-                  src="/images/undraw_online-articles.png"
-                  alt="NewsInsight"
-                  fill
-                  className="object-contain w-full h-full"
-                  priority
-                />
-              </div>
+        {/* Panel kiri: Kenapa NewsInsight? (hidden di mobile) */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+          className="hidden md:flex relative text-white px-14 py-12 rounded-3xl font-normal overflow-hidden justify-center items-center w-fit min-h-full bg-gradient-to-br from-[#2FAACC] to-[#2B62C2]"
+        >
+          <div className="relative z-20 flex flex-col justify-between items-start w-full h-full">
+            <div className="flex flex-col gap-4 items-start">
+              <p className="font-bold text-2xl">Kenapa NewsInsight?</p>
+              <ul className="flex flex-col gap-2 font-normal text-base">
+                {advancedFeatures.map((feature, index) => (
+                  <li key={index}>
+                    <div className="flex items-center gap-2">
+                      <Icon
+                        icon="akar-icons:check-box-fill"
+                        className="text-2xl"
+                      />
+                      <p>{feature}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </motion.div>
 
-          {/* Panel Kanan: Form Register */}
+            {/* Gambar dinamis, responsive */}
+            <div className="relative w-full h-40 md:h-60 lg:h-80 mt-6">
+              <Image
+                src="/images/undraw_online-articles.png"
+                alt="NewsInsight"
+                fill
+                className="object-contain w-full h-full"
+                priority
+              />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Panel kanan: Form Register */}
+        <div className="flex flex-1 w-full items-center justify-center min-h-full">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex flex-col gap-4 items-center justify-start w-full mx-auto h-full bg-white rounded-lg px-4 md:pl-10 md:pr-6 py-6 text-black"
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className={`flex flex-col gap-4 items-center justify-start w-full mx-auto h-full ${isDark ? "text-white" : "text-black"} px-4 md:pl-10 md:pr-6 py-6`}
           >
-            <div className="flex w-full items-start">
-              <Breadcrumbs items={breadcrumbsItems} />
-            </div>
             <div className="flex flex-col items-center gap-1">
-              <h1 className="text-xl font-bold">Daftar Akun Baru</h1>
-              <p className="text-gray-600 text-center mb-2">
+              <h1 className="text-xl font-bold">Daftar Akun Baru</h1>{" "}
+              <p
+                className={`${isDark ? "text-gray-300" : "text-gray-600"} text-center mb-2`}
+              >
                 Kelola berita dan komentar Anda dengan mudah.
               </p>
             </div>
@@ -282,51 +273,61 @@ export default function Register() {
               className="flex flex-col gap-3 w-full"
               onSubmit={handleSubmit}
             >
-              {/* Username */}
+              {/* Username */}{" "}
               <div className="mb-3">
-                <label className="block font-medium text-gray-800 mb-1">
+                <label
+                  className={`block font-medium ${isDark ? "text-gray-200" : "text-gray-800"} mb-1`}
+                >
                   Username
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                  <div
+                    className={`absolute inset-y-0 left-0 flex items-center pl-3 ${isDark ? "text-gray-400" : "text-gray-400"}`}
+                  >
                     <Icon icon="fluent:person-28-filled" fontSize={20} />
                   </div>
                   <input
                     type="text"
                     placeholder="Masukkan username..."
-                    className="w-full border border-gray-300 rounded-lg py-2 px-3 pl-10 text-gray-700 focus:outline-none focus:border-blue-500"
+                    className={`w-full border ${isDark ? "border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:border-blue-400" : "border-gray-300 bg-white text-gray-700 placeholder-gray-500 focus:border-blue-500"} rounded-lg py-2 px-3 pl-10 focus:outline-none transition-colors duration-200`}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    disabled={isRegisterLoading}
                   />
                 </div>
               </div>
-              {/* Email */}
+              {/* Email */}{" "}
               <div className="mb-3">
-                <label className="block font-medium text-gray-800 mb-1">
+                <label
+                  className={`block font-medium ${isDark ? "text-gray-200" : "text-gray-800"} mb-1`}
+                >
                   Email
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                  <div
+                    className={`absolute inset-y-0 left-0 flex items-center pl-3 ${isDark ? "text-gray-400" : "text-gray-400"}`}
+                  >
                     <Icon icon="mage:email-opened-fill" fontSize={20} />
                   </div>
                   <input
                     type="email"
                     placeholder="Masukkan email..."
-                    className="w-full border border-gray-300 rounded-lg py-2 px-3 pl-10 text-gray-700 focus:outline-none focus:border-blue-500"
+                    className={`w-full border ${isDark ? "border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:border-blue-400" : "border-gray-300 bg-white text-gray-700 placeholder-gray-500 focus:border-blue-500"} rounded-lg py-2 px-3 pl-10 focus:outline-none transition-colors duration-200`}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    disabled={isRegisterLoading}
                   />
                 </div>
               </div>
-              {/* Password */}
+              {/* Password */}{" "}
               <div className="mb-3">
-                <label className="block font-medium text-gray-800 mb-1">
+                <label
+                  className={`block font-medium ${isDark ? "text-gray-200" : "text-gray-800"} mb-1`}
+                >
                   Password
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                  <div
+                    className={`absolute inset-y-0 left-0 flex items-center pl-3 ${isDark ? "text-gray-400" : "text-gray-400"}`}
+                  >
                     <Icon
                       icon="material-symbols:password-rounded"
                       fontSize={20}
@@ -335,15 +336,14 @@ export default function Register() {
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder="Masukkan password..."
-                    className="w-full border border-gray-300 rounded-lg py-2 px-3 pl-10 pr-10 text-gray-700 focus:outline-none focus:border-blue-500"
+                    className={`w-full border ${isDark ? "border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:border-blue-400" : "border-gray-300 bg-white text-gray-700 placeholder-gray-500 focus:border-blue-500"} rounded-lg py-2 px-3 pl-10 pr-10 focus:outline-none transition-colors duration-200`}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    disabled={isRegisterLoading}
-                  />{" "}
+                  />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                    className={`absolute inset-y-0 right-0 flex items-center pr-3 ${isDark ? "text-gray-400 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"} transition-colors duration-200`}
                   >
                     {showPassword ? (
                       <Icon icon="lucide:eye-off" />
@@ -352,35 +352,39 @@ export default function Register() {
                     )}
                   </button>
                 </div>
-                <p className="mt-1 text-sm text-gray-500">
+                <p
+                  className={`mt-1 text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                >
                   Gunakan minimal 8 karakter dengan kombinasi huruf dan angka
                 </p>
               </div>
-              {/* Konfirmasi Password */}
+              {/* Konfirmasi Password */}{" "}
               <div className="mb-3">
-                <label className="block font-medium text-gray-800 mb-1">
+                <label
+                  className={`block font-medium ${isDark ? "text-gray-200" : "text-gray-800"} mb-1`}
+                >
                   Konfirmasi Password
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                  <div
+                    className={`absolute inset-y-0 left-0 flex items-center pl-3 ${isDark ? "text-gray-400" : "text-gray-400"}`}
+                  >
                     <Icon
                       icon="material-symbols:password-rounded"
                       fontSize={20}
                     />
-                  </div>{" "}
+                  </div>
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder="Masukkan konfirmasi password..."
-                    className="w-full border border-gray-300 rounded-lg py-2 px-3 pl-10 pr-10 text-gray-700 focus:outline-none focus:border-blue-500"
+                    className={`w-full border ${isDark ? "border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:border-blue-400" : "border-gray-300 bg-white text-gray-700 placeholder-gray-500 focus:border-blue-500"} rounded-lg py-2 px-3 pl-10 pr-10 focus:outline-none transition-colors duration-200`}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={isRegisterLoading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
-                    disabled={isRegisterLoading}
+                    className={`absolute inset-y-0 right-0 flex items-center pr-3 ${isDark ? "text-gray-400 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"} transition-colors duration-200`}
                   >
                     {showPassword ? (
                       <Icon icon="lucide:eye-off" />
@@ -392,7 +396,10 @@ export default function Register() {
               </div>
             </form>
             <div className="flex flex-col gap-2.5 items-center w-full">
-              <p className="text-black/40 text-sm text-justify">
+              {" "}
+              <p
+                className={`${isDark ? "text-gray-400" : "text-black/40"} text-sm text-justify`}
+              >
                 Dengan melakukan pendaftaran, Anda setuju dengan{" "}
                 <span className="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] bg-clip-text text-transparent font-bold">
                   syarat & ketentuan
@@ -402,29 +409,32 @@ export default function Register() {
               <motion.button
                 onClick={handleSubmit}
                 className="cursor-pointer text-white rounded-lg px-5 py-3 w-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] transition duration-300 ease-in-out hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isRegisterLoading}
               >
-                {isRegisterLoading ? (
-                  <Icon
-                    icon="line-md:loading-loop"
-                    className="text-xl animate-spin mx-auto"
-                  />
-                ) : (
-                  "Daftar"
-                )}
+                Daftar
               </motion.button>
-            </div>
+            </div>{" "}
             <div className="flex flex-row gap-4 items-center w-full opacity-20">
-              <hr className="border-t border-black w-full" />
-              <p className="text-black text-sm">atau</p>
-              <hr className="border-t border-black w-full" />
+              <hr
+                className={`border-t ${isDark ? "border-gray-300" : "border-black"} w-full`}
+              />
+              <p
+                className={`${isDark ? "text-gray-300" : "text-black"} text-sm`}
+              >
+                atau
+              </p>
+              <hr
+                className={`border-t ${isDark ? "border-gray-300" : "border-black"} w-full`}
+              />
             </div>{" "}
             <motion.button
               className="w-full"
               onClick={handleGoogleSignUp}
               disabled={isGoogleLoading}
             >
-              <div className="flex flex-row gap-2 items-center justify-center w-full bg-white border border-gray-300 rounded-lg px-5 py-3 transition duration-300 ease-in-out hover:opacity-80 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+              {" "}
+              <div
+                className={`flex flex-row gap-2 items-center justify-center w-full ${isDark ? "bg-gray-700 border-gray-600 hover:bg-gray-600" : "bg-white border-gray-300 hover:opacity-80"} border rounded-lg px-5 py-3 transition duration-300 ease-in-out cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
                 {isGoogleLoading ? (
                   <Icon
                     icon="line-md:loading-loop"
@@ -432,13 +442,19 @@ export default function Register() {
                   />
                 ) : (
                   <>
-                    <p className="text-black text-sm">Daftar dengan Google</p>
+                    <p
+                      className={`${isDark ? "text-white" : "text-black"} text-sm`}
+                    >
+                      Daftar dengan Google
+                    </p>
                     <Icon icon="flat-color-icons:google" className="text-2xl" />
                   </>
                 )}
               </div>
-            </motion.button>
-            <p className="text-gray-500 text-sm text-center mt-4">
+            </motion.button>{" "}
+            <p
+              className={`${isDark ? "text-gray-400" : "text-gray-500"} text-sm text-center mt-4`}
+            >
               Sudah punya akun?{" "}
               <Link
                 href="/login"
@@ -446,11 +462,10 @@ export default function Register() {
               >
                 Masuk sekarang
               </Link>
-            </p>
+            </p>{" "}
           </motion.div>
         </div>
       </div>
-      {/* Panel Kiri: Kenapa NewsInsight? (hidden di mobile) */}
     </>
   );
 }

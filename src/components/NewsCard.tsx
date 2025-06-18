@@ -1,10 +1,11 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 import React from "react";
-import { formatDistanceToNow } from "date-fns";
-import { id as idLocale } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import { useDarkMode } from "@/context/DarkModeContext";
+import { useLanguage } from "@/context/LanguageContext";
+import { TranslatedText } from "@/components/TranslatedText";
+import { formatTimestamp } from "@/utils/formatTimestamp";
 
 interface NewsCard {
   id?: string;
@@ -28,16 +29,10 @@ export default function NewsCard({
   link,
 }: NewsCard) {
   const { isDark } = useDarkMode();
-  const formattedTimestamp = formatDistanceToNow(new Date(timestamp), {
-    addSuffix: true,
-    locale: idLocale,
-  });
+  const { currentLanguage } = useLanguage();
   const router = useRouter();
 
-  const customFormattedTimestamp = formattedTimestamp
-    .replace("sekitar ", "")
-    .replace("dalam waktu ", "")
-    .replace("dulu", "lalu");
+  const formattedTimestamp = formatTimestamp(timestamp, currentLanguage.code);
 
   return (
     <div onClick={() => router.push(link)} className="cursor-pointer w-full">
@@ -48,7 +43,7 @@ export default function NewsCard({
           src={imageUrl}
           alt={title}
           className="w-full h-36 sm:h-44 lg:h-48 object-cover rounded-xl sm:rounded-2xl"
-        />
+        />{" "}
         <div className="p-3 sm:p-4 flex flex-col gap-1 sm:gap-2 w-full">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-xs sm:text-sm font-bold bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text">
@@ -60,13 +55,13 @@ export default function NewsCard({
             <p
               className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
             >
-              {customFormattedTimestamp}
+              {formattedTimestamp}
             </p>
           </div>
           <p
             className={`${isDark ? "text-white" : "text-black"} font-medium text-sm sm:text-base leading-tight`}
           >
-            {title}
+            <TranslatedText>{title}</TranslatedText>
           </p>
         </div>
       </div>

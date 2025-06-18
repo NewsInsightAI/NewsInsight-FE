@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
+import React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
@@ -10,12 +11,17 @@ import {
   formatDateForUrl,
 } from "@/utils/newsUrlGenerator";
 import { useDarkMode } from "@/context/DarkModeContext";
-import { formatDistanceToNow } from "date-fns";
-import { id as idLocale } from "date-fns/locale";
+import { useLanguage } from "@/context/LanguageContext";
+import { TranslatedText } from "@/components/TranslatedText";
+import { TranslatedContent } from "@/components/TranslatedContent";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { Vibrant } from "node-vibrant/browser";
+import { Icon } from "@iconify/react/dist/iconify.js";
+import { formatTimestamp } from "@/utils/formatTimestamp";
 
 export default function NewsDetailPage() {
   const { isDark } = useDarkMode();
+  const { currentLanguage } = useLanguage();
   const params = useParams();
   const [news, setNews] = useState<NewsItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,20 +33,93 @@ export default function NewsDetailPage() {
   const [fontSize, setFontSize] = useState<"small" | "medium" | "large">(
     "medium"
   );
-  const [isReading, setIsReading] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+
+  const [translatedContentForTTS, setTranslatedContentForTTS] =
+    useState<string>("");
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // Fungsi untuk menghitung reading time
   const calculateReadingTime = (text: string): number => {
-    const wordsPerMinute = 200; // Average reading speed
+    const wordsPerMinute = 200;
     const words = text.trim().split(/\s+/).length;
     return Math.ceil(words / wordsPerMinute);
   };
 
-  // Mock content untuk demo - dalam implementasi nyata ambil dari API
-  const articleContent = `
-    Ini adalah konten demo untuk berita dengan judul "${news?.title}". Dalam implementasi sebenarnya, konten ini akan diambil dari database atau API yang menyediakan detail lengkap artikel berita.
+  const speakText = (text: string) => {
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+
+      const languageMap: Record<string, string> = {
+        id: "id-ID",
+        en: "en-US",
+        es: "es-ES",
+        fr: "fr-FR",
+        de: "de-DE",
+        ja: "ja-JP",
+        ko: "ko-KR",
+        zh: "zh-CN",
+        ar: "ar-SA",
+        pt: "pt-BR",
+        ru: "ru-RU",
+        hi: "hi-IN",
+      };
+
+      utterance.lang = languageMap[currentLanguage.code] || "id-ID";
+      utterance.rate = 0.9;
+      utterance.pitch = 1.0;
+      utterance.onstart = () => {
+        setIsSpeaking(true);
+      };
+      utterance.onend = () => {
+        setIsSpeaking(false);
+      };
+
+      utterance.onerror = (event) => {
+        console.error("Speech error:", event);
+        setIsSpeaking(false);
+
+        if (event.error !== "canceled" && event.error !== "interrupted") {
+          alert("Terjadi kesalahan saat memutar audio.");
+        }
+      };
+
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert("Browser Anda tidak mendukung Text-to-Speech.");
+    }
+  };
+  const stopSpeech = () => {
+    if ("speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {
+        console.log("Speech already stopped or cancelled");
+      } finally {
+        setIsSpeaking(false);
+      }
+    }
+  };
+  const handleSpeechToggle = () => {
+    if (isSpeaking) {
+      stopSpeech();
+    } else {
+      const contentToSpeak = translatedContentForTTS || getPlainTextContent();
+      const textToSpeak = `${news?.title}. ${contentToSpeak}`;
+      speakText(textToSpeak);
+    }
+  };
+
+  const getPlainTextContent = () => {
+    if (news?.content) {
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = news.content;
+      return tempDiv.textContent || tempDiv.innerText || "";
+    }
+
+    return `Ini adalah konten demo untuk berita dengan judul "${news?.title}". Dalam implementasi sebenarnya, konten ini akan diambil dari database atau API yang menyediakan detail lengkap artikel berita.
     
     Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
     
@@ -48,8 +127,10 @@ export default function NewsDetailPage() {
     
     Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
     
-    Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.
-  `;
+    Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.`;
+  };
+
+  const articleContent = getPlainTextContent();
 
   const readingTime = calculateReadingTime(articleContent);
 
@@ -109,7 +190,6 @@ export default function NewsDetailPage() {
     }
   }, [params]);
 
-  // useEffect untuk vibrant color ketika news sudah dimuat
   useEffect(() => {
     if (news && news.imageUrl) {
       Vibrant.from(news.imageUrl)
@@ -125,7 +205,7 @@ export default function NewsDetailPage() {
         });
     }
   }, [news]);
-  // CSS untuk styling konten React Quill
+
   useEffect(() => {
     const style = document.createElement("style");
     style.textContent = `
@@ -204,7 +284,9 @@ export default function NewsDetailPage() {
       >
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-current mx-auto mb-4"></div>
-          <p>Memuat berita...</p>
+          <p>
+            <TranslatedText>Memuat berita...</TranslatedText>
+          </p>
         </div>
       </div>
     );
@@ -219,25 +301,25 @@ export default function NewsDetailPage() {
         style={{ paddingTop: navbarHeight + 24 }}
       >
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Berita tidak ditemukan</h1>
+          {" "}
+          <h1 className="text-2xl font-bold mb-4">
+            <TranslatedText>Berita tidak ditemukan</TranslatedText>
+          </h1>
           <Link
             href="/"
             className="text-blue-600 hover:text-blue-800 underline"
           >
-            Kembali ke beranda
+            <TranslatedText>Kembali ke beranda</TranslatedText>
           </Link>
         </div>
       </div>
     );
   }
 
-  const formattedTimestamp = formatDistanceToNow(new Date(news.timestamp), {
-    addSuffix: true,
-    locale: idLocale,
-  })
-    .replace("sekitar ", "")
-    .replace("dalam waktu ", "")
-    .replace("dulu", "lalu");
+  const formattedTimestamp = formatTimestamp(
+    news.timestamp,
+    currentLanguage.code
+  );
 
   return (
     <div
@@ -250,49 +332,33 @@ export default function NewsDetailPage() {
       <div className="w-full grid grid-cols-1 lg:grid-cols-4 gap-0">
         {/* Area Kiri - Konten Utama (75%) */}
         <div className="lg:col-span-3 px-3 sm:px-6">
+          {" "}
           {/* Breadcrumbs */}
-          <nav className="flex mb-6 text-sm">
-            <ol className="flex items-center space-x-2">
-              <li>
-                <Link
-                  href="/"
-                  className={`${
-                    isDark
-                      ? "text-blue-400 hover:text-blue-300"
-                      : "text-blue-600 hover:text-blue-800"
-                  } transition-colors`}
-                >
-                  Beranda
-                </Link>
-              </li>
-              <li className={`${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                <span> / </span>
-              </li>
-              <li>
-                <span
-                  className={`${
-                    isDark ? "text-blue-400" : "text-blue-600"
-                  } capitalize`}
-                >
-                  {news.category}
-                </span>
-              </li>
-              <li className={`${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                <span> / </span>
-              </li>
-              <li
-                className={`${
-                  isDark ? "text-gray-400" : "text-gray-500"
-                } truncate max-w-xs`}
-              >
-                {news.title}
-              </li>
-            </ol>
-          </nav>
+          {news && (
+            <Breadcrumbs
+              items={[
+                {
+                  label: "Beranda",
+                  href: "/",
+                },
+                {
+                  label:
+                    news.category.charAt(0).toUpperCase() +
+                    news.category.slice(1),
+                  href: `/${news.category}`,
+                },
+                {
+                  label: news.title,
+                  isActive: true,
+                },
+              ]}
+              className="mb-6"
+            />
+          )}
           {/* Hero Section */}
           <div
             className={`relative w-full h-[300px] sm:h-[400px] lg:h-[550px] rounded-2xl sm:rounded-3xl overflow-hidden mb-8 ${
-              isDark ? "shadow-2xl news-glow-pulse" : ""
+              isDark ? "shadow-2xl" : ""
             }`}
             style={{
               boxShadow: isDark
@@ -336,76 +402,63 @@ export default function NewsDetailPage() {
                   className="text-xs sm:text-sm lg:text-base font-bold px-2 sm:px-3 lg:px-4 py-1 sm:py-1.5 lg:py-2 bg-white rounded-full"
                   style={{ color: vibrantColor }}
                 >
-                  {news.category
-                    ? news.category.charAt(0).toUpperCase() +
-                      news.category.slice(1)
-                    : "Kategori Berita"}
+                  <TranslatedText>
+                    {news.category
+                      ? news.category.charAt(0).toUpperCase() +
+                        news.category.slice(1)
+                      : "Kategori Berita"}
+                  </TranslatedText>
                 </p>
               </div>
-
               <div className="flex flex-col gap-1 sm:gap-2 w-full">
+                {" "}
                 <p className="text-white text-xs sm:text-sm font-semibold">
-                  {news.source || "Nama Penulis"} •{" "}
+                  {news.source || <TranslatedText>Nama Penulis</TranslatedText>}{" "}
+                  •{" "}
                   <span className="font-normal">
-                    {formattedTimestamp || "Tanggal Publikasi"}
+                    {formattedTimestamp || (
+                      <TranslatedText>Tanggal Publikasi</TranslatedText>
+                    )}
                   </span>
                 </p>
                 <p className="text-white text-lg sm:text-2xl lg:text-[32px] font-semibold w-full sm:w-3/4 lg:w-1/2 leading-tight">
-                  {news.title || "Judul Berita"}
+                  <TranslatedText>
+                    {news.title || "Judul Berita"}
+                  </TranslatedText>
                 </p>
-              </div>
+              </div>{" "}
             </div>{" "}
-          </div>
+          </div>{" "}
           {/* Action Buttons */}
-          <div className="py-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex flex-wrap gap-3">
-              {/* Ringkas Berita */}
-              <button className="inline-flex items-center px-4 py-2 rounded-lg font-medium text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl">
-                <svg
+          <div className="pb-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex gap-3 overflow-x-auto no-scrollbar">
+              {/* Ringkas Berita - Urutan Pertama dengan flex-1 */}
+              <button className="flex-1 inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium text-white bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] hover:from-[#2DD4FF] hover:to-[#4F46E5] transition-all duration-300 shadow-lg hover:shadow-xl whitespace-nowrap">
+                <Icon
+                  icon="material-symbols:summarize"
                   className="w-4 h-4 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                Ringkas Berita
+                />
+                <TranslatedText>Ringkas Berita</TranslatedText>
               </button>
-
               {/* Reading Time */}
               <div
-                className={`inline-flex items-center px-4 py-2 rounded-lg font-medium ${
+                className={`inline-flex items-center px-4 py-2 rounded-lg font-medium whitespace-nowrap ${
                   isDark
                     ? "bg-gray-800 text-gray-300 border border-gray-700"
                     : "bg-gray-100 text-gray-700 border border-gray-300"
                 }`}
               >
-                <svg
+                <Icon
+                  icon="material-symbols:schedule"
                   className="w-4 h-4 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                {readingTime} Menit
+                />
+                <TranslatedText>{`${readingTime} Menit`}</TranslatedText>
               </div>
-
               {/* Bacakan */}
               <button
-                onClick={() => setIsReading(!isReading)}
-                className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors ${
-                  isReading
+                onClick={handleSpeechToggle}
+                className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                  isSpeaking
                     ? isDark
                       ? "bg-green-800 text-green-100 hover:bg-green-700"
                       : "bg-green-100 text-green-800 hover:bg-green-200"
@@ -414,62 +467,35 @@ export default function NewsDetailPage() {
                       : "bg-gray-100 text-gray-900 hover:bg-gray-200"
                 }`}
               >
-                {isReading ? (
-                  <svg
+                {isSpeaking ? (
+                  <Icon
+                    icon="material-symbols:pause-circle"
                     className="w-4 h-4 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
+                  />
                 ) : (
-                  <svg
+                  <Icon
+                    icon="material-symbols:play-circle"
                     className="w-4 h-4 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M9 9v6l4-3-4-3z"
-                    />
-                  </svg>
+                  />
                 )}
-                {isReading ? "Berhenti" : "Bacakan"}
+                <TranslatedText>
+                  {isSpeaking ? "Berhenti" : "Bacakan"}
+                </TranslatedText>
               </button>
-
               {/* Terjemahan */}
               <button
-                className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
                   isDark
                     ? "bg-gray-800 text-white hover:bg-gray-700"
                     : "bg-gray-100 text-gray-900 hover:bg-gray-200"
                 }`}
               >
-                <svg
+                <Icon
+                  icon="material-symbols:translate"
                   className="w-4 h-4 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-                  />
-                </svg>
-                Terjemahan
+                />
+                <TranslatedText>Terjemahan</TranslatedText>
               </button>
-
               {/* Ubah Font */}
               <button
                 onClick={() => {
@@ -482,34 +508,24 @@ export default function NewsDetailPage() {
                   const nextIndex = (currentIndex + 1) % sizes.length;
                   setFontSize(sizes[nextIndex]);
                 }}
-                className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
                   isDark
                     ? "bg-gray-800 text-white hover:bg-gray-700"
                     : "bg-gray-100 text-gray-900 hover:bg-gray-200"
                 }`}
               >
-                <svg
+                <Icon
+                  icon="material-symbols:format-size"
                   className="w-4 h-4 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                  />
-                </svg>
-                Font (
+                />
+                <TranslatedText>Font</TranslatedText> (
                 {fontSize === "small" ? "S" : fontSize === "medium" ? "M" : "L"}
                 )
               </button>
-
               {/* Simpan */}
               <button
                 onClick={() => setIsSaved(!isSaved)}
-                className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
                   isSaved
                     ? isDark
                       ? "bg-yellow-800 text-yellow-100 hover:bg-yellow-700"
@@ -520,31 +536,20 @@ export default function NewsDetailPage() {
                 }`}
               >
                 {isSaved ? (
-                  <svg
+                  <Icon
+                    icon="material-symbols:bookmark"
                     className="w-4 h-4 mr-2"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M19 21l-7-5-7 5V5a2 2 0 01-2-2h10a2 2 0 012 2v16z" />
-                  </svg>
+                  />
                 ) : (
-                  <svg
+                  <Icon
+                    icon="material-symbols:bookmark-outline"
                     className="w-4 h-4 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-5-7 5V5z"
-                    />
-                  </svg>
+                  />
                 )}
-                {isSaved ? "Tersimpan" : "Simpan"}
+                <TranslatedText>
+                  {isSaved ? "Tersimpan" : "Simpan"}
+                </TranslatedText>
               </button>
-
               {/* Bagikan */}
               <button
                 onClick={() => {
@@ -561,194 +566,225 @@ export default function NewsDetailPage() {
                     alert("Link berhasil disalin!");
                   }
                 }}
-                className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
                   isDark
                     ? "bg-gray-800 text-white hover:bg-gray-700"
                     : "bg-gray-100 text-gray-900 hover:bg-gray-200"
                 }`}
               >
-                <svg
-                  className="w-4 h-4 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
-                  />
-                </svg>
-                Bagikan
+                <Icon icon="material-symbols:share" className="w-4 h-4 mr-2" />
+                <TranslatedText>Bagikan</TranslatedText>
               </button>
-
               {/* Laporkan */}
               <button
-                className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
                   isDark
                     ? "bg-gray-800 text-white hover:bg-gray-700"
                     : "bg-gray-100 text-gray-900 hover:bg-gray-200"
                 }`}
               >
-                <svg
-                  className="w-4 h-4 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-                  />
-                </svg>
-                Laporkan
+                <Icon icon="material-symbols:report" className="w-4 h-4 mr-2" />
+                <TranslatedText>Laporkan</TranslatedText>
               </button>
             </div>
-          </div>{" "}
+          </div>
           {/* Konten Artikel */}
           <div className="py-4">
-            <div
-              className={`prose max-w-none ${isDark ? "prose-invert" : ""} ${
-                fontSize === "small"
-                  ? "prose-sm"
-                  : fontSize === "large"
-                    ? "prose-xl"
-                    : "prose-lg"
-              }`}
-            >
-              {news.content ? (
-                // Render HTML content from React Quill
-                <div
-                  dangerouslySetInnerHTML={{ __html: news.content }}
-                  className={`quill-content ${
-                    fontSize === "small"
-                      ? "text-sm"
-                      : fontSize === "large"
-                        ? "text-xl"
-                        : "text-base"
-                  }`}
-                />
-              ) : (
-                // Fallback content untuk demo
-                <>
-                  <p
-                    className={`leading-relaxed mb-6 ${
-                      fontSize === "small"
-                        ? "text-base"
-                        : fontSize === "large"
-                          ? "text-xl"
-                          : "text-lg"
-                    }`}
-                  >
-                    Ini adalah konten demo untuk berita dengan judul &ldquo;
-                    {news.title}&rdquo;. Dalam implementasi sebenarnya, konten
-                    ini akan diambil dari database atau API yang menyediakan
-                    detail lengkap artikel berita.
-                  </p>
-                  <p className="mb-6">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
-                    do eiusmod tempor incididunt ut labore et dolore magna
-                    aliqua. Ut enim ad minim veniam, quis nostrud exercitation
-                    ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                  </p>
-                  <p className="mb-6">
-                    Duis aute irure dolor in reprehenderit in voluptate velit
-                    esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
-                    occaecat cupidatat non proident, sunt in culpa qui officia
-                    deserunt mollit anim id est laborum.
-                  </p>
-                  <h2
-                    className={`font-bold mb-4 ${isDark ? "text-white" : "text-gray-900"} ${
-                      fontSize === "small"
-                        ? "text-xl"
-                        : fontSize === "large"
-                          ? "text-3xl"
-                          : "text-2xl"
-                    }`}
-                  >
-                    Informasi Lebih Lanjut
-                  </h2>
-                  <p className="mb-6">
-                    Sed ut perspiciatis unde omnis iste natus error sit
-                    voluptatem accusantium doloremque laudantium, totam rem
-                    aperiam, eaque ipsa quae ab illo inventore veritatis et
-                    quasi architecto beatae vitae dicta sunt explicabo.
-                  </p>{" "}
-                  <p>
-                    Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut
-                    odit aut fugit, sed quia consequuntur magni dolores eos qui
-                    ratione voluptatem sequi nesciunt.
-                  </p>
-                  <h2
-                    className={`font-bold mb-4 ${isDark ? "text-white" : "text-gray-900"} ${
-                      fontSize === "small"
-                        ? "text-xl"
-                        : fontSize === "large"
-                          ? "text-3xl"
-                          : "text-2xl"
-                    }`}
-                  >
-                    Contoh List
-                  </h2>
-                  <p className="mb-4">Berikut adalah contoh unordered list:</p>
-                  <ul>
-                    <li>Item pertama dalam list</li>
-                    <li>Item kedua dalam list</li>
-                    <li>
-                      Item ketiga dalam list
-                      <ul>
-                        <li>Sub-item pertama</li>
-                        <li>Sub-item kedua</li>
-                      </ul>
-                    </li>
-                  </ul>
-                  <p className="mb-4 mt-6">
-                    Berikut adalah contoh ordered list:
-                  </p>
-                  <ol>
-                    <li>Langkah pertama</li>
-                    <li>Langkah kedua</li>
-                    <li>
-                      Langkah ketiga
-                      <ol>
-                        <li>Sub-langkah pertama</li>
-                        <li>Sub-langkah kedua</li>
-                      </ol>
-                    </li>
-                  </ol>
-                </>
-              )}
-            </div>
-
-            {/* Tombol Kembali */}
-            <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
-              <button
-                onClick={() => window.history.back()}
-                className={`inline-flex items-center px-6 py-3 rounded-lg font-medium transition-colors ${
+            {" "}
+            <TranslatedContent
+              htmlContent={news.content}
+              plainTextContent={getPlainTextContent()}
+              fontSize={fontSize}
+              newsTitle={news.title}
+              onTranslatedTextChange={setTranslatedContentForTTS}
+            />{" "}
+            {/* Informasi Pelaporan */}
+            {(news.reporters || news.editors) && (
+              <div
+                className={`flex justify-center items-center rounded-2xl py-4 px-5 mt-8 ${
                   isDark
-                    ? "bg-gray-800 text-white hover:bg-gray-700"
-                    : "bg-gray-100 text-gray-900 hover:bg-gray-200"
+                    ? "bg-gray-800 border border-gray-600"
+                    : "bg-[#F2F2F2] border border-black/30"
                 }`}
               >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                <div
+                  className={`text-sm flex items-center gap-3 ${
+                    isDark ? "text-gray-300" : "text-black"
+                  }`}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                  />
-                </svg>
-                Kembali
-              </button>
-            </div>
+                  <Icon icon="oui:reporter" className="w-6 h-6 flex-shrink-0" />
+                  <span className="leading-relaxed">
+                    {" "}
+                    {news.reporters && news.reporters.length > 0 && (
+                      <>
+                        <TranslatedText>Pelaporan oleh</TranslatedText>{" "}
+                        {(() => {
+                          const reportersByLocation: {
+                            [key: string]: string[];
+                          } = {};
+
+                          news.reporters.forEach((reporter) => {
+                            const parts = reporter.split(" di ");
+                            if (parts.length === 2) {
+                              const [name, location] = parts;
+                              if (!reportersByLocation[location]) {
+                                reportersByLocation[location] = [];
+                              }
+                              reportersByLocation[location].push(name.trim());
+                            } else {
+                              if (!reportersByLocation["no-location"]) {
+                                reportersByLocation["no-location"] = [];
+                              }
+                              reportersByLocation["no-location"].push(
+                                reporter.trim()
+                              );
+                            }
+                          });
+
+                          const locationGroups =
+                            Object.keys(reportersByLocation);
+                          const formattedGroups: React.ReactNode[] = [];
+
+                          locationGroups.forEach((location, groupIndex) => {
+                            const names = reportersByLocation[location];
+
+                            if (groupIndex > 0) {
+                              formattedGroups.push(", ");
+                            }
+
+                            if (location === "no-location") {
+                              if (names.length === 1) {
+                                formattedGroups.push(
+                                  <span
+                                    key={`reporter-group-${groupIndex}`}
+                                    className="font-semibold"
+                                  >
+                                    {names[0]}
+                                  </span>
+                                );
+                              } else if (names.length === 2) {
+                                formattedGroups.push(
+                                  <span
+                                    key={`reporter-group-${groupIndex}`}
+                                    className="font-semibold"
+                                  >
+                                    {names[0]}{" "}
+                                    <TranslatedText>dan</TranslatedText>{" "}
+                                    {names[1]}
+                                  </span>
+                                );
+                              } else {
+                                const allButLast = names.slice(0, -1);
+                                const lastName = names[names.length - 1];
+                                formattedGroups.push(
+                                  <span
+                                    key={`reporter-group-${groupIndex}`}
+                                    className="font-semibold"
+                                  >
+                                    {allButLast.join(", ")}{" "}
+                                    <TranslatedText>dan</TranslatedText>{" "}
+                                    {lastName}
+                                  </span>
+                                );
+                              }
+                            } else {
+                              if (names.length === 1) {
+                                formattedGroups.push(
+                                  <React.Fragment
+                                    key={`reporter-group-${groupIndex}`}
+                                  >
+                                    <span className="font-semibold">
+                                      {names[0]}
+                                    </span>{" "}
+                                    <TranslatedText>di</TranslatedText>{" "}
+                                    <span className="font-semibold">
+                                      {location}
+                                    </span>
+                                  </React.Fragment>
+                                );
+                              } else if (names.length === 2) {
+                                formattedGroups.push(
+                                  <React.Fragment
+                                    key={`reporter-group-${groupIndex}`}
+                                  >
+                                    <span className="font-semibold">
+                                      {names[0]}{" "}
+                                      <TranslatedText>dan</TranslatedText>{" "}
+                                      {names[1]}
+                                    </span>{" "}
+                                    <TranslatedText>di</TranslatedText>{" "}
+                                    <span className="font-semibold">
+                                      {location}
+                                    </span>
+                                  </React.Fragment>
+                                );
+                              } else {
+                                const allButLast = names.slice(0, -1);
+                                const lastName = names[names.length - 1];
+                                formattedGroups.push(
+                                  <React.Fragment
+                                    key={`reporter-group-${groupIndex}`}
+                                  >
+                                    <span className="font-semibold">
+                                      {allButLast.join(", ")}{" "}
+                                      <TranslatedText>dan</TranslatedText>{" "}
+                                      {lastName}
+                                    </span>{" "}
+                                    <TranslatedText>di</TranslatedText>{" "}
+                                    <span className="font-semibold">
+                                      {location}
+                                    </span>
+                                  </React.Fragment>
+                                );
+                              }
+                            }
+                          });
+
+                          return formattedGroups;
+                        })()}
+                      </>
+                    )}
+                    {news.reporters &&
+                      news.reporters.length > 0 &&
+                      news.editors &&
+                      news.editors.length > 0 &&
+                      " • "}{" "}
+                    {news.editors && news.editors.length > 0 && (
+                      <>
+                        <TranslatedText>Penyuntingan oleh</TranslatedText>{" "}
+                        {(() => {
+                          if (news.editors.length === 1) {
+                            return (
+                              <span className="font-semibold">
+                                {news.editors[0]}
+                              </span>
+                            );
+                          } else if (news.editors.length === 2) {
+                            return (
+                              <span className="font-semibold">
+                                {news.editors[0]}{" "}
+                                <TranslatedText>dan</TranslatedText>{" "}
+                                {news.editors[1]}
+                              </span>
+                            );
+                          } else {
+                            const allButLast = news.editors.slice(0, -1);
+                            const lastName =
+                              news.editors[news.editors.length - 1];
+                            return (
+                              <span className="font-semibold">
+                                {allButLast.join(", ")}{" "}
+                                <TranslatedText>dan</TranslatedText> {lastName}
+                              </span>
+                            );
+                          }
+                        })()}
+                      </>
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -757,10 +793,12 @@ export default function NewsDetailPage() {
           <div className="mb-8 sticky" style={{ top: navbarHeight + 24 }}>
             {/* Berita Kategori Sama */}
             <div className="mb-8">
+              {" "}
               <h3
                 className={`text-xl font-bold mb-4 ${isDark ? "text-white" : "text-gray-900"}`}
               >
-                Berita {news.category} Lainnya
+                <TranslatedText>Berita</TranslatedText> {news.category}{" "}
+                <TranslatedText>Lainnya</TranslatedText>
               </h3>
               <div className="space-y-4">
                 {listNews
@@ -802,32 +840,31 @@ export default function NewsDetailPage() {
                               textOverflow: "ellipsis",
                             }}
                           >
-                            {item.title}
-                          </h4>
+                            <TranslatedText>{item.title}</TranslatedText>
+                          </h4>{" "}
                           <p
                             className={`text-xs ${
                               isDark ? "text-gray-400" : "text-gray-600"
                             }`}
                           >
                             {item.source} •{" "}
-                            {formatDistanceToNow(new Date(item.timestamp), {
-                              addSuffix: true,
-                              locale: idLocale,
-                            })}
+                            {formatTimestamp(
+                              item.timestamp,
+                              currentLanguage.code
+                            )}
                           </p>
                         </div>
                       </div>
                     </Link>
                   ))}
               </div>
-            </div>
-
+            </div>{" "}
             {/* Berita Trending */}
             <div>
               <h3
                 className={`text-xl font-bold mb-4 ${isDark ? "text-white" : "text-gray-900"}`}
               >
-                Berita Trending
+                <TranslatedText>Berita Trending</TranslatedText>
               </h3>
               <div className="space-y-4">
                 {listNews
@@ -857,7 +894,7 @@ export default function NewsDetailPage() {
                           }`}
                         >
                           {index + 1}
-                        </div>
+                        </div>{" "}
                         <div className="flex-1 min-w-0">
                           <h4
                             className={`text-sm font-semibold mb-1 ${
@@ -871,18 +908,18 @@ export default function NewsDetailPage() {
                               textOverflow: "ellipsis",
                             }}
                           >
-                            {item.title}
-                          </h4>
+                            <TranslatedText>{item.title}</TranslatedText>
+                          </h4>{" "}
                           <p
                             className={`text-xs ${
                               isDark ? "text-gray-400" : "text-gray-600"
                             }`}
                           >
                             {item.source} •{" "}
-                            {formatDistanceToNow(new Date(item.timestamp), {
-                              addSuffix: true,
-                              locale: idLocale,
-                            })}
+                            {formatTimestamp(
+                              item.timestamp,
+                              currentLanguage.code
+                            )}
                           </p>
                         </div>
                       </div>

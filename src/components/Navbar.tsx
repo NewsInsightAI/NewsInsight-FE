@@ -10,6 +10,9 @@ import { useSession, signOut } from "next-auth/react";
 import { getAvatarUrl } from "@/utils/avatarUtils";
 import { shortenName } from "@/utils/nameUtils";
 import { useDarkMode } from "@/context/DarkModeContext";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { TranslatedText } from "@/components/TranslatedText";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface ProfileData {
   id: number;
@@ -25,6 +28,7 @@ interface ProfileData {
 
 export const Navbar = () => {
   const { isDark, toggleDark } = useDarkMode();
+  const { currentLanguage } = useLanguage();
   const pathname = usePathname();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -34,69 +38,88 @@ export const Navbar = () => {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [isBackendConnected, setIsBackendConnected] = useState(false);
   const [isCheckingBackend, setIsCheckingBackend] = useState(true);
-  useEffect(() => {
-    const checkBackendConnection = async () => {
-      if (status === "authenticated") {
-        try {
-          setIsCheckingBackend(true);
+  const checkBackendConnection = React.useCallback(async () => {
+    if (status === "authenticated") {
+      try {
+        setIsCheckingBackend(true);
 
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-          const response = await fetch("/api/profile/me", {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            signal: controller.signal,
-          });
+        const response = await fetch("/api/profile/me", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          signal: controller.signal,
+        });
 
-          clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
 
-          if (response.ok) {
-            const result = await response.json();
-            if (result.status === "success") {
-              setIsBackendConnected(true);
-            } else {
-              console.warn("Backend authentication failed:", result.message);
-              setIsBackendConnected(false);
-
-              if (
-                result.message?.includes("token") ||
-                result.message?.includes("unauthorized") ||
-                result.message?.includes("invalid")
-              ) {
-                console.log("Clearing invalid session...");
-                await signOut({ redirect: false });
-              }
-            }
+        if (response.ok) {
+          const result = await response.json();
+          if (result.status === "success") {
+            setIsBackendConnected(true);
           } else {
-            console.warn("Backend not accessible, status:", response.status);
+            console.warn("Backend authentication failed:", result.message);
             setIsBackendConnected(false);
 
-            if (response.status === 401 || response.status === 403) {
-              console.log("Clearing unauthorized session...");
+            if (
+              result.message?.includes("token") ||
+              result.message?.includes("unauthorized") ||
+              result.message?.includes("invalid")
+            ) {
+              console.log("Clearing invalid session...");
               await signOut({ redirect: false });
             }
           }
-        } catch (error: unknown) {
-          console.warn("Backend connection check failed:", error);
+        } else {
+          console.warn("Backend not accessible, status:", response.status);
           setIsBackendConnected(false);
 
-          if (error instanceof Error && error.name !== "AbortError") {
-            console.warn("Non-timeout error:", error.message);
+          if (response.status === 401 || response.status === 403) {
+            console.log("Clearing unauthorized session...");
+            await signOut({ redirect: false });
           }
-        } finally {
-          setIsCheckingBackend(false);
         }
-      } else {
+      } catch (error: unknown) {
+        console.warn("Backend connection check failed:", error);
         setIsBackendConnected(false);
+
+        if (error instanceof Error && error.name !== "AbortError") {
+          console.warn("Non-timeout error:", error.message);
+        }
+      } finally {
         setIsCheckingBackend(false);
       }
+    } else {
+      setIsBackendConnected(false);
+      setIsCheckingBackend(false);
+    }
+  }, [status]);
+
+  useEffect(() => {
+    checkBackendConnection();
+  }, [checkBackendConnection]);
+
+
+  useEffect(() => {
+    const handleAuthStateChange = () => {
+      console.log(
+        "Auth state change detected, re-checking backend connection..."
+      );
+      checkBackendConnection();
     };
 
-    checkBackendConnection();
-  }, [status]);
+  
+    window.addEventListener("auth-state-changed", handleAuthStateChange);
+    window.addEventListener("login-success", handleAuthStateChange);
+
+    return () => {
+      window.removeEventListener("auth-state-changed", handleAuthStateChange);
+      window.removeEventListener("login-success", handleAuthStateChange);
+    };
+  }, [checkBackendConnection]);
 
   React.useEffect(() => {
     console.log("Navbar session check:", {
@@ -120,45 +143,53 @@ export const Navbar = () => {
     }
     return "/images/default_profile.png";
   };
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      if (status === "authenticated" && isBackendConnected) {
-        try {
-          const response = await fetch("/api/profile/me");
-          const result = await response.json();
+  const fetchProfileData = React.useCallback(async () => {
+    if (status === "authenticated" && isBackendConnected) {
+      try {
+        const response = await fetch("/api/profile/me");
+        const result = await response.json();
 
-          if (response.ok && result.status === "success") {
-            setProfileData(result.data);
-            if (result.data?.avatar) {
-              setProfileAvatar(result.data.avatar);
-            } else {
-              setProfileAvatar("");
-            }
+        if (response.ok && result.status === "success") {
+          setProfileData(result.data);
+          if (result.data?.avatar) {
+            setProfileAvatar(result.data.avatar);
           } else {
-            console.error("Failed to fetch profile:", result.message);
-            setProfileData(null);
             setProfileAvatar("");
           }
-        } catch (error) {
-          console.error("Error fetching profile:", error);
+        } else {
+          console.error("Failed to fetch profile:", result.message);
           setProfileData(null);
           setProfileAvatar("");
         }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        setProfileData(null);
+        setProfileAvatar("");
       }
-    };
+    }
+  }, [status, isBackendConnected]);
 
+  useEffect(() => {
     fetchProfileData();
 
     const handleProfileUpdate = () => {
       fetchProfileData();
     };
 
+    const handleAuthChange = () => {
+      fetchProfileData();
+    };
+
     window.addEventListener("profile-updated", handleProfileUpdate);
+    window.addEventListener("login-success", handleAuthChange);
+    window.addEventListener("auth-state-changed", handleAuthChange);
 
     return () => {
       window.removeEventListener("profile-updated", handleProfileUpdate);
+      window.removeEventListener("login-success", handleAuthChange);
+      window.removeEventListener("auth-state-changed", handleAuthChange);
     };
-  }, [status, isBackendConnected]);
+  }, [fetchProfileData]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -183,7 +214,40 @@ export const Navbar = () => {
       redirect: true,
       callbackUrl: "/login",
     });
+
+    window.dispatchEvent(new CustomEvent("auth-state-changed"));
   };
+  const searchPlaceholder = (() => {
+    switch (currentLanguage.code) {
+      case "en":
+        return "Search news...";
+      case "es":
+        return "Buscar noticias...";
+      case "fr":
+        return "Rechercher des nouvelles...";
+      case "de":
+        return "Nachrichten suchen...";
+      case "pt":
+        return "Pesquisar notícias...";
+      case "it":
+        return "Cerca notizie...";
+      case "ru":
+        return "Поиск новостей...";
+      case "ja":
+        return "ニュースを検索...";
+      case "ko":
+        return "뉴스 검색...";
+      case "zh":
+        return "搜索新闻...";
+      case "ar":
+        return "البحث عن الأخبار...";
+      case "hi":
+        return "समाचार खोजें...";
+      case "id":
+      default:
+        return "Cari berita...";
+    }
+  })();
 
   const isUserAuthenticated = () => {
     return (
@@ -228,28 +292,25 @@ export const Navbar = () => {
               </span>
             </Link>
           </div>
-          {/* Desktop menu */}
+          {/* Desktop menu */}{" "}
           <ul className="hidden md:flex space-x-10">
             <li>
+              {" "}
               <div className="hover:text-gray-400 flex items-center gap-2 cursor-pointer">
-                <div>Kategori</div>
+                <TranslatedText>Kategori</TranslatedText>
                 <Icon icon="mingcute:down-line" className="inline-block" />
               </div>
             </li>
             <li>
-              <a href="/about-us" className="hover:text-gray-400">
-                Tentang Kami
-              </a>
+              <Link href="/about-us" className="hover:text-gray-400">
+                <TranslatedText>Tentang Kami</TranslatedText>
+              </Link>
             </li>
           </ul>
-        </div>
-
+        </div>{" "}
         <div className="flex items-center gap-4 md:gap-10">
           {/* Hide language and dark mode on mobile */}
-          <div className="hidden md:flex items-center gap-2 cursor-pointer hover:text-gray-400">
-            <p>ID</p>
-            <Icon icon="mingcute:down-line" className="inline-block" />
-          </div>{" "}
+          <LanguageSelector className="hidden md:flex" />
           <button
             className="hidden md:block hover:text-gray-400 transition-colors"
             onClick={toggleDark}
@@ -262,7 +323,7 @@ export const Navbar = () => {
               }
               className="text-2xl"
             />
-          </button>{" "}
+          </button>
           {isUserAuthenticated() && session ? (
             <>
               {session.user?.role === "user" ? (
@@ -321,15 +382,16 @@ export const Navbar = () => {
                             href="/profile"
                             className={`px-5 py-2 ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"} cursor-pointer flex items-center gap-2`}
                           >
+                            {" "}
                             <Icon icon="iconamoon:profile-fill" fontSize={18} />
-                            Profil Saya
+                            <TranslatedText>Profil Saya</TranslatedText>
                           </Link>
                           <Link
                             href="/settings"
                             className={`px-5 py-2 ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"} cursor-pointer flex items-center gap-2`}
                           >
                             <Icon icon="solar:settings-bold" fontSize={18} />
-                            Pengaturan
+                            <TranslatedText>Pengaturan</TranslatedText>
                           </Link>
                           <button
                             onClick={toggleDark}
@@ -343,14 +405,16 @@ export const Navbar = () => {
                               }
                               fontSize={18}
                             />
-                            {isDark ? "Mode Terang" : "Mode Gelap"}
-                          </button>{" "}
+                            <TranslatedText>
+                              {isDark ? "Mode Terang" : "Mode Gelap"}
+                            </TranslatedText>
+                          </button>
                           <button
                             onClick={handleLogout}
                             className={`px-5 py-2 ${isDark ? "hover:bg-red-900/50" : "hover:bg-red-100"} text-red-500 cursor-pointer flex items-center gap-2 w-full text-left`}
                           >
                             <Icon icon="solar:logout-2-bold" fontSize={18} />
-                            Keluar
+                            <TranslatedText>Keluar</TranslatedText>
                           </button>
                         </ul>
                       </motion.div>
@@ -363,8 +427,9 @@ export const Navbar = () => {
                     href="/dashboard"
                     className="flex items-center gap-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white rounded-3xl px-4 md:px-5 py-2 md:py-2.5 hover:opacity-80 transition duration-300 ease-in-out cursor-pointer text-sm md:text-base"
                   >
+                    {" "}
                     <Icon icon="mynaui:home-solid" fontSize={20} />
-                    <p>Dashboard</p>
+                    <TranslatedText>Dasbor</TranslatedText>
                   </Link>
                   <div className="relative" ref={dropdownRef}>
                     <div
@@ -415,22 +480,24 @@ export const Navbar = () => {
                           <ul
                             className={`text-sm ${isDark ? "text-white" : "text-black"} flex flex-col`}
                           >
+                            {" "}
                             <Link
                               href="/profile"
                               className={`px-5 py-2 ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"} cursor-pointer flex items-center gap-2`}
                             >
+                              {" "}
                               <Icon
                                 icon="iconamoon:profile-fill"
                                 fontSize={18}
                               />
-                              Profil Saya
+                              <TranslatedText>Profil Saya</TranslatedText>
                             </Link>
                             <Link
                               href="/settings"
                               className={`px-5 py-2 ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"} cursor-pointer flex items-center gap-2`}
                             >
                               <Icon icon="solar:settings-bold" fontSize={18} />
-                              Pengaturan
+                              <TranslatedText>Pengaturan Akun</TranslatedText>
                             </Link>
                             <button
                               onClick={toggleDark}
@@ -444,14 +511,16 @@ export const Navbar = () => {
                                 }
                                 fontSize={18}
                               />
-                              {isDark ? "Mode Terang" : "Mode Gelap"}
-                            </button>
+                              <TranslatedText>
+                                {isDark ? "Tema Terang" : "Tema Gelap"}
+                              </TranslatedText>
+                            </button>{" "}
                             <button
                               onClick={handleLogout}
                               className={`px-5 py-2 ${isDark ? "hover:bg-red-900/50" : "hover:bg-red-100"} text-red-500 cursor-pointer flex items-center gap-2 w-full text-left`}
                             >
                               <Icon icon="solar:logout-2-bold" fontSize={18} />
-                              Keluar
+                              <TranslatedText>Keluar</TranslatedText>
                             </button>
                           </ul>
                         </motion.div>
@@ -472,7 +541,7 @@ export const Navbar = () => {
                   href="/login"
                   className="flex items-center gap-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white rounded-3xl px-4 md:px-5 py-2 md:py-2.5 hover:opacity-80 transition duration-300 ease-in-out cursor-pointer text-sm md:text-base"
                 >
-                  <p>Masuk</p>
+                  <TranslatedText>Masuk</TranslatedText>
                   <Icon
                     icon="majesticons:login"
                     fontSize={20}
@@ -505,24 +574,49 @@ export const Navbar = () => {
               className={`absolute left-0 right-0 top-0 ${isDark ? "bg-[#1A1A1A] text-white" : "bg-white text-black"} shadow-lg rounded-b-2xl flex flex-col gap-2 py-4 px-6`}
               onClick={(e) => e.stopPropagation()}
             >
+              {" "}
               <Link
                 href="/"
                 className="py-2"
                 onClick={() => setShowMobileMenu(false)}
               >
-                Beranda
+                <TranslatedText>Beranda</TranslatedText>
               </Link>
               <Link
                 href="/about-us"
                 className="py-2"
                 onClick={() => setShowMobileMenu(false)}
               >
-                Tentang Kami
-              </Link>
+                <TranslatedText>Tentang Kami</TranslatedText>
+              </Link>{" "}
               <div className="py-2 flex items-center gap-2">
-                <span>Kategori</span>
+                <TranslatedText>Kategori</TranslatedText>
                 <Icon icon="mingcute:down-line" />
               </div>
+              {/* Language selector for mobile */}{" "}
+              <div className="py-2 border-t border-gray-200 dark:border-gray-700 mt-2 pt-4">
+                <div className="mb-2 text-sm font-medium opacity-75">
+                  <TranslatedText>Bahasa</TranslatedText>
+                </div>
+                <LanguageSelector showFullName />
+              </div>
+              {/* Dark mode toggle for mobile */}
+              <button
+                onClick={toggleDark}
+                className="py-2 flex items-center gap-2 w-full text-left"
+              >
+                <Icon
+                  icon={
+                    isDark
+                      ? "material-symbols:light-mode-rounded"
+                      : "ic:round-dark-mode"
+                  }
+                  fontSize={18}
+                />
+                <TranslatedText>
+                  {isDark ? "Mode Terang" : "Mode Gelap"}
+                </TranslatedText>
+              </button>
             </motion.div>
           </motion.div>
         )}
@@ -534,7 +628,7 @@ export const Navbar = () => {
           {" "}
           <input
             type="text"
-            placeholder="Cari berita..."
+            placeholder={searchPlaceholder}
             className={`w-full px-5 md:px-6 py-2.5 md:py-3 border ${isDark ? "border-gray-600 bg-[#1A1A1A] text-white placeholder:text-gray-400 shadow-lg shadow-blue-500/10" : "border-[#E2E2E2] bg-white text-black placeholder:text-[#818181]"} rounded-full focus:outline-[#367AF2] text-sm md:text-base transition-all duration-300`}
           />
           <Icon
