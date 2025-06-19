@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/context/LanguageContextSimple";
 
+
 export const useAutoTranslate = (originalText: string) => {
   const { currentLanguage } = useLanguage();
   const [translatedText, setTranslatedText] = useState(originalText);

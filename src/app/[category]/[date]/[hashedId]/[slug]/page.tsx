@@ -35,7 +35,7 @@ export default function NewsDetailPage() {
   );
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-
+  
   const [translatedContentForTTS, setTranslatedContentForTTS] =
     useState<string>("");
   const imgRef = useRef<HTMLImageElement>(null);
@@ -190,6 +190,7 @@ export default function NewsDetailPage() {
     }
   }, [params]);
 
+  
   useEffect(() => {
     if (news && news.imageUrl) {
       Vibrant.from(news.imageUrl)
@@ -205,7 +206,7 @@ export default function NewsDetailPage() {
         });
     }
   }, [news]);
-
+  
   useEffect(() => {
     const style = document.createElement("style");
     style.textContent = `
@@ -358,7 +359,7 @@ export default function NewsDetailPage() {
           {/* Hero Section */}
           <div
             className={`relative w-full h-[300px] sm:h-[400px] lg:h-[550px] rounded-2xl sm:rounded-3xl overflow-hidden mb-8 ${
-              isDark ? "shadow-2xl" : ""
+              isDark ? "shadow-2xl news-glow-pulse" : ""
             }`}
             style={{
               boxShadow: isDark

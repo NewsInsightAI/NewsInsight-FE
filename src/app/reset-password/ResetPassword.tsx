@@ -1,11 +1,13 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import VerifyEmail from "../../components/popup/VerifyEmail";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useToast } from "@/context/ToastProvider";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useDarkMode } from "@/context/DarkModeContext";
 
 const breadcrumbsItems = [
   { label: "Beranda", href: "/" },
@@ -13,60 +15,22 @@ const breadcrumbsItems = [
 ];
 
 export default function ResetPassword() {
+  const { isDark } = useDarkMode();
   const [navbarHeight, setNavbarHeight] = useState(0);
   const [showVerifyEmail, setShowVerifyEmail] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isValidating, setIsValidating] = useState(true);
+  const [tokenValid, setTokenValid] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
   const { promise, showToast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const [token, setToken] = useState<string | null>(null);
-  const [tokenValid, setTokenValid] = useState<null | boolean>(null);
-  const [tokenCheckLoading, setTokenCheckLoading] = useState(true);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const t = params.get("token");
-    setToken(t);
-    if (t) {
-      setTokenCheckLoading(true);
-      fetch("/api/auth/check-reset-token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: t }),
-      })
-        .then(async (res) => {
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok || !data.data?.valid) {
-            setTokenValid(false);
-
-            if (data?.error?.code === "GOOGLE_AUTH_NO_PASSWORD") {
-              showToast(
-                "Akun ini terdaftar melalui Google. Reset password tidak diperlukan. Silakan login menggunakan Google.",
-                "error"
-              );
-            } else {
-              showToast(
-                data?.message || "Token tidak valid atau sudah expired",
-                "error"
-              );
-            }
-          } else {
-            setTokenValid(true);
-          }
-        })
-        .catch(() => {
-          setTokenValid(false);
-          showToast("Gagal memeriksa token reset password.", "error");
-        })
-        .finally(() => setTokenCheckLoading(false));
-    } else {
-      setTokenValid(false);
-      setTokenCheckLoading(false);
-    }
-  }, [showToast]);
+  const token = searchParams.get("token");
 
   useEffect(() => {
     const navbar = document.querySelector("nav");
@@ -84,75 +48,368 @@ export default function ResetPassword() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    const validateToken = async () => {
+      if (!token) {
+        setErrorMessage("Token reset password tidak ditemukan dalam URL.");
+        setIsValidating(false);
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/auth/check-reset-token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ token }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.status === "success" && result.data.valid) {
+          setTokenValid(true);
+        } else {
+          setErrorMessage(
+            result.message || "Token tidak valid atau telah kedaluwarsa."
+          );
+        }
+      } catch (error) {
+        console.error("Error validating token:", error);
+        setErrorMessage("Terjadi kesalahan saat memvalidasi token.");
+      } finally {
+        setIsValidating(false);
+      }
+    };
+
+    validateToken();
+  }, [token]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token) {
-      showToast("Token reset password tidak ditemukan.", "error");
-      return;
-    }
-    if (tokenValid === false) {
-      showToast("Token tidak valid atau sudah expired.", "error");
-      return;
-    }
+
     if (!password || !confirmPassword) {
-      showToast("Mohon isi semua field.", "error");
+      showToast("Semua field wajib diisi.", "error");
       return;
     }
-    if (password.length < 8) {
-      showToast("Password minimal 8 karakter.", "error");
-      return;
-    }
+
     if (password !== confirmPassword) {
       showToast("Konfirmasi password tidak cocok.", "error");
       return;
     }
-    setLoading(true);
+
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    if (!passwordRegex.test(password)) {
+      showToast(
+        "Gunakan minimal 8 karakter dengan kombinasi huruf dan angka.",
+        "error"
+      );
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
       await promise(
-        fetch("/api/auth/reset-password", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token, password }),
-        }).then(async (res) => {
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok) {
-            if (data?.error?.code === "GOOGLE_AUTH_NO_PASSWORD") {
-              throw new Error(
-                "Akun ini terdaftar melalui Google. Reset password tidak diperlukan. Silakan login menggunakan Google."
-              );
-            }
-            throw new Error(data?.message || "Gagal reset password.");
+        (async () => {
+          const response = await fetch("/api/auth/reset-password", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ token, password }),
+          });
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.message || "Gagal mengatur ulang password.");
           }
-          return data;
-        }),
+
+          setTimeout(() => {
+            router.push("/login");
+          }, 2000);
+
+          return result;
+        })(),
         {
           loading: "Mengatur ulang password...",
-          success:
-            "Password berhasil diubah! Silakan login dengan password baru.",
+          success: () =>
+            "Password berhasil diatur ulang! Mengarahkan ke halaman login...",
           error: (err) =>
             err instanceof Error
               ? err.message
               : "Terjadi kesalahan. Silakan coba lagi.",
         }
       );
-      setPassword("");
-      setConfirmPassword("");
-      setTimeout(() => router.push("/login"), 1500);
-    } catch {
+    } catch (error) {
+      console.error("Reset password error:", error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
-
   return (
     <>
+      <div
+        style={{
+          paddingTop:
+            typeof window !== "undefined" && window.innerWidth < 768
+              ? navbarHeight
+              : navbarHeight + 20,
+        }}
+        className={`flex flex-col md:flex-row min-h-screen w-full ${isDark ? "bg-gray-900 text-white" : "bg-white text-black"} p-4 md:p-6 overflow-y-auto overflow-x-hidden`}
+      >
+        {" "}
+        {/* Left Panel - Image/Illustration (Hidden on mobile) */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+          className="hidden md:flex relative text-white px-8 lg:px-14 py-8 lg:py-12 rounded-3xl font-normal overflow-hidden justify-center items-center w-fit min-h-full bg-gradient-to-br from-[#2FAACC] to-[#2B62C2]"
+        >
+          <div className="relative z-20 flex flex-col justify-between items-start w-full h-full">
+            <div className="flex flex-col gap-3 lg:gap-4 items-start">
+              <p className="font-bold text-xl lg:text-2xl">
+                Keamanan Akun Terjamin
+              </p>
+              <p className="text-blue-100 text-base lg:text-lg">
+                Atur ulang kata sandi Anda dengan aman dan mudah
+              </p>
+            </div>
+
+            {/* Gambar dinamis, responsive */}
+            <div className="relative w-full h-24 md:h-32 lg:h-40 xl:h-64 mt-4 lg:mt-6">
+              <Image
+                src="/images/undraw_secure-login.svg"
+                alt="Reset Password Illustration"
+                fill
+                className="object-contain w-full h-full"
+                priority
+              />
+            </div>
+          </div>
+        </motion.div>
+        {/* Right Panel - Form */}
+        <div className="flex flex-1 w-full items-start md:items-center justify-center min-h-full">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className={`flex flex-col gap-4 items-start md:items-center justify-start w-full mx-auto h-full ${isDark ? "text-white" : "text-black"} px-4 md:px-6 lg:px-10 py-6`}
+          >
+            <Breadcrumbs items={breadcrumbsItems} />
+            {isValidating ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="flex flex-col items-center justify-center py-8 md:py-12 space-y-4 px-4"
+              >
+                <Icon
+                  icon="eos-icons:loading"
+                  className={`text-3xl md:text-4xl ${isDark ? "text-white" : "text-gray-800"} animate-spin`}
+                />
+                <p
+                  className={`${isDark ? "text-gray-300" : "text-gray-600"} text-sm md:text-base text-center`}
+                >
+                  Memvalidasi token...
+                </p>
+              </motion.div>
+            ) : !tokenValid ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="flex flex-col items-center justify-center py-8 md:py-12 space-y-4 px-4"
+              >
+                <div className="p-3 bg-red-100 rounded-full">
+                  <Icon
+                    icon="mdi:alert-circle"
+                    className="text-2xl md:text-3xl text-red-600"
+                  />
+                </div>
+                <div className="text-center max-w-md">
+                  <h1
+                    className={`text-lg md:text-xl font-bold ${isDark ? "text-white" : "text-gray-800"} mb-2`}
+                  >
+                    Token Tidak Valid
+                  </h1>
+                  <p
+                    className={`${isDark ? "text-gray-300" : "text-gray-600"} mb-4 text-sm md:text-base px-2`}
+                  >
+                    {errorMessage}
+                  </p>
+                  <motion.button
+                    onClick={() => router.push("/")}
+                    className="px-4 md:px-6 py-2 md:py-2.5 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white rounded-lg font-medium hover:opacity-90 transition text-sm md:text-base"
+                  >
+                    Kembali ke Beranda
+                  </motion.button>
+                </div>
+              </motion.div>
+            ) : (
+              <>
+                {" "}
+                <div className="flex flex-col items-start md:items-center gap-1 mb-2">
+                  <h1 className="text-lg md:text-xl font-bold text-left md:text-center">
+                    Atur Ulang Kata Sandi
+                  </h1>
+                  <p
+                    className={`${isDark ? "text-gray-300" : "text-gray-600"} text-left md:text-center text-sm md:text-base px-0 md:px-2`}
+                  >
+                    Atur ulang kata sandi Anda untuk mendapatkan akses kembali
+                    ke akun NewsInsight.
+                  </p>
+                </div>{" "}
+                <form
+                  className="flex flex-col gap-3 w-full"
+                  onSubmit={handleSubmit}
+                >
+                  <div className="mb-3 md:mb-4">
+                    <label
+                      className={`block font-medium ${isDark ? "text-gray-200" : "text-gray-800"} mb-1 text-sm md:text-base`}
+                    >
+                      Password Baru
+                    </label>
+                    <div className="relative">
+                      <div
+                        className={`absolute inset-y-0 left-0 flex items-center pl-3 ${isDark ? "text-gray-400" : "text-gray-400"}`}
+                      >
+                        <Icon
+                          icon="material-symbols:password-rounded"
+                          fontSize={18}
+                          className="md:text-xl"
+                        />
+                      </div>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Masukkan password..."
+                        className={`w-full border ${isDark ? "border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:border-blue-400" : "border-gray-300 bg-white text-gray-700 placeholder-gray-500 focus:border-blue-500"} rounded-lg py-2.5 md:py-3 px-3 pl-10 md:pl-12 pr-10 md:pr-12 focus:outline-none transition-colors duration-200 text-sm md:text-base`}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className={`absolute inset-y-0 right-0 flex items-center pr-3 ${isDark ? "text-gray-400 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"} transition-colors duration-200`}
+                      >
+                        <Icon
+                          icon={showPassword ? "lucide:eye-off" : "lucide:eye"}
+                          fontSize={18}
+                          className="md:text-xl"
+                        />
+                      </button>
+                    </div>
+                    <p
+                      className={`mt-1 text-xs md:text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                    >
+                      Gunakan minimal 8 karakter dengan kombinasi huruf dan
+                      angka
+                    </p>
+                  </div>
+
+                  <div className="mb-4 md:mb-6">
+                    <label
+                      className={`block font-medium ${isDark ? "text-gray-200" : "text-gray-800"} mb-1 text-sm md:text-base`}
+                    >
+                      Konfirmasi Password Baru
+                    </label>
+                    <div className="relative">
+                      <div
+                        className={`absolute inset-y-0 left-0 flex items-center pl-3 ${isDark ? "text-gray-400" : "text-gray-400"}`}
+                      >
+                        <Icon
+                          icon="material-symbols:password-rounded"
+                          fontSize={18}
+                          className="md:text-xl"
+                        />
+                      </div>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Masukkan konfirmasi password..."
+                        className={`w-full border ${isDark ? "border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:border-blue-400" : "border-gray-300 bg-white text-gray-700 placeholder-gray-500 focus:border-blue-500"} rounded-lg py-2.5 md:py-3 px-3 pl-10 md:pl-12 pr-10 md:pr-12 focus:outline-none transition-colors duration-200 text-sm md:text-base`}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className={`absolute inset-y-0 right-0 flex items-center pr-3 ${isDark ? "text-gray-400 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"} transition-colors duration-200`}
+                      >
+                        <Icon
+                          icon={showPassword ? "lucide:eye-off" : "lucide:eye"}
+                          fontSize={18}
+                          className="md:text-xl"
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2.5 items-center w-full">
+                    <motion.button
+                      type="submit"
+                      disabled={isLoading}
+                      className="cursor-pointer text-white rounded-lg px-4 md:px-5 py-2.5 md:py-3 w-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] transition duration-300 ease-in-out hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base font-medium"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Icon
+                            icon="eos-icons:loading"
+                            width={18}
+                            height={18}
+                            className="md:w-5 md:h-5 animate-spin"
+                          />
+                          <span className="hidden sm:inline">Memproses...</span>
+                          <span className="sm:hidden">Loading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="hidden sm:inline">
+                            Atur Ulang Password
+                          </span>
+                          <span className="sm:hidden">Reset Password</span>
+                          <Icon
+                            icon="material-symbols:lock-reset"
+                            width={18}
+                            height={18}
+                            className="md:w-5 md:h-5"
+                          />
+                        </>
+                      )}
+                    </motion.button>
+
+                    <motion.button
+                      type="button"
+                      onClick={() => router.push("/login")}
+                      className={`cursor-pointer rounded-lg px-4 md:px-5 py-2.5 md:py-3 w-full border ${isDark ? "border-gray-600 text-gray-300 hover:bg-gray-800" : "border-gray-300 text-gray-700 hover:bg-gray-50"} transition duration-300 ease-in-out flex items-center justify-center gap-2 text-sm md:text-base`}
+                    >
+                      <span className="hidden sm:inline">Kembali ke Login</span>
+                      <span className="sm:hidden">Login</span>
+                      <Icon
+                        icon="material-symbols:arrow-back"
+                        width={18}
+                        height={18}
+                        className="md:w-5 md:h-5"
+                      />
+                    </motion.button>
+                  </div>
+                </form>
+              </>
+            )}
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Verify Email Popup */}
       <AnimatePresence>
         {showVerifyEmail && (
           <motion.div
             key="verify-email"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.3 }}
             className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center"
           >
@@ -160,142 +417,6 @@ export default function ResetPassword() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      <div className="flex flex-col h-screen bg-white w-full text-black p-10 overflow-hidden">
-        <div className="flex flex-1" style={{ paddingTop: navbarHeight }}>
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex flex-col gap-4 items-center justify-start w-full h-full bg-white rounded-lg px-4 text-black"
-          >
-            <div className="flex w-full items-start">
-              <Breadcrumbs items={breadcrumbsItems} />
-            </div>
-
-            {tokenCheckLoading ? (
-              <div className="w-full flex flex-col items-center justify-center py-10">
-                <Icon
-                  icon="line-md:loading-loop"
-                  className="text-3xl animate-spin mb-2"
-                />
-                <span className="text-gray-500">
-                  Memeriksa token reset password...
-                </span>
-              </div>
-            ) : tokenValid === false ? (
-              <div className="w-full flex flex-col h-full items-center justify-center gap-3 p-6">
-                <div className="flex flex-col items-center">
-                  <div className="flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-2">
-                    <Icon
-                      icon="line-md:alert-circle"
-                      className="text-4xl text-red-500"
-                    />
-                  </div>
-                  <span className="text-red-600 font-bold text-lg text-center">
-                    Token tidak valid atau sudah expired
-                  </span>
-                  <span className="text-gray-500 text-sm text-center mt-1">
-                    Link reset password yang Anda gunakan sudah tidak berlaku.
-                    <br />
-                    Silakan lakukan permintaan reset password ulang melalui
-                    halaman login.
-                  </span>
-                </div>
-                <button
-                  className="mt-4 px-5 py-2 rounded-lg bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white font-semibold hover:opacity-90 transition"
-                  onClick={() => router.push("/login")}
-                >
-                  Kembali ke Login
-                </button>
-              </div>
-            ) : (
-              <form
-                className="flex flex-col gap-3 w-full"
-                onSubmit={handleSubmit}
-              >
-                <div className="mb-4">
-                  <label className="block font-medium text-gray-800 mb-1">
-                    Password Baru
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                      <Icon
-                        icon="material-symbols:password-rounded"
-                        fontSize={20}
-                      />
-                    </div>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Masukkan password..."
-                      className="w-full border border-gray-300 rounded-lg py-2 px-3 pl-10 pr-10 text-gray-700 focus:outline-none focus:border-blue-500"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      disabled={loading}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
-                      tabIndex={-1}
-                    >
-                      {showPassword ? (
-                        <Icon icon="lucide:eye-off" />
-                      ) : (
-                        <Icon icon="lucide:eye" />
-                      )}
-                    </button>
-                  </div>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Gunakan minimal 8 karakter dengan kombinasi huruf dan angka
-                  </p>
-                </div>
-
-                <div className="mb-4">
-                  <label className="block font-medium text-gray-800 mb-1">
-                    Konfirmasi Password Baru
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                      <Icon
-                        icon="material-symbols:password-rounded"
-                        fontSize={20}
-                      />
-                    </div>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Masukkan konfirmasi password..."
-                      className="w-full border border-gray-300 rounded-lg py-2 px-3 pl-10 pr-10 text-gray-700 focus:outline-none focus:border-blue-500"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      disabled={loading}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
-                      tabIndex={-1}
-                    >
-                      {showPassword ? (
-                        <Icon icon="lucide:eye-off" />
-                      ) : (
-                        <Icon icon="lucide:eye" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-                <motion.button
-                  type="submit"
-                  disabled={loading}
-                  className="cursor-pointer text-white rounded-lg px-5 py-3 w-full bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] transition duration-300 ease-in-out hover:opacity-80 disabled:opacity-60"
-                >
-                  {loading ? "Mengatur Ulang..." : "Atur Ulang Kata Sandi"}
-                </motion.button>
-              </form>
-            )}
-          </motion.div>
-        </div>
-      </div>
     </>
   );
 }

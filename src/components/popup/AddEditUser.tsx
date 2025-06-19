@@ -17,6 +17,7 @@ interface UserFormProps {
     email: string;
     role: string;
     status: string;
+    password?: string;
   }) => void;
 }
 
@@ -34,6 +35,7 @@ export default function UserForm({
   const [fullName, setFullName] = useState(initialFullName);
   const [username, setUsername] = useState(initialUsername);
   const [email, setEmail] = useState(initialEmail);
+  const [password, setPassword] = useState("");
   const [role, setRole] = useState(initialRole);
   const [status, setStatus] = useState(initialStatus);
   const popUpRef = useRef<HTMLDivElement>(null);
@@ -50,20 +52,34 @@ export default function UserForm({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose]);
-
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    onSubmit({
+
+    const submitData: {
+      fullName: string;
+      username: string;
+      email: string;
+      role: string;
+      status: string;
+      password?: string;
+    } = {
       fullName,
       username,
       email,
       role,
       status,
-    });
+    };
+
+    if (mode === "add" || password.trim()) {
+      submitData.password = password;
+    }
+
+    onSubmit(submitData);
 
     setFullName("");
     setUsername("");
     setEmail("");
+    setPassword("");
     setRole("");
     setStatus("");
   };
@@ -145,7 +161,7 @@ export default function UserForm({
             onChangeValue={setUsername}
             disabled={mode === "edit"}
             required
-          />
+          />{" "}
           <Input
             id="email"
             type="email"
@@ -156,6 +172,20 @@ export default function UserForm({
             onChangeValue={setEmail}
             disabled={mode === "edit"}
             required
+          />
+          <Input
+            id="password"
+            type="password"
+            icon="fluent:lock-closed-28-filled"
+            label={mode === "add" ? "Password" : "Password Baru (Opsional)"}
+            placeholder={
+              mode === "add"
+                ? "Masukkan password..."
+                : "Masukkan password baru..."
+            }
+            value={password}
+            onChangeValue={setPassword}
+            required={mode === "add"}
           />
           <Input
             id="role"
@@ -199,10 +229,17 @@ export default function UserForm({
               }`}
             >
               Batal
-            </button>
+            </button>{" "}
             <button
               type="submit"
-              disabled={!fullName || !username || !email || !role || !status}
+              disabled={
+                !fullName ||
+                !username ||
+                !email ||
+                !role ||
+                !status ||
+                (mode === "add" && !password)
+              }
               className="w-full enabled:bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 enabled:hover:opacity-90 transition cursor-pointer disabled:bg-[#DEDEDE] disabled:cursor-not-allowed disabled:text-[#A2A2A2]"
             >
               Simpan

@@ -7,6 +7,7 @@ import React, {
   useCallback,
 } from "react";
 
+
 export const SUPPORTED_LANGUAGES = [
   { code: "id", name: "Bahasa Indonesia", flag: "🇮🇩" },
   { code: "en", name: "English", flag: "🇺🇸" },

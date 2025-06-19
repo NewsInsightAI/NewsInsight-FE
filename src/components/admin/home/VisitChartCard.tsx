@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { motion } from "framer-motion";
 import { useDarkMode } from "@/context/DarkModeContext";
+import { TranslatedText } from "@/components/TranslatedText";
 
 const rawData = {
   "7D": [
@@ -43,7 +44,7 @@ export default function VisitChartCard() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className={`col-span-4 w-full rounded-3xl p-6 border flex flex-col gap-4 transition-colors duration-300 ${
+      className={`w-full h-full rounded-3xl p-4 md:p-6 lg:p-8 border flex flex-col gap-4 transition-colors duration-300 min-h-[240px] md:min-h-[280px] lg:min-h-[380px] xl:min-h-[420px] ${
         isDark ? "bg-gray-800 border-gray-600" : "bg-white border-gray-300"
       }`}
     >
@@ -51,9 +52,9 @@ export default function VisitChartCard() {
         <div className="flex items-center gap-3">
           <div className="flex justify-center items-center bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white rounded-2xl p-2.5">
             <Icon icon="solar:graph-bold" className="text-2xl" />
-          </div>
+          </div>{" "}
           <p className="bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text font-semibold text-xl">
-            Grafik Kunjungan
+            <TranslatedText>Grafik Kunjungan</TranslatedText>
           </p>
         </div>{" "}
         <div

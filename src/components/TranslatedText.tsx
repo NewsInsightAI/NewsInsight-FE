@@ -23,6 +23,7 @@ export const TranslatedText: React.FC<TranslatedTextProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  
   const performTranslation = useCallback(
     async (text: string, langCode: string) => {
       if (langCode === "id" || !text.trim()) {
@@ -53,6 +54,7 @@ export const TranslatedText: React.FC<TranslatedTextProps> = ({
     [translateText, fallbackToOriginal]
   );
 
+  
   const stableText = useMemo(() => children, [children]);
   const stableLanguageCode = useMemo(
     () => currentLanguage.code,

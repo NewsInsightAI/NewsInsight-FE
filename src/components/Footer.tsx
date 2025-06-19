@@ -6,7 +6,6 @@ import { Manrope } from "next/font/google";
 import { usePathname } from "next/navigation";
 import { useDarkMode } from "@/context/DarkModeContext";
 import { TranslatedText } from "@/components/TranslatedText";
-import { useSession } from "next-auth/react";
 
 const manropeFont = Manrope({
   subsets: ["latin"],
@@ -46,7 +45,6 @@ const menuItems = [
 export default function Footer() {
   const { isDark } = useDarkMode();
   const pathname = usePathname();
-  const { data: session, status } = useSession();
   const hideFooterRoutes = [
     "/dashboard",
     "/dashboard/news",
@@ -64,58 +62,55 @@ export default function Footer() {
     "/settings/personal-data",
     "/settings/account-security",
   ];
+
   const isShowFooter = !hideFooterRoutes.includes(pathname);
-  const isUserLoggedIn = status === "authenticated" && session;
 
   if (!isShowFooter) return null;
   return (
     <footer
       className={`flex flex-col gap-4 md:gap-6 p-4 md:p-6 ${isDark ? "bg-[#1A1A1A]" : "bg-white"} transition-colors duration-300`}
     >
-      {/* Show CTA section only if user is not logged in */}
-      {!isUserLoggedIn && (
-        <div className="relative text-white px-6 md:px-12 py-6 md:py-8 rounded-2xl md:rounded-3xl font-normal overflow-hidden flex justify-center items-center gap-4 md:gap-10 min-h-[200px] md:h-48">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] z-0" />{" "}
-          <Image
-            src="/images/newsinsight-fullwhite.png"
-            alt="News"
-            width={50}
-            height={50}
-            className="object-cover opacity-50 absolute -bottom-2 md:-bottom-4 -left-1 md:-left-2 w-[50px] md:w-[70px] h-[50px] md:h-[70px] footer-logo-bounce hover:scale-125 transition-all duration-300 cursor-pointer"
-            style={
-              {
-                "--rotation": "-13deg",
-              } as React.CSSProperties
-            }
-          />
-          <div className="relative z-20 flex flex-col md:flex-row justify-between items-center w-full gap-6 md:gap-0">
-            <div className="relative text-center md:text-left">
-              {" "}
-              <Image
-                src="/images/newsinsight-fullwhite.png"
-                alt="News"
-                width={50}
-                height={50}
-                className="object-cover opacity-50 absolute -top-2 md:-top-4 -right-8 md:-right-20 w-[50px] md:w-[70px] h-[50px] md:h-[70px] hidden md:block footer-logo-wiggle hover:scale-125 transition-all duration-300 cursor-pointer"
-                style={
-                  {
-                    animationDelay: "2s",
-                    "--rotation": "22deg",
-                  } as React.CSSProperties
-                }
-              />{" "}
-              <p className="font-bold text-xl md:text-[32px] w-full md:w-[420px] leading-tight md:leading-12">
-                <TranslatedText>
-                  Ingin terus update dengan berita terbaik kami?
-                </TranslatedText>
-              </p>
-            </div>{" "}
-            <button className="px-6 md:px-7 py-3 md:py-4 rounded-full border-2 border-white/60 text-white font-medium text-sm md:text-base hover:bg-white/30 hover:scale-105 hover:border-white transition-all duration-300 ease-in-out cursor-pointer whitespace-nowrap transform hover:shadow-lg hover:shadow-white/20">
-              <TranslatedText>DAFTAR SEKARANG</TranslatedText>
-            </button>
-          </div>
+      <div className="relative text-white px-6 md:px-12 py-6 md:py-8 rounded-2xl md:rounded-3xl font-normal overflow-hidden flex justify-center items-center gap-4 md:gap-10 min-h-[200px] md:h-48">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] z-0" />{" "}
+        <Image
+          src="/images/newsinsight-fullwhite.png"
+          alt="News"
+          width={50}
+          height={50}
+          className="object-cover opacity-50 absolute -bottom-2 md:-bottom-4 -left-1 md:-left-2 w-[50px] md:w-[70px] h-[50px] md:h-[70px] footer-logo-bounce hover:scale-125 transition-all duration-300 cursor-pointer"
+          style={
+            {
+              "--rotation": "-13deg",
+            } as React.CSSProperties
+          }
+        />
+        <div className="relative z-20 flex flex-col md:flex-row justify-between items-center w-full gap-6 md:gap-0">
+          <div className="relative text-center md:text-left">
+            {" "}
+            <Image
+              src="/images/newsinsight-fullwhite.png"
+              alt="News"
+              width={50}
+              height={50}
+              className="object-cover opacity-50 absolute -top-2 md:-top-4 -right-8 md:-right-20 w-[50px] md:w-[70px] h-[50px] md:h-[70px] hidden md:block footer-logo-wiggle hover:scale-125 transition-all duration-300 cursor-pointer"
+              style={
+                {
+                  animationDelay: "2s",
+                  "--rotation": "22deg",
+                } as React.CSSProperties
+              }
+            />{" "}
+            <p className="font-bold text-xl md:text-[32px] w-full md:w-[420px] leading-tight md:leading-12">
+              <TranslatedText>
+                Ingin terus update dengan berita terbaik kami?
+              </TranslatedText>
+            </p>
+          </div>{" "}
+          <button className="px-6 md:px-7 py-3 md:py-4 rounded-full border-2 border-white/60 text-white font-medium text-sm md:text-base hover:bg-white/30 hover:scale-105 hover:border-white transition-all duration-300 ease-in-out cursor-pointer whitespace-nowrap transform hover:shadow-lg hover:shadow-white/20">
+            <TranslatedText>DAFTAR SEKARANG</TranslatedText>
+          </button>
         </div>
-      )}
+      </div>
 
       <div className="relative text-white px-6 md:px-12 py-6 md:py-8 rounded-2xl md:rounded-3xl font-normal overflow-hidden flex flex-col gap-6 md:gap-10">
         <div className="absolute inset-0 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] z-0" />

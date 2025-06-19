@@ -1,6 +1,6 @@
 "use client";
 import { useLanguage } from "@/context/LanguageContext";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 
 interface TranslatedContentProps {
   htmlContent?: string;
@@ -27,7 +27,7 @@ export function TranslatedContent({
     currentLanguage.code
   );
 
-  const translateHtmlContent = useCallback(async (
+  const translateHtmlContent = async (
     html: string,
     targetLang: string
   ): Promise<string> => {
@@ -88,7 +88,7 @@ export function TranslatedContent({
     });
 
     return translatedHtml;
-  }, [translateText]);
+  };
 
   useEffect(() => {
     if (lastLanguage === currentLanguage.code) {
@@ -139,7 +139,7 @@ export function TranslatedContent({
     };
 
     translateContent();
-  }, [currentLanguage.code, htmlContent, lastLanguage, onTranslatedTextChange, plainTextContent, translateHtmlContent, translateText]);
+  }, [currentLanguage.code, lastLanguage]);
 
   const isLoading = isTranslating || isTranslatingContent;
 

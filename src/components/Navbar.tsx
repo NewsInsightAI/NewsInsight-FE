@@ -102,7 +102,7 @@ export const Navbar = () => {
     checkBackendConnection();
   }, [checkBackendConnection]);
 
-
+  
   useEffect(() => {
     const handleAuthStateChange = () => {
       console.log(
@@ -111,7 +111,6 @@ export const Navbar = () => {
       checkBackendConnection();
     };
 
-  
     window.addEventListener("auth-state-changed", handleAuthStateChange);
     window.addEventListener("login-success", handleAuthStateChange);
 
@@ -248,7 +247,6 @@ export const Navbar = () => {
         return "Cari berita...";
     }
   })();
-
   const isUserAuthenticated = () => {
     return (
       status === "authenticated" &&
@@ -257,6 +255,11 @@ export const Navbar = () => {
       !isCheckingBackend
     );
   };
+
+  if (pathname.startsWith("/dashboard")) {
+    return null;
+  }
+
   return (
     <nav
       id="navbar"

@@ -171,6 +171,26 @@ export default function Register() {
     };
   }, []);
 
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const session = await getSession();
+        if (session?.backendUser) {
+          const userRole = session.backendUser.role;
+          if (userRole === "user") {
+            router.push("/");
+          } else {
+            router.push("/dashboard");
+          }
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+      }
+    };
+
+    checkSession();
+  }, [router]);
+
   const advancedFeatures = [
     "Update berita real-time",
     "Komentar dan diskusi komunitas",

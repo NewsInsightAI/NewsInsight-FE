@@ -28,7 +28,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // If source and target languages are the same, return original text
     if (from === to) {
       return NextResponse.json({
         success: true,
@@ -36,7 +35,7 @@ export async function POST(request: NextRequest) {
         sourceLanguage: from,
         targetLanguage: to,
       });
-    } // Use translate-google to translate the text
+    }
     console.log("Calling translate-google with:", { text, from, to });
 
     try {
@@ -54,7 +53,6 @@ export async function POST(request: NextRequest) {
     } catch (translateError) {
       console.log("Google Translate failed, trying fallback mapping...");
 
-      // Fallback ke manual mapping
       const fallbackTranslation = TRANSLATION_MAP[to]?.[text];
       if (fallbackTranslation) {
         console.log("Using fallback translation:", fallbackTranslation);
@@ -68,13 +66,11 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // Jika tidak ada fallback, lempar error
       throw translateError;
     }
   } catch (error: unknown) {
     console.error("Translation error details:", error);
 
-    // Handle specific error cases
     const errorObj = error as { code?: string; message?: string };
 
     if (errorObj.code === "BAD_REQUEST") {

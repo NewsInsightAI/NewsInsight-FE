@@ -1,7 +1,7 @@
 "use client";
 import { useLanguage } from "@/context/LanguageContext";
 import { useDarkMode } from "@/context/DarkModeContext";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import { TranslatedText } from "@/components/TranslatedText";
 import { Toast } from "@/components/Toast";
@@ -116,7 +116,7 @@ export function TranslatedContent({
     return <div>{elements}</div>;
   };
 
-  const translateHtmlContent = useCallback(async (
+  const translateHtmlContent = async (
     html: string,
     targetLang: string
   ): Promise<string> => {
@@ -208,7 +208,7 @@ export function TranslatedContent({
       console.error("Error in translateHtmlContent:", error);
       return html;
     }
-  }, [translateText, isDark]);
+  };
   useEffect(() => {
     if (lastLanguage === currentLanguage.code) {
       return;
@@ -289,7 +289,7 @@ export function TranslatedContent({
       }
     };
     translateContent();
-  }, [currentLanguage.code, htmlContent, lastLanguage, onTranslatedTextChange, plainTextContent, translateHtmlContent, translateText]);
+  }, [currentLanguage.code, htmlContent, plainTextContent]);
 
   if (htmlContent) {
     let contentToShow =

@@ -80,6 +80,7 @@ export function TranslatedContent({
 
   const isLoading = isTranslating || isTranslatingContent;
 
+  
   const contentToShow =
     currentLanguage.code === "id"
       ? htmlContent || plainTextContent
@@ -128,6 +129,7 @@ export function TranslatedContent({
     );
   }
 
+  
   const contentParagraphs = contentToShow
     .split("\n")
     .map((paragraph: string) => paragraph.trim())

@@ -1,26 +1,4 @@
 /**
- * Get Indonesian timezone abbreviation based on timezone or default to WIB
- * @param date - Date object
- * @returns WIB, WITA, or WIT
- */
-const getIndonesianTimezone = (date: Date): string => {
-  const offset = date.getTimezoneOffset();
-
-  const offsetHours = -offset / 60;
-
-  switch (offsetHours) {
-    case 7:
-      return "WIB";
-    case 8:
-      return "WITA";
-    case 9:
-      return "WIT";
-    default:
-      return "WIB";
-  }
-};
-
-/**
  * Format timestamp based on language locale
  * @param timestamp - ISO string timestamp
  * @param language - Language code (id, en, es, fr, etc.)
@@ -61,7 +39,7 @@ export const formatTimestamp = (
         hour: "2-digit",
         minute: "2-digit",
         timeZone: "Asia/Jakarta",
-        hour12: false,
+        hour12: true,
       }).formatToParts(date);
 
       const day = parts.find((p) => p.type === "day")?.value;
@@ -69,10 +47,9 @@ export const formatTimestamp = (
       const year = parts.find((p) => p.type === "year")?.value;
       const hour = parts.find((p) => p.type === "hour")?.value;
       const minute = parts.find((p) => p.type === "minute")?.value;
+      const dayPeriod = parts.find((p) => p.type === "dayPeriod")?.value;
 
-      const timezone = getIndonesianTimezone(date);
-
-      return `${day} ${month} ${year}, ${hour}:${minute} ${timezone}`;
+      return `${day} ${month} ${year}, ${hour}:${minute} ${dayPeriod?.toUpperCase()} GMT+7`;
     }
 
     const formatted = new Intl.DateTimeFormat(locale, {

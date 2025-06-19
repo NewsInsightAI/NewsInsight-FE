@@ -66,161 +66,292 @@ export default function CategoryTable({ datas }: CategoryTableProps) {
               />
             </motion.div>
           </div>
-        )}
+        )}{" "}
       </AnimatePresence>
+      {/* Desktop Table View - Hidden on mobile */}
       <div
-        className={`overflow-hidden rounded-xl w-full transition-colors duration-300 border ${
+        className={`hidden md:block rounded-xl w-full transition-colors duration-300 border ${
           isDark ? "bg-gray-800 border-gray-600" : "bg-white border-gray-200"
         }`}
       >
-        <table className={`min-w-full ${isDark ? "bg-gray-800" : "bg-white"}`}>
-          <thead>
-            <tr
-              className={`border-b transition-colors duration-300 ${
-                isDark
-                  ? "bg-blue-600/20 border-gray-600"
-                  : "bg-[#367AF2]/12 border-gray-200"
-              }`}
-            >
-              <th className="py-3 px-4 relative flex items-center justify-center">
-                <input
-                  type="checkbox"
-                  className="h-5 w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none hover:cursor-pointer hover:bg-[#367AF2]/10"
-                  checked={
-                    selectedItems.length === datas.length && datas.length > 0
-                  }
-                  onChange={toggleSelectAll}
-                />
-                {selectedItems.length === datas.length && (
-                  <Icon
-                    icon="mdi:check"
-                    className="absolute text-white h-3 w-3 pointer-events-none"
-                  />
-                )}
-              </th>
-              <th
-                className={`py-3 px-4 text-left text-xs font-medium uppercase tracking-wider ${
-                  isDark ? "text-gray-300" : "text-black"
-                }`}
-              >
-                No
-              </th>
-              <th
-                className={`py-3 px-4 text-left text-xs font-medium uppercase tracking-wider ${
-                  isDark ? "text-gray-300" : "text-black"
-                }`}
-              >
-                Nama Kategori
-              </th>
-              <th
-                className={`py-3 px-4 text-left text-xs font-medium uppercase tracking-wider ${
-                  isDark ? "text-gray-300" : "text-black"
-                }`}
-              >
-                Deskripsi Singkat
-              </th>
-              <th
-                className={`py-3 px-4 text-left text-xs font-medium uppercase tracking-wider ${
-                  isDark ? "text-gray-300" : "text-black"
-                }`}
-              >
-                Jumlah Berita{" "}
-              </th>
-              <th
-                className={`py-3 px-4 text-left text-xs font-medium uppercase tracking-wider ${
-                  isDark ? "text-gray-300" : "text-black"
-                }`}
-              >
-                Aksi
-              </th>
-            </tr>
-          </thead>
-          <tbody
-            className={`divide-y transition-colors duration-300 ${
-              isDark ? "divide-gray-600" : "divide-gray-200"
-            }`}
+        {/* Horizontal scroll wrapper for mobile */}
+        <div className="w-full overflow-x-auto">
+          <table
+            className={`w-full min-w-full ${isDark ? "bg-gray-800" : "bg-white"}`}
           >
-            {datas.map((report, index) => (
+            <thead>
               <tr
-                key={report.id}
-                className={`transition-colors duration-300 ${
-                  isDark ? "hover:bg-gray-700" : "hover:bg-gray-50"
-                } ${index === datas.length - 1 ? "last:rounded-b-xl" : ""}`}
+                className={`border-b transition-colors duration-300 ${
+                  isDark
+                    ? "bg-blue-600/20 border-gray-600"
+                    : "bg-[#367AF2]/12 border-gray-200"
+                }`}
               >
-                <td className="py-4 px-4">
-                  <div className="relative flex items-center justify-center">
+                <th className="py-2 md:py-3 px-2 md:px-4 w-12">
+                  <div className="flex items-center justify-center">
                     <input
                       type="checkbox"
-                      className="h-5 w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none"
-                      checked={selectedItems.includes(report.id.toString())}
-                      onChange={() => toggleSelectItem(report.id.toString())}
+                      className="h-4 w-4 md:h-5 md:w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none hover:cursor-pointer hover:bg-[#367AF2]/10"
+                      checked={
+                        selectedItems.length === datas.length &&
+                        datas.length > 0
+                      }
+                      onChange={toggleSelectAll}
                     />
-                    {selectedItems.includes(report.id.toString()) && (
+                    {selectedItems.length === datas.length && (
                       <Icon
                         icon="mdi:check"
                         className="absolute text-white h-3 w-3 pointer-events-none"
                       />
                     )}
                   </div>
-                </td>
-                <td
-                  className={`py-4 px-4 text-sm ${
-                    isDark ? "text-gray-300" : "text-gray-900"
+                </th>
+                <th
+                  className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[60px] ${
+                    isDark ? "text-gray-300" : "text-black"
                   }`}
                 >
-                  {index + 1}
-                </td>
-                <td
-                  className={`py-4 px-4 text-sm ${
-                    isDark ? "text-gray-300" : "text-gray-900"
+                  No
+                </th>
+                <th
+                  className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[150px] ${
+                    isDark ? "text-gray-300" : "text-black"
                   }`}
                 >
-                  {report.name}{" "}
-                </td>
-                <td
-                  className={`py-4 px-4 text-sm ${
-                    isDark ? "text-gray-300" : "text-gray-900"
+                  Nama Kategori
+                </th>
+                <th
+                  className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[200px] ${
+                    isDark ? "text-gray-300" : "text-black"
                   }`}
                 >
-                  {report.description}
-                </td>
-                <td
-                  className={`py-4 px-4 text-sm ${
-                    isDark ? "text-gray-300" : "text-gray-900"
+                  Deskripsi
+                </th>
+                <th
+                  className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[120px] ${
+                    isDark ? "text-gray-300" : "text-black"
                   }`}
                 >
-                  {report.totalNews}
-                </td>
-                <td className="py-4 px-4 text-sm space-x-2">
-                  <button
-                    className="border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-3 py-2 text-sm hover:opacity-80 hover:cursor-pointer disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15"
-                    onClick={() => {
-                      setSelectedCategory(report);
-                      setShowEditCategory(true);
-                    }}
-                  >
-                    <Icon
-                      icon="mage:edit-fill"
-                      className="inline mr-1"
-                      width={16}
-                      height={16}
-                    />
-                    Edit
-                  </button>
-                  <button className="border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-3 py-2 text-sm hover:opacity-80 hover:cursor-pointer">
-                    <Icon
-                      icon="mingcute:delete-fill"
-                      className="inline mr-1"
-                      width={16}
-                      height={16}
-                    />
-                    Hapus
-                  </button>
-                </td>
+                  Total Berita
+                </th>
+                <th
+                  className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[100px] ${
+                    isDark ? "text-gray-300" : "text-black"
+                  }`}
+                >
+                  Aksi
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody
+              className={`divide-y transition-colors duration-300 ${
+                isDark ? "divide-gray-600" : "divide-gray-200"
+              }`}
+            >
+              {datas.map((report, index) => (
+                <tr
+                  key={report.id}
+                  className={`transition-colors duration-300 ${
+                    isDark ? "hover:bg-gray-700" : "hover:bg-gray-50"
+                  } ${index === datas.length - 1 ? "last:rounded-b-xl" : ""}`}
+                >
+                  <td className="py-2 md:py-4 px-2 md:px-4 w-12">
+                    <div className="flex items-center justify-center">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 md:h-5 md:w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none"
+                        checked={selectedItems.includes(report.id.toString())}
+                        onChange={() => toggleSelectItem(report.id.toString())}
+                      />
+                      {selectedItems.includes(report.id.toString()) && (
+                        <Icon
+                          icon="mdi:check"
+                          className="absolute text-white h-3 w-3 pointer-events-none"
+                        />
+                      )}
+                    </div>
+                  </td>
+                  <td
+                    className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
+                      isDark ? "text-gray-300" : "text-gray-900"
+                    }`}
+                  >
+                    {index + 1}
+                  </td>
+                  <td
+                    className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm font-medium ${
+                      isDark ? "text-gray-300" : "text-gray-900"
+                    }`}
+                  >
+                    {report.name}
+                  </td>
+                  <td
+                    className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
+                      isDark ? "text-gray-300" : "text-gray-900"
+                    }`}
+                  >
+                    <div
+                      className="max-w-xs truncate"
+                      title={report.description}
+                    >
+                      {report.description}
+                    </div>
+                  </td>
+                  <td
+                    className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
+                      isDark ? "text-gray-300" : "text-gray-900"
+                    }`}
+                  >
+                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                      {report.totalNews} berita
+                    </span>
+                  </td>
+                  <td className="py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm">
+                    <div className="flex flex-col md:flex-row gap-1 md:gap-2">
+                      <button
+                        className="border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm hover:opacity-80 hover:cursor-pointer disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15 whitespace-nowrap"
+                        onClick={() => {
+                          setSelectedCategory(report);
+                          setShowEditCategory(true);
+                        }}
+                      >
+                        <Icon
+                          icon="mage:edit-fill"
+                          className="inline mr-1"
+                          width={12}
+                          height={12}
+                        />
+                        <span className="hidden md:inline">Edit</span>
+                      </button>
+                      <button className="border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm hover:opacity-80 hover:cursor-pointer whitespace-nowrap">
+                        {" "}
+                        <Icon
+                          icon="mingcute:delete-fill"
+                          className="inline mr-1"
+                          width={12}
+                          height={12}
+                        />
+                        <span className="hidden md:inline">Hapus</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {/* Mobile Card View - Visible only on mobile */}
+      <div className="md:hidden space-y-4">
+        {datas.map((category, index) => (
+          <div
+            key={category.id}
+            className={`rounded-xl p-4 transition-colors duration-300 border ${
+              isDark
+                ? "bg-gray-800 border-gray-600"
+                : "bg-white border-gray-200"
+            }`}
+          >
+            {/* Card Header */}
+            <div className="flex items-start gap-3 mb-3">
+              <div className="relative flex items-center justify-center">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none"
+                  checked={selectedItems.includes(category.id.toString())}
+                  onChange={() => toggleSelectItem(category.id.toString())}
+                />
+                {selectedItems.includes(category.id.toString()) && (
+                  <Icon
+                    icon="mdi:check"
+                    className="absolute text-white h-2.5 w-2.5 pointer-events-none"
+                  />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-2">
+                  <h3
+                    className={`font-semibold text-base ${
+                      isDark ? "text-gray-100" : "text-gray-900"
+                    }`}
+                  >
+                    {category.name}
+                  </h3>
+                  <span
+                    className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                  >
+                    #{index + 1}
+                  </span>
+                </div>
+                <p
+                  className={`text-sm leading-5 line-clamp-2 ${
+                    isDark ? "text-gray-300" : "text-gray-600"
+                  }`}
+                >
+                  {category.description}
+                </p>
+              </div>
+            </div>
+
+            {/* Card Content */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span
+                  className={`text-xs font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                >
+                  Total Berita:
+                </span>
+                <span
+                  className={`text-sm font-medium ${isDark ? "text-gray-100" : "text-gray-900"}`}
+                >
+                  {category.totalNews} artikel
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span
+                  className={`text-xs font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                >
+                  Dibuat:
+                </span>
+                <span
+                  className={`text-xs ${isDark ? "text-gray-300" : "text-gray-900"}`}
+                >
+                  {new Date(category.createdAt).toLocaleDateString("id-ID")}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span
+                  className={`text-xs font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                >
+                  Diperbarui:
+                </span>
+                <span
+                  className={`text-xs ${isDark ? "text-gray-300" : "text-gray-900"}`}
+                >
+                  {new Date(category.updatedAt).toLocaleDateString("id-ID")}
+                </span>
+              </div>
+            </div>
+
+            {/* Card Actions */}
+            <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+              <button
+                className="flex-1 border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-3 py-2 text-xs hover:opacity-80 hover:cursor-pointer flex items-center justify-center gap-1"
+                onClick={() => {
+                  setSelectedCategory(category);
+                  setShowEditCategory(true);
+                }}
+              >
+                <Icon icon="mage:edit-fill" width={12} height={12} />
+                <span>Edit</span>
+              </button>
+              <button className="flex-1 border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-3 py-2 text-xs hover:opacity-80 hover:cursor-pointer flex items-center justify-center gap-1">
+                <Icon icon="mingcute:delete-fill" width={12} height={12} />
+                <span>Hapus</span>
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </>
   );

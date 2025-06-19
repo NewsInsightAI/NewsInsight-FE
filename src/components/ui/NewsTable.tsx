@@ -51,45 +51,56 @@ export default function NewsTable({ datas }: NewsTableProps) {
       setSelectedItems(datas.map((item) => item.id.toString()));
     }
   };
-
   const getStatusBadge = (level: string) => {
     switch (level) {
       case "published":
         return (
-          <span className="bg-[#22C55E]/15 text-[#22C55E] border border-[#22C55E] px-3 py-2 rounded-full flex items-center justify-center w-fit">
-            <Icon icon="ic:round-publish" className="w-4 h-4 mr-1" />
-            Terbit
+          <span className="bg-[#22C55E]/15 text-[#22C55E] border border-[#22C55E] px-2 md:px-3 py-1 md:py-2 rounded-full flex items-center justify-center w-fit text-xs md:text-sm">
+            <Icon
+              icon="ic:round-publish"
+              className="w-3 h-3 md:w-4 md:h-4 mr-1"
+            />
+            <span>Terbit</span>
           </span>
         );
       case "draft":
         return (
-          <span className="bg-[#9CA3AF]/15 text-[#9CA3AF] border border-[#9CA3AF] px-3 py-2 rounded-full flex items-center justify-center w-fit">
-            <Icon icon="material-symbols:draft" className="w-4 h-4 mr-1" />
-            Draf
+          <span className="bg-[#9CA3AF]/15 text-[#9CA3AF] border border-[#9CA3AF] px-2 md:px-3 py-1 md:py-2 rounded-full flex items-center justify-center w-fit text-xs md:text-sm">
+            <Icon
+              icon="material-symbols:draft"
+              className="w-3 h-3 md:w-4 md:h-4 mr-1"
+            />
+            <span>Draf</span>
           </span>
         );
       case "scheduled":
         return (
-          <span className="bg-[#3B82F6]/15 text-[#3B82F6] border border-[#3B82F6] px-3 py-2 rounded-full flex items-center justify-center w-fit">
-            <Icon icon="solar:danger-triangle-bold" className="w-4 h-4 mr-1" />
-            Terjadwal
+          <span className="bg-[#3B82F6]/15 text-[#3B82F6] border border-[#3B82F6] px-2 md:px-3 py-1 md:py-2 rounded-full flex items-center justify-center w-fit text-xs md:text-sm">
+            <Icon
+              icon="solar:danger-triangle-bold"
+              className="w-3 h-3 md:w-4 md:h-4 mr-1"
+            />
+            <span>Terjadwal</span>
           </span>
         );
       case "archived":
         return (
-          <span className="bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444] px-3 py-2 rounded-full flex items-center justify-center w-fit">
+          <span className="bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444] px-2 md:px-3 py-1 md:py-2 rounded-full flex items-center justify-center w-fit text-xs md:text-sm">
             <Icon
               icon="material-symbols:archive-rounded"
-              className="w-4 h-4 mr-1"
+              className="w-3 h-3 md:w-4 md:h-4 mr-1"
             />
-            Arsip
+            <span>Arsip</span>
           </span>
         );
       case "review":
         return (
-          <span className="bg-[#FACC15]/15 text-[#FACC15] border border-[#FACC15] px-3 py-2 rounded-full flex items-center justify-center w-fit">
-            <Icon icon="material-symbols:review" className="w-4 h-4 mr-1" />
-            Review
+          <span className="bg-[#FACC15]/15 text-[#FACC15] border border-[#FACC15] px-2 md:px-3 py-1 md:py-2 rounded-full flex items-center justify-center w-fit text-xs md:text-sm">
+            <Icon
+              icon="material-symbols:review"
+              className="w-3 h-3 md:w-4 md:h-4 mr-1"
+            />
+            <span>Review</span>
           </span>
         );
       default:
@@ -131,13 +142,15 @@ export default function NewsTable({ datas }: NewsTableProps) {
   };
   return (
     <>
-      {" "}
+      {/* Desktop Table View - Hidden on mobile */}
       <div
-        className={`overflow-hidden rounded-xl w-full transition-colors duration-300 border ${
+        className={`hidden md:block w-full overflow-x-auto rounded-xl transition-colors duration-300 border ${
           isDark ? "bg-gray-800 border-gray-600" : "bg-white border-gray-200"
         }`}
       >
-        <table className={`min-w-full ${isDark ? "bg-gray-800" : "bg-white"}`}>
+        <table
+          className={`w-full min-w-full ${isDark ? "bg-gray-800" : "bg-white"}`}
+        >
           <thead>
             <tr
               className={`border-b transition-colors duration-300 ${
@@ -146,10 +159,10 @@ export default function NewsTable({ datas }: NewsTableProps) {
                   : "bg-[#367AF2]/12 border-gray-200"
               }`}
             >
-              <th className="py-3 px-4 relative flex items-center justify-center">
+              <th className="py-2 md:py-3 px-2 md:px-4 relative flex items-center justify-center min-w-[40px]">
                 <input
                   type="checkbox"
-                  className="h-5 w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none hover:cursor-pointer hover:bg-[#367AF2]/10"
+                  className="h-4 w-4 md:h-5 md:w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none hover:cursor-pointer hover:bg-[#367AF2]/10"
                   checked={
                     selectedItems.length === datas.length && datas.length > 0
                   }
@@ -158,61 +171,61 @@ export default function NewsTable({ datas }: NewsTableProps) {
                 {selectedItems.length === datas.length && (
                   <Icon
                     icon="mdi:check"
-                    className="absolute text-white h-3 w-3 pointer-events-none"
+                    className="absolute text-white h-2.5 w-2.5 md:h-3 md:w-3 pointer-events-none"
                   />
                 )}
-              </th>{" "}
+              </th>
               <th
-                className={`py-3 px-4 text-left text-xs font-medium uppercase tracking-wider ${
+                className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[50px] ${
                   isDark ? "text-gray-300" : "text-black"
                 }`}
               >
                 No
               </th>
               <th
-                className={`py-3 px-4 text-left text-xs font-medium uppercase tracking-wider ${
+                className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[80px] ${
                   isDark ? "text-gray-300" : "text-black"
                 }`}
               >
                 Gambar
-              </th>
+              </th>{" "}
               <th
-                className={`py-3 px-4 text-left text-xs font-medium uppercase tracking-wider ${
+                className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[250px] md:min-w-[300px] ${
                   isDark ? "text-gray-300" : "text-black"
                 }`}
               >
                 Judul Berita
               </th>
               <th
-                className={`py-3 px-4 text-left text-xs font-medium uppercase tracking-wider ${
+                className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[100px] ${
                   isDark ? "text-gray-300" : "text-black"
                 }`}
               >
                 Kategori
-              </th>
+              </th>{" "}
               <th
-                className={`py-3 px-4 text-left text-xs font-medium uppercase tracking-wider ${
+                className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[120px] md:min-w-[150px] ${
                   isDark ? "text-gray-300" : "text-black"
                 }`}
               >
-                Penulis
-              </th>
+                Penulis{" "}
+              </th>{" "}
               <th
-                className={`py-3 px-4 text-left text-xs font-medium uppercase tracking-wider ${
+                className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[180px] md:min-w-[200px] ${
                   isDark ? "text-gray-300" : "text-black"
                 }`}
               >
                 Tanggal Publikasi
               </th>
               <th
-                className={`py-3 px-4 text-left text-xs font-medium uppercase tracking-wider ${
+                className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[100px] ${
                   isDark ? "text-gray-300" : "text-black"
                 }`}
               >
                 Status
               </th>{" "}
               <th
-                className={`py-3 px-4 text-left text-xs font-medium uppercase tracking-wider ${
+                className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[160px] md:min-w-[180px] ${
                   isDark ? "text-gray-300" : "text-black"
                 }`}
               >
@@ -225,7 +238,6 @@ export default function NewsTable({ datas }: NewsTableProps) {
               isDark ? "divide-gray-600" : "divide-gray-200"
             }`}
           >
-            {" "}
             {datas.map((report, index) => (
               <tr
                 key={report.id}
@@ -233,37 +245,37 @@ export default function NewsTable({ datas }: NewsTableProps) {
                   isDark ? "hover:bg-gray-700" : "hover:bg-gray-50"
                 } ${index === datas.length - 1 ? "last:rounded-b-xl" : ""}`}
               >
-                <td className="py-4 px-4">
+                <td className="py-2 md:py-4 px-2 md:px-4">
                   <div className="relative flex items-center justify-center">
                     <input
                       type="checkbox"
-                      className="h-5 w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none"
+                      className="h-4 w-4 md:h-5 md:w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none"
                       checked={selectedItems.includes(report.id.toString())}
                       onChange={() => toggleSelectItem(report.id.toString())}
                     />
                     {selectedItems.includes(report.id.toString()) && (
                       <Icon
                         icon="mdi:check"
-                        className="absolute text-white h-3 w-3 pointer-events-none"
+                        className="absolute text-white h-2.5 w-2.5 md:h-3 md:w-3 pointer-events-none"
                       />
                     )}
                   </div>
-                </td>{" "}
+                </td>
                 <td
-                  className={`py-4 px-4 text-sm ${
+                  className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
                     isDark ? "text-gray-300" : "text-gray-900"
                   }`}
                 >
                   {index + 1}
                 </td>
                 <td
-                  className={`py-4 px-4 text-sm ${
+                  className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
                     isDark ? "text-gray-300" : "text-gray-900"
                   }`}
                 >
                   {report.imageUrl && (
                     <div
-                      className="h-10 w-16 bg-gray-200 rounded cursor-pointer"
+                      className="h-8 w-12 md:h-10 md:w-16 bg-gray-200 rounded cursor-pointer"
                       onClick={() =>
                         setSelectedPhoto({
                           id: report.id.toString(),
@@ -274,76 +286,224 @@ export default function NewsTable({ datas }: NewsTableProps) {
                       <img
                         src={report.imageUrl}
                         alt="Report"
-                        className="h-10 w-16 rounded object-cover"
+                        className="h-8 w-12 md:h-10 md:w-16 rounded object-cover"
                       />
                     </div>
                   )}
                 </td>{" "}
                 <td
-                  className={`py-4 px-4 text-sm ${
+                  className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
                     isDark ? "text-gray-300" : "text-gray-900"
                   }`}
                 >
-                  {report.title}
+                  <div
+                    className="max-w-[200px] md:max-w-xs truncate"
+                    title={report.title}
+                  >
+                    {report.title}
+                  </div>
                 </td>
                 <td
-                  className={`py-4 px-4 text-sm ${
+                  className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
                     isDark ? "text-gray-300" : "text-gray-900"
                   }`}
                 >
-                  {report.category.name}
-                </td>
+                  {report.category.name}{" "}
+                </td>{" "}
                 <td
-                  className={`py-4 px-4 text-sm ${
+                  className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
                     isDark ? "text-gray-300" : "text-gray-900"
                   }`}
                 >
-                  {report.author.length > 0
-                    ? formatAuthorNames(report.author)
-                    : "Tidak ada penulis"}
+                  <div
+                    className="max-w-[100px] md:max-w-24 truncate"
+                    title={
+                      report.author.length > 0
+                        ? formatAuthorNames(report.author)
+                        : "Tidak ada penulis"
+                    }
+                  >
+                    {report.author.length > 0
+                      ? formatAuthorNames(report.author)
+                      : "Tidak ada penulis"}
+                  </div>
                 </td>
                 <td
-                  className={`py-4 px-4 text-sm ${
+                  className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
                     isDark ? "text-gray-300" : "text-gray-900"
                   }`}
                 >
-                  {getDateTimeWithTimezone(report.publishedAt)}
+                  <div className="text-xs md:text-sm">
+                    {getDateTimeWithTimezone(report.publishedAt)}
+                  </div>
                 </td>
                 <td
-                  className={`py-4 px-4 text-sm ${
+                  className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
                     isDark ? "text-gray-300" : "text-gray-900"
                   }`}
                 >
                   {getStatusBadge(report.status)}
-                </td>
-                <td className="py-4 px-4 text-sm space-x-2">
-                  <button
-                    className="border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-3 py-2 text-sm hover:opacity-80 hover:cursor-pointer disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15"
-                    onClick={() => console.log(`Edit report ${report.id}`)}
-                  >
-                    <Icon
-                      icon="mage:edit-fill"
-                      className="inline mr-1"
-                      width={16}
-                      height={16}
-                    />
-                    Edit
-                  </button>
-                  <button className="border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-3 py-2 text-sm hover:opacity-80 hover:cursor-pointer">
-                    <Icon
-                      icon="mingcute:delete-fill"
-                      className="inline mr-1"
-                      width={16}
-                      height={16}
-                    />
-                    Hapus
-                  </button>
+                </td>{" "}
+                <td className="py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm">
+                  {" "}
+                  <div className="flex flex-row gap-1 sm:gap-2 justify-start">
+                    <button
+                      className="border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm hover:opacity-80 hover:cursor-pointer disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15 flex items-center justify-center min-w-0"
+                      onClick={() => console.log(`Edit report ${report.id}`)}
+                    >
+                      <Icon
+                        icon="mage:edit-fill"
+                        className="sm:mr-1"
+                        width={12}
+                        height={12}
+                      />
+                      <span className="hidden sm:inline">Edit</span>
+                    </button>
+                    <button className="border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm hover:opacity-80 hover:cursor-pointer flex items-center justify-center min-w-0">
+                      <Icon
+                        icon="mingcute:delete-fill"
+                        className="sm:mr-1"
+                        width={12}
+                        height={12}
+                      />
+                      <span className="hidden sm:inline">Hapus</span>{" "}
+                    </button>
+                  </div>{" "}
                 </td>
               </tr>
-            ))}
+            ))}{" "}
           </tbody>
         </table>
-      </div>{" "}
+      </div>
+
+      {/* Mobile Card View - Visible only on mobile */}
+      <div className="md:hidden space-y-4">
+        {datas.map((report, index) => (
+          <div
+            key={report.id}
+            className={`rounded-xl p-4 transition-colors duration-300 border ${
+              isDark
+                ? "bg-gray-800 border-gray-600"
+                : "bg-white border-gray-200"
+            }`}
+          >
+            {/* Card Header */}
+            <div className="flex items-start gap-3 mb-3">
+              <div className="relative flex items-center justify-center">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none"
+                  checked={selectedItems.includes(report.id.toString())}
+                  onChange={() => toggleSelectItem(report.id.toString())}
+                />
+                {selectedItems.includes(report.id.toString()) && (
+                  <Icon
+                    icon="mdi:check"
+                    className="absolute text-white h-2.5 w-2.5 pointer-events-none"
+                  />
+                )}
+              </div>
+              {report.imageUrl && (
+                <div
+                  className="h-16 w-20 bg-gray-200 rounded-lg cursor-pointer flex-shrink-0"
+                  onClick={() =>
+                    setSelectedPhoto({
+                      id: report.id.toString(),
+                      image: report.imageUrl,
+                    })
+                  }
+                >
+                  <img
+                    src={report.imageUrl}
+                    alt="Report"
+                    className="h-16 w-20 rounded-lg object-cover"
+                  />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <h3
+                  className={`font-medium text-sm leading-5 line-clamp-2 ${
+                    isDark ? "text-gray-100" : "text-gray-900"
+                  }`}
+                  title={report.title}
+                >
+                  {report.title}
+                </h3>
+                <div className="flex items-center gap-2 mt-1">
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full ${
+                      isDark
+                        ? "bg-blue-600/20 text-blue-400"
+                        : "bg-blue-100 text-blue-600"
+                    }`}
+                  >
+                    {report.category.name}
+                  </span>
+                  <span
+                    className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                  >
+                    #{index + 1}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card Content */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span
+                  className={`text-xs font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                >
+                  Penulis:
+                </span>
+                <span
+                  className={`text-xs ${isDark ? "text-gray-300" : "text-gray-900"}`}
+                >
+                  {report.author.length > 0
+                    ? formatAuthorNames(report.author)
+                    : "Tidak ada penulis"}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span
+                  className={`text-xs font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                >
+                  Publikasi:
+                </span>
+                <span
+                  className={`text-xs ${isDark ? "text-gray-300" : "text-gray-900"}`}
+                >
+                  {getDateTimeWithTimezone(report.publishedAt)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span
+                  className={`text-xs font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                >
+                  Status:
+                </span>
+                <div>{getStatusBadge(report.status)}</div>
+              </div>
+            </div>
+
+            {/* Card Actions */}
+            <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+              <button
+                className="flex-1 border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-3 py-2 text-xs hover:opacity-80 hover:cursor-pointer disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15 flex items-center justify-center gap-1"
+                onClick={() => console.log(`Edit report ${report.id}`)}
+              >
+                <Icon icon="mage:edit-fill" width={12} height={12} />
+                <span>Edit</span>
+              </button>
+              <button className="flex-1 border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-3 py-2 text-xs hover:opacity-80 hover:cursor-pointer flex items-center justify-center gap-1">
+                <Icon icon="mingcute:delete-fill" width={12} height={12} />
+                <span>Hapus</span>
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
       {selectedPhoto && (
         <div
           className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"

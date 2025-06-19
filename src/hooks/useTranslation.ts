@@ -28,6 +28,7 @@ export const useTranslation = () => {
       const targetLang = options?.targetLang || currentLanguage.code;
       const cacheKey = `${text}_${targetLang}`;
 
+      
       if (!options?.forceRefresh && translations.has(cacheKey)) {
         const cached = translations.get(cacheKey);
         if (cached && !cached.isLoading && !cached.error) {

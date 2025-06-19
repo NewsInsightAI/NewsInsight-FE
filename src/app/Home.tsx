@@ -110,7 +110,7 @@ export default function Home() {
         {" "}
         {/* Hero Section */}
         <div
-          className={`relative w-full h-[300px] sm:h-[400px] lg:h-[550px] rounded-2xl sm:rounded-3xl overflow-hidden group cursor-pointer ${isDark ? "shadow-2xl" : ""}`}
+          className={`relative w-full h-[300px] sm:h-[400px] lg:h-[550px] rounded-2xl sm:rounded-3xl overflow-hidden group cursor-pointer ${isDark ? "shadow-2xl news-glow-pulse" : ""}`}
           style={{
             boxShadow: isDark
               ? `0 25px 50px -12px ${vibrantColor}33`

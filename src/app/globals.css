@@ -314,6 +314,10 @@ body {
   animation: float 6s ease-in-out infinite;
 }
 
+.news-glow-pulse {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
 .footer-logo-bounce {
   animation: bounce-rotate 8s ease-in-out infinite;
 }

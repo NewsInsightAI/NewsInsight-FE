@@ -12,6 +12,7 @@ const popularNews = [
   "Alibaba Rilis Model AI QwQ-32B, Diklaim Ungguli OpenAI dan DeepSeek",
   "Apple mengatakan beberapa peningkatan AI pada Siri ditunda hingga 2026",
   "Alibaba Rilis Model AI QwQ-32B, Diklaim Ungguli OpenAI dan DeepSeek",
+  "Meta Luncurkan VR Headset Terbaru dengan Teknologi Eye Tracking",
 ];
 
 const popularCategory = ["AI", "Teknologi", "Gaya Hidup", "Otomotif", "Gadget"];
@@ -58,20 +59,39 @@ export default function Home() {
   }, [navbarDashboardHeight]);
   return (
     <div
-      className={`flex flex-col gap-6 justify-start items-start ${
+      className={`${
         isDark ? "bg-[#1A1A1A] text-white" : "bg-white text-black"
-      } rounded-4xl w-full h-full p-6 transition-colors duration-300`}
-      style={{ height: `calc(100vh - ${navbarDashboardHeight}px)` }}
+      } rounded-none md:rounded-4xl w-full h-full transition-colors duration-300 overflow-auto`}
+      style={{
+        height: `calc(100vh - ${navbarDashboardHeight}px)`,
+        minHeight: "600px",
+      }}
     >
-      <div className="grid grid-cols-10 gap-6 w-full h-full">
-        <TodayVisitCard visitCount={239} lastUpdated="16:00 WIB" />
-        <PopularNewsCard newsList={popularNews} category={popularCategory} />
-      </div>
-
-      <div className="grid grid-cols-12 gap-6 w-full">
-        <VisitChartCard />
-        <TopEditorsCard editors={popularEditors} />
-        <QuickInfoCard info={fastInfo} />
+      <div className="flex flex-col gap-3 md:gap-5 justify-start items-start w-full p-4 md:p-6 pb-6">
+        {/* First Row - Today's Visit and Popular News */}
+        <div className="grid grid-cols-1 lg:grid-cols-10 gap-3 md:gap-5 w-full h-auto">
+          <div className="lg:col-span-6 h-full">
+            <TodayVisitCard visitCount={239} lastUpdated="16:00 WIB" />
+          </div>
+          <div className="lg:col-span-4 h-full">
+            <PopularNewsCard
+              newsList={popularNews}
+              category={popularCategory}
+            />
+          </div>
+        </div>
+        {/* Second Row - Chart, Editors, and Quick Info */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-5 w-full">
+          <div className="lg:col-span-1 h-full">
+            <VisitChartCard />
+          </div>
+          <div className="lg:col-span-1 h-full">
+            <TopEditorsCard editors={popularEditors} />
+          </div>
+          <div className="lg:col-span-1 h-full">
+            <QuickInfoCard info={fastInfo} />
+          </div>
+        </div>
       </div>
     </div>
   );
