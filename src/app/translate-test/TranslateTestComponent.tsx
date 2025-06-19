@@ -1,23 +1,13 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { TranslatedText } from "@/components/TranslatedTextSimple";
 import { TranslatedContent } from "@/components/TranslatedContent";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { useDarkMode } from "@/context/DarkModeContext";
 
-export default function TranslateTestPage() {
-  const [mounted, setMounted] = useState(false);
+export default function TranslateTestComponent() {
   const [testText, setTestText] = useState("Selamat datang di NewsInsight");
   const { isDark, toggleDark } = useDarkMode();
-
-  // Only render on client side to avoid SSR issues
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return <div className="container mx-auto p-8 text-center">Loading...</div>;
-  }
 
   const sampleHtmlContent = `
     <h2>Contoh Artikel dengan Kutipan</h2>
@@ -112,7 +102,7 @@ export default function TranslateTestPage() {
 
       {/* HTML Content Translation Test */}
       <div className="bg-gray-100 p-6 rounded-lg">
-        <h2 className="text-xl mb-4">HTML Content Translation Test:</h2>
+        <h2 className="text-xl mb-4">HTML Content Translation Test:</h2>{" "}
         <div className="bg-white p-4 border rounded">
           <TranslatedContent
             htmlContent={sampleHtmlContent}
@@ -189,6 +179,32 @@ export default function TranslateTestPage() {
               <li>
                 <strong>Good night: </strong>
                 <TranslatedText>Selamat malam</TranslatedText>
+              </li>
+            </ul>
+          </div>
+
+          <div className="p-4 bg-white rounded border">
+            <h3 className="font-semibold mb-2">News Related:</h3>
+            <ul className="space-y-2">
+              <li>
+                <strong>Latest News: </strong>
+                <TranslatedText>Berita Terbaru</TranslatedText>
+              </li>
+              <li>
+                <strong>Breaking News: </strong>
+                <TranslatedText>Berita Utama</TranslatedText>
+              </li>
+              <li>
+                <strong>Sports: </strong>
+                <TranslatedText>Olahraga</TranslatedText>
+              </li>
+              <li>
+                <strong>Technology: </strong>
+                <TranslatedText>Teknologi</TranslatedText>
+              </li>
+              <li>
+                <strong>Politics: </strong>
+                <TranslatedText>Politik</TranslatedText>
               </li>
             </ul>
           </div>

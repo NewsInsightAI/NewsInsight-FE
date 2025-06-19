@@ -252,7 +252,7 @@ export const authOptions: AuthOptions = {
             email: string;
             name: string;
             role?: string;
-            username?: string;
+            username?: string | null;
             isProfileComplete?: boolean;
           };
           isProfileComplete?: boolean;

@@ -8,12 +8,13 @@ import UserForm from "@/components/popup/AddEditUser";
 import { useDarkMode } from "@/context/DarkModeContext";
 import { useUsers } from "@/hooks/useUsers";
 import { CreateUserData } from "@/lib/api/users";
+import AdminGuard from "@/components/AdminGuard";
 
 export default function Users() {
   const { isDark } = useDarkMode();
   const [navbarDashboardHeight, setNavbarDashboardHeight] = useState(0);
   const [showAddUser, setShowAddUser] = useState(false);
-  
+
   const {
     users,
     loading,
@@ -67,9 +68,8 @@ export default function Users() {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
-
   return (
-    <>
+    <AdminGuard>
       <AnimatePresence>
         {showAddUser && (
           <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center">
@@ -155,9 +155,9 @@ export default function Users() {
             datas={users}
             loading={loading}
             onRefresh={refreshUsers}
-          />
+          />{" "}
         </div>
       </div>
-    </>
+    </AdminGuard>
   );
 }

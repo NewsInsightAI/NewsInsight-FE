@@ -4,9 +4,10 @@ import { authOptions } from "../../../../lib/auth";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
 
     if (!session?.backendToken) {
@@ -23,7 +24,7 @@ export async function GET(
     }
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    const apiRes = await fetch(`${apiUrl}/users/${params.id}`, {
+    const apiRes = await fetch(`${apiUrl}/users/${id}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -55,9 +56,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
 
     if (!session?.backendToken) {
@@ -76,7 +78,7 @@ export async function PUT(
     const body = await request.json();
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    const apiRes = await fetch(`${apiUrl}/users/${params.id}`, {
+    const apiRes = await fetch(`${apiUrl}/users/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -109,9 +111,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
 
     if (!session?.backendToken) {
@@ -128,7 +131,7 @@ export async function DELETE(
     }
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    const apiRes = await fetch(`${apiUrl}/users/${params.id}`, {
+    const apiRes = await fetch(`${apiUrl}/users/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",

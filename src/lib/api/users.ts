@@ -8,12 +8,13 @@ interface ApiError {
 interface User {
   id: number;
   fullName: string;
-  username: string;
+  username: string | null;
   email: string;
   role: string;
   status: string;
   createdAt: string;
   updatedAt: string;
+  googleId?: string | null; // Menandakan jika user mendaftar via Google
 }
 
 interface UsersResponse {
@@ -42,7 +43,7 @@ interface UserResponse {
 
 interface CreateUserData {
   email: string;
-  username: string;
+  username: string | null;
   password: string;
   role: string;
   fullName?: string;
@@ -51,7 +52,7 @@ interface CreateUserData {
 
 interface UpdateUserData {
   email?: string;
-  username?: string;
+  username?: string | null;
   role?: string;
   fullName?: string;
   status?: string;

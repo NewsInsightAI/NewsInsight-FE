@@ -19,7 +19,7 @@ interface ProfileData {
   id: number;
   user_id: number;
   full_name: string | null;
-  username: string;
+  username: string | null;
   email: string;
   avatar: string | null;
   headline: string | null;
