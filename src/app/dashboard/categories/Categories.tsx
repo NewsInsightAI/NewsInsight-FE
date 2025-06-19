@@ -1,24 +1,29 @@
 "use client";
 import CategoryForm from "@/components/popup/AddEditCategory";
 import CategoryTable from "@/components/ui/CategoryTable";
-import { categoryData } from "@/utils/categoryData";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import React, { useState, useEffect } from "react";
 import { useDarkMode } from "@/context/DarkModeContext";
-
-interface Category {
-  id: number;
-  name: string;
-  description: string;
-}
+import { useCategories } from "@/hooks/useCategories";
+import { CreateCategoryData, Category } from "@/lib/api/categories";
 
 export default function Categories() {
   const { isDark } = useDarkMode();
   const [navbarDashboardHeight, setNavbarDashboardHeight] = useState(0);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [selectedCategory] = useState<Category | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const {
+    categories,
+    loading,
+    error,
+    createCategory,
+    deleteCategory,
+    bulkDeleteCategories,
+    refreshCategories,
+  } = useCategories();
 
   useEffect(() => {
     const top = document.querySelector("#navbar-dashboard");
@@ -32,6 +37,48 @@ export default function Categories() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [navbarDashboardHeight]);
+
+  const handleCreateCategory = async (data: {
+    name: string;
+    description: string;
+  }) => {
+    try {
+      const createCategoryData: CreateCategoryData = {
+        name: data.name,
+        description: data.description,
+      };
+
+      await createCategory(createCategoryData);
+      setShowAddCategory(false);
+    } catch (error) {
+      console.error("Error creating category:", error);
+    }
+  };
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+  const handleEditCategory = (category: Category) => {
+    // This will be handled by the CategoryTable component itself
+    console.log("Edit category:", category);
+  };
+
+  const handleDeleteCategory = async (id: number) => {
+    try {
+      await deleteCategory(id);
+      await refreshCategories();
+    } catch (error) {
+      console.error("Error deleting category:", error);
+    }
+  };
+
+  const handleBulkDeleteCategories = async (ids: number[]) => {
+    try {
+      await bulkDeleteCategories(ids);
+      await refreshCategories();
+    } catch (error) {
+      console.error("Error bulk deleting categories:", error);
+    }
+  };
   return (
     <>
       <AnimatePresence>
@@ -45,15 +92,13 @@ export default function Categories() {
               transition={{ duration: 0.3 }}
               className="w-full h-full inset-0 flex items-center justify-center"
             >
+              {" "}
               <CategoryForm
                 mode="add"
                 initialName={selectedCategory?.name || ""}
                 initialDescription={selectedCategory?.description || ""}
                 onClose={() => setShowAddCategory(false)}
-                onSubmit={(data) => {
-                  console.log(data);
-                  setShowAddCategory(false);
-                }}
+                onSubmit={handleCreateCategory}
               />
             </motion.div>
           </div>
@@ -77,12 +122,14 @@ export default function Categories() {
 
           {/* Search and Action Section - Responsive */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full lg:w-auto">
-            {/* Search Input */}
+            {/* Search Input */}{" "}
             <div className="flex items-center justify-center w-full sm:max-w-52">
               <div className="relative w-full">
                 <input
                   type="text"
                   placeholder="Cari kategori..."
+                  value={searchQuery}
+                  onChange={handleSearchChange}
                   className={`w-full px-4 md:px-6 py-2.5 md:py-3 border rounded-full text-sm md:text-base transition-colors duration-300 ${
                     isDark
                       ? "border-gray-600 bg-gray-800 text-white placeholder:text-gray-400"
@@ -98,7 +145,6 @@ export default function Categories() {
                 />
               </div>
             </div>
-
             {/* Add Button */}
             <button
               onClick={() => {
@@ -111,10 +157,26 @@ export default function Categories() {
               <span className="sm:hidden">Tambah</span>
             </button>
           </div>
-        </div>{" "}
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="w-full p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            <p className="text-sm">{error}</p>
+          </div>
+        )}
+
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto overflow-x-auto w-full">
-          <CategoryTable datas={categoryData} />
+          {" "}
+          <CategoryTable
+            datas={categories}
+            loading={loading}
+            onRefresh={refreshCategories}
+            onEdit={handleEditCategory}
+            onDelete={handleDeleteCategory}
+            onBulkDelete={handleBulkDeleteCategories}
+          />
         </div>
       </div>
     </>

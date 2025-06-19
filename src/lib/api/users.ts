@@ -14,7 +14,8 @@ interface User {
   status: string;
   createdAt: string;
   updatedAt: string;
-  googleId?: string | null; // Menandakan jika user mendaftar via Google
+  googleId?: string | null;
+  authProvider?: "email" | "google"; // Proper auth provider field
 }
 
 interface UsersResponse {

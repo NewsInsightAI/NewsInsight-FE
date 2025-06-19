@@ -8,17 +8,32 @@ import { useDarkMode } from "@/context/DarkModeContext";
 interface CategoryData {
   id: number;
   name: string;
-  description: string;
-  totalNews: number;
+  description: string | null;
+  slug: string;
+  status: string;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  totalNews?: number; // Optional for now, can be added later
 }
 
 interface CategoryTableProps {
   datas: CategoryData[];
+  loading?: boolean;
+  onRefresh?: () => Promise<void>;
+  onEdit?: (category: CategoryData) => void;
+  onDelete?: (id: number) => void;
+  onBulkDelete?: (ids: number[]) => void;
 }
 
-export default function CategoryTable({ datas }: CategoryTableProps) {
+export default function CategoryTable({
+  datas,
+  loading = false,
+  onRefresh,
+  onEdit,
+  onDelete,
+  onBulkDelete,
+}: CategoryTableProps) {
   const { isDark } = useDarkMode();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<CategoryData | null>(
@@ -26,6 +41,79 @@ export default function CategoryTable({ datas }: CategoryTableProps) {
   );
 
   const [showEditCategory, setShowEditCategory] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<CategoryData | null>(
+    null
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // TODO: Implement loading state
+  if (loading) {
+    // Loading component can be added here
+  } // TODO: Implement refresh functionality
+  const handleRefresh = () => {
+    if (onRefresh) {
+      onRefresh();
+    }
+  };
+  // Use void to avoid lint error for unused variable
+  void handleRefresh;
+
+  // Handler functions for actions
+  const handleEdit = (category: CategoryData) => {
+    setSelectedCategory(category);
+    setShowEditCategory(true);
+    if (onEdit) {
+      onEdit(category);
+    }
+  };
+
+  const handleDelete = (category: CategoryData) => {
+    setCategoryToDelete(category);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedItems.length > 0) {
+      setShowBulkDeleteConfirm(true);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!categoryToDelete || isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      if (onDelete) {
+        await onDelete(categoryToDelete.id);
+      }
+      setShowDeleteConfirm(false);
+      setCategoryToDelete(null);
+    } catch (error) {
+      console.error("Error deleting category:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const confirmBulkDelete = async () => {
+    if (selectedItems.length === 0 || isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      const categoryIds = selectedItems.map((id) => parseInt(id));
+      if (onBulkDelete) {
+        await onBulkDelete(categoryIds);
+      }
+      setShowBulkDeleteConfirm(false);
+      setSelectedItems([]);
+    } catch (error) {
+      console.error("Error bulk deleting categories:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const toggleSelectItem = (id: string) => {
     setSelectedItems((prev) =>
@@ -63,11 +151,168 @@ export default function CategoryTable({ datas }: CategoryTableProps) {
                   console.log(data);
                   setShowEditCategory(false);
                 }}
-              />
+              />{" "}
             </motion.div>
           </div>
-        )}{" "}
+        )}
       </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteConfirm && categoryToDelete && (
+          <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center">
+            <motion.div
+              key="delete-confirm"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className={`bg-white dark:bg-gray-800 rounded-xl p-6 mx-4 max-w-md w-full border ${
+                isDark ? "border-gray-600" : "border-gray-200"
+              }`}
+            >
+              <div className="text-center">
+                <Icon
+                  icon="heroicons:exclamation-triangle"
+                  className="mx-auto h-12 w-12 text-red-500 mb-4"
+                />
+                <h3
+                  className={`text-lg font-medium mb-2 ${isDark ? "text-white" : "text-gray-900"}`}
+                >
+                  Hapus Kategori
+                </h3>{" "}
+                <p
+                  className={`text-sm mb-6 ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                >
+                  Apakah Anda yakin ingin menghapus kategori &quot;
+                  {categoryToDelete.name}&quot;? Tindakan ini tidak dapat
+                  dibatalkan.
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className={`px-4 py-2 rounded-lg border ${
+                      isDark
+                        ? "border-gray-600 text-gray-300 hover:bg-gray-700"
+                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    disabled={isDeleting}
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
+                  >
+                    {isDeleting ? "Menghapus..." : "Hapus"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Bulk Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showBulkDeleteConfirm && (
+          <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center">
+            <motion.div
+              key="bulk-delete-confirm"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className={`bg-white dark:bg-gray-800 rounded-xl p-6 mx-4 max-w-md w-full border ${
+                isDark ? "border-gray-600" : "border-gray-200"
+              }`}
+            >
+              <div className="text-center">
+                <Icon
+                  icon="heroicons:exclamation-triangle"
+                  className="mx-auto h-12 w-12 text-red-500 mb-4"
+                />
+                <h3
+                  className={`text-lg font-medium mb-2 ${isDark ? "text-white" : "text-gray-900"}`}
+                >
+                  Hapus Beberapa Kategori
+                </h3>
+                <p
+                  className={`text-sm mb-6 ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                >
+                  Apakah Anda yakin ingin menghapus {selectedItems.length}{" "}
+                  kategori yang dipilih? Tindakan ini tidak dapat dibatalkan.
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={() => setShowBulkDeleteConfirm(false)}
+                    className={`px-4 py-2 rounded-lg border ${
+                      isDark
+                        ? "border-gray-600 text-gray-300 hover:bg-gray-700"
+                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={confirmBulkDelete}
+                    disabled={isDeleting}
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
+                  >
+                    {isDeleting
+                      ? "Menghapus..."
+                      : `Hapus ${selectedItems.length} Kategori`}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Bulk Actions Bar */}
+      {selectedItems.length > 0 && (
+        <div
+          className={`mb-4 p-4 rounded-lg border ${
+            isDark
+              ? "bg-gray-800 border-gray-600"
+              : "bg-blue-50 border-blue-200"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span
+              className={`text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"}`}
+            >
+              {selectedItems.length} kategori dipilih
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSelectedItems([])}
+                className={`px-3 py-1 text-xs rounded-lg border ${
+                  isDark
+                    ? "border-gray-600 text-gray-300 hover:bg-gray-700"
+                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                Batalkan Pilihan
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                className="px-3 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600"
+              >
+                <Icon
+                  icon="mingcute:delete-fill"
+                  className="inline mr-1"
+                  width={12}
+                  height={12}
+                />
+                Hapus Terpilih
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Desktop Table View - Hidden on mobile */}
       <div
         className={`hidden md:block rounded-xl w-full transition-colors duration-300 border ${
@@ -132,7 +377,7 @@ export default function CategoryTable({ datas }: CategoryTableProps) {
                     isDark ? "text-gray-300" : "text-black"
                   }`}
                 >
-                  Total Berita
+                  Status
                 </th>
                 <th
                   className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[100px] ${
@@ -192,9 +437,9 @@ export default function CategoryTable({ datas }: CategoryTableProps) {
                   >
                     <div
                       className="max-w-xs truncate"
-                      title={report.description}
+                      title={report.description || ""}
                     >
-                      {report.description}
+                      {report.description || "-"}
                     </div>
                   </td>
                   <td
@@ -202,18 +447,30 @@ export default function CategoryTable({ datas }: CategoryTableProps) {
                       isDark ? "text-gray-300" : "text-gray-900"
                     }`}
                   >
-                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                      {report.totalNews} berita
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        report.status === "active"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      <Icon
+                        icon={
+                          report.status === "active"
+                            ? "heroicons:check-circle"
+                            : "heroicons:x-circle"
+                        }
+                        className="w-3 h-3 inline mr-1"
+                      />
+                      {report.status === "active" ? "Aktif" : "Tidak Aktif"}
                     </span>
                   </td>
                   <td className="py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm">
                     <div className="flex flex-col md:flex-row gap-1 md:gap-2">
+                      {" "}
                       <button
                         className="border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm hover:opacity-80 hover:cursor-pointer disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15 whitespace-nowrap"
-                        onClick={() => {
-                          setSelectedCategory(report);
-                          setShowEditCategory(true);
-                        }}
+                        onClick={() => handleEdit(report)}
                       >
                         <Icon
                           icon="mage:edit-fill"
@@ -223,8 +480,10 @@ export default function CategoryTable({ datas }: CategoryTableProps) {
                         />
                         <span className="hidden md:inline">Edit</span>
                       </button>
-                      <button className="border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm hover:opacity-80 hover:cursor-pointer whitespace-nowrap">
-                        {" "}
+                      <button
+                        className="border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm hover:opacity-80 hover:cursor-pointer whitespace-nowrap"
+                        onClick={() => handleDelete(report)}
+                      >
                         <Icon
                           icon="mingcute:delete-fill"
                           className="inline mr-1"
@@ -290,21 +549,32 @@ export default function CategoryTable({ datas }: CategoryTableProps) {
                 >
                   {category.description}
                 </p>
-              </div>
+              </div>{" "}
             </div>
-
             {/* Card Content */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span
                   className={`text-xs font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
                 >
-                  Total Berita:
+                  Status:
                 </span>
                 <span
-                  className={`text-sm font-medium ${isDark ? "text-gray-100" : "text-gray-900"}`}
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    category.status === "active"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
                 >
-                  {category.totalNews} artikel
+                  <Icon
+                    icon={
+                      category.status === "active"
+                        ? "heroicons:check-circle"
+                        : "heroicons:x-circle"
+                    }
+                    className="w-3 h-3 inline mr-1"
+                  />
+                  {category.status === "active" ? "Aktif" : "Tidak Aktif"}
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -332,20 +602,19 @@ export default function CategoryTable({ datas }: CategoryTableProps) {
                 </span>
               </div>
             </div>
-
-            {/* Card Actions */}
+            {/* Card Actions */}{" "}
             <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
               <button
                 className="flex-1 border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-3 py-2 text-xs hover:opacity-80 hover:cursor-pointer flex items-center justify-center gap-1"
-                onClick={() => {
-                  setSelectedCategory(category);
-                  setShowEditCategory(true);
-                }}
+                onClick={() => handleEdit(category)}
               >
                 <Icon icon="mage:edit-fill" width={12} height={12} />
                 <span>Edit</span>
               </button>
-              <button className="flex-1 border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-3 py-2 text-xs hover:opacity-80 hover:cursor-pointer flex items-center justify-center gap-1">
+              <button
+                className="flex-1 border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-3 py-2 text-xs hover:opacity-80 hover:cursor-pointer flex items-center justify-center gap-1"
+                onClick={() => handleDelete(category)}
+              >
                 <Icon icon="mingcute:delete-fill" width={12} height={12} />
                 <span>Hapus</span>
               </button>
