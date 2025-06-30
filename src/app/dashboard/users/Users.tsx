@@ -1,5 +1,6 @@
 "use client";
 import UsersTable from "@/components/ui/UsersTable";
+import Pagination from "@/components/ui/Pagination";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
@@ -8,10 +9,11 @@ import UserForm from "@/components/popup/AddEditUser";
 import { useDarkMode } from "@/context/DarkModeContext";
 import { useUsers } from "@/hooks/useUsers";
 import { CreateUserData } from "@/lib/api/users";
-import AdminGuard from "@/components/AdminGuard";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Users() {
   const { isDark } = useDarkMode();
+  const { user, isAdmin, isAuthenticated } = useAuth();
   const [navbarDashboardHeight, setNavbarDashboardHeight] = useState(0);
   const [showAddUser, setShowAddUser] = useState(false);
 
@@ -19,10 +21,12 @@ export default function Users() {
     users,
     loading,
     error,
+    pagination,
     searchQuery,
     setSearchQuery,
     createUser,
     refreshUsers,
+    fetchUsers,
   } = useUsers();
   useEffect(() => {
     const top = document.querySelector("#navbar-dashboard");
@@ -68,11 +72,15 @@ export default function Users() {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
+
+  const handlePageChange = (page: number) => {
+    fetchUsers({ page });
+  };
   return (
-    <AdminGuard>
+    <>
       <AnimatePresence>
         {showAddUser && (
-          <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center">
+          <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center">
             <motion.div
               key="verify-email"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -146,7 +154,21 @@ export default function Users() {
         {/* Error Message */}
         {error && (
           <div className="w-full p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-            <p className="text-sm">{error}</p>
+            <p className="text-sm font-semibold mb-2">❌ Error: {error}</p>
+            {/* Debug Info */}
+            <div className="mt-2 text-xs bg-gray-50 p-3 rounded border">
+              <p className="font-semibold mb-1">🔍 Debug Information:</p>
+              <p>📧 User: {user?.email || "Not found"}</p>
+              <p>👤 Role: {user?.role || "Not found"}</p>
+              <p>🛡️ Is Admin: {isAdmin ? "Yes" : "No"}</p>
+              <p>✅ Is Authenticated: {isAuthenticated ? "Yes" : "No"}</p>
+              <p className="mt-2 text-blue-600">
+                💡 Troubleshooting: If you&apos;re admin but getting 403, try:
+                <br />• Refresh the page
+                <br />• Check if backend server is running on port 5000
+                <br />• Check browser console for detailed errors
+              </p>
+            </div>
           </div>
         )}
         {/* Scrollable Content Area */}
@@ -155,9 +177,22 @@ export default function Users() {
             datas={users}
             loading={loading}
             onRefresh={refreshUsers}
-          />{" "}
+          />
+          {/* Pagination */}
+          {!loading && users.length > 0 && pagination && (
+            <div className="mt-4">
+              <Pagination
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                totalItems={pagination.totalUsers}
+                itemsPerPage={10}
+                onPageChange={handlePageChange}
+                loading={loading}
+              />
+            </div>
+          )}{" "}
         </div>
       </div>
-    </AdminGuard>
+    </>
   );
 }

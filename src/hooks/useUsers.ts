@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   usersAPI,
   User,
@@ -46,37 +46,54 @@ export function useUsers(): UseUsersReturn {
   } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({ role: "", status: "" });
+
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const doFetchUsers = async (params: GetUsersParams = {}) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await usersAPI.getAllUsers(params);
+
+      if (response.status === "success") {
+        setUsers(response.data);
+        setPagination(response.metadata.pagination);
+      } else {
+        setError(response.error?.message || "Failed to fetch users");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchUsers = useCallback(
     async (params: GetUsersParams = {}) => {
-      try {
-        setLoading(true);
-        setError(null);
+      const finalParams = {
+        search: searchQuery,
+        role: filters.role || undefined,
+        status: filters.status || undefined,
+        page: 1,
+        limit: 10,
+        ...params,
+      };
 
-        const finalParams = {
-          search: searchQuery,
-          role: filters.role || undefined,
-          status: filters.status || undefined,
-          page: 1,
-          limit: 10,
-          ...params,
-        };
-
-        const response = await usersAPI.getAllUsers(finalParams);
-
-        if (response.status === "success") {
-          setUsers(response.data);
-          setPagination(response.metadata.pagination);
-        } else {
-          setError(response.error?.message || "Failed to fetch users");
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
-      }
+      await doFetchUsers(finalParams);
     },
     [searchQuery, filters.role, filters.status]
   );
+
+  const debouncedFetchUsers = useCallback(() => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    debounceTimeoutRef.current = setTimeout(() => {
+      fetchUsers();
+    }, 500);
+  }, [fetchUsers]);
 
   const createUser = useCallback(
     async (userData: CreateUserData) => {
@@ -167,16 +184,22 @@ export function useUsers(): UseUsersReturn {
   }, [fetchUsers]);
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    doFetchUsers({
+      search: "",
+      page: 1,
+      limit: 10,
+    });
+  }, []);
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      fetchUsers();
-    }, 500);
+    debouncedFetchUsers();
 
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, filters, fetchUsers]);
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [searchQuery, filters.role, filters.status, debouncedFetchUsers]);
 
   return {
     users,

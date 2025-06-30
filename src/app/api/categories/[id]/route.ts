@@ -43,6 +43,13 @@ export async function PUT(request: NextRequest, { params }: Params) {
     const token = request.headers.get("authorization");
     const body = await request.json();
 
+    console.log(
+      "PUT /api/categories - Received token:",
+      token ? "Token exists" : "No token"
+    );
+    console.log("PUT /api/categories - Category ID:", id);
+    console.log("PUT /api/categories - Body:", body);
+
     const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
       method: "PUT",
       headers: {
@@ -75,6 +82,12 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
     const token = request.headers.get("authorization");
+
+    console.log(
+      "DELETE /api/categories - Received token:",
+      token ? "Token exists" : "No token"
+    );
+    console.log("DELETE /api/categories - Category ID:", id);
 
     const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
       method: "DELETE",

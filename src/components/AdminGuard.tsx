@@ -4,6 +4,7 @@ import { useDarkMode } from "@/context/DarkModeContext";
 import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { ClipLoader } from "react-spinners";
 
 interface AdminGuardProps {
   children: React.ReactNode;
@@ -21,19 +22,23 @@ export default function AdminGuard({ children, fallback }: AdminGuardProps) {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  // Loading state
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] w-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-        <p className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}>
+        <ClipLoader
+          color={isDark ? "#3B82F6" : "#2563EB"}
+          loading={true}
+          size={40}
+        />
+        <p
+          className={`text-sm mt-4 ${isDark ? "text-gray-300" : "text-gray-600"}`}
+        >
           Memverifikasi akses...
         </p>
       </div>
     );
   }
 
-  // Not authenticated
   if (!isAuthenticated || !user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] w-full">
@@ -51,7 +56,6 @@ export default function AdminGuard({ children, fallback }: AdminGuardProps) {
     );
   }
 
-  // Not admin
   if (!isAdmin) {
     if (fallback) {
       return <>{fallback}</>;
@@ -94,6 +98,5 @@ export default function AdminGuard({ children, fallback }: AdminGuardProps) {
     );
   }
 
-  // Admin access granted
   return <>{children}</>;
 }

@@ -344,7 +344,7 @@ export default function Login() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center"
+            className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center"
           >
             <ForgotPassword onClose={() => setShowForgotPassword(false)} />
           </motion.div>
@@ -356,7 +356,7 @@ export default function Login() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center"
+            className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center"
           >
             <VerifyEmail
               onClose={() => setShowVerifyEmail(false)}
@@ -376,7 +376,7 @@ export default function Login() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center"
+            className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center"
           >
             {" "}
             <MFAVerification

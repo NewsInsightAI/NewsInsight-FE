@@ -6,6 +6,7 @@ import UserForm from "../popup/AddEditUser";
 import { AnimatePresence, motion } from "framer-motion";
 import { useUsers } from "@/hooks/useUsers";
 import { UpdateUserData } from "@/lib/api/users";
+import ConfirmationModal from "./ConfirmationModal";
 
 interface UsersData {
   id: number;
@@ -17,7 +18,7 @@ interface UsersData {
   createdAt: string;
   updatedAt: string;
   googleId?: string | null;
-  authProvider?: "email" | "google"; // Proper auth provider field
+  authProvider?: "email" | "google";
 }
 
 interface UsersTableProps {
@@ -26,14 +27,12 @@ interface UsersTableProps {
   onRefresh?: () => Promise<void>;
 }
 
-// Helper function to detect if user registered via Google
+
 const isGoogleUser = (user: UsersData): boolean => {
-  // Primary method: Check authProvider field (most accurate)
   if (user.authProvider === "google") {
     return true;
   }
 
-  // Fallback method: Check googleId for backward compatibility
   if (user.googleId) {
     return true;
   }
@@ -41,7 +40,6 @@ const isGoogleUser = (user: UsersData): boolean => {
   return false;
 };
 
-// Component for displaying authentication provider badge
 const AuthProviderBadge = ({ user }: { user: UsersData }) => {
   const isGoogle = isGoogleUser(user);
   if (isGoogle) {
@@ -61,10 +59,7 @@ const AuthProviderBadge = ({ user }: { user: UsersData }) => {
       className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-600 dark:bg-gray-700 rounded-full w-fit shadow-md"
       title="User mendaftar menggunakan email dan password"
     >
-      <Icon
-        icon="mage:email-opened-fill"
-        className="w-3.5 h-3.5 text-white"
-      />
+      <Icon icon="mage:email-opened-fill" className="w-3.5 h-3.5 text-white" />
       <span className="text-xs font-semibold text-white">Email</span>
     </div>
   );
@@ -78,6 +73,11 @@ export default function UsersTable({
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showEditUser, setShowEditUser] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UsersData | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UsersData | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const { updateUser, deleteUser, bulkDeleteUsers } = useUsers();
   const toggleSelectItem = (id: string) => {
@@ -125,31 +125,44 @@ export default function UsersTable({
     }
   };
 
-  const handleDeleteUser = async (userId: number) => {
-    if (confirm("Apakah Anda yakin ingin menghapus pengguna ini?")) {
-      try {
-        await deleteUser(userId);
-      } catch (error) {
-        console.error("Error deleting user:", error);
-      }
+  const handleDeleteUser = (user: UsersData) => {
+    setUserToDelete(user);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete || isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteUser(userToDelete.id);
+      setShowDeleteConfirm(false);
+      setUserToDelete(null);
+    } catch (error) {
+      console.error("Error deleting user:", error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (selectedItems.length === 0) return;
+    setShowBulkDeleteConfirm(true);
+  };
 
-    if (
-      confirm(
-        `Apakah Anda yakin ingin menghapus ${selectedItems.length} pengguna yang dipilih?`
-      )
-    ) {
-      try {
-        const userIds = selectedItems.map((id) => parseInt(id));
-        await bulkDeleteUsers(userIds);
-        setSelectedItems([]);
-      } catch (error) {
-        console.error("Error deleting users:", error);
-      }
+  const confirmBulkDelete = async () => {
+    if (selectedItems.length === 0 || isBulkDeleting) return;
+
+    setIsBulkDeleting(true);
+    try {
+      const userIds = selectedItems.map((id) => parseInt(id));
+      await bulkDeleteUsers(userIds);
+      setSelectedItems([]);
+      setShowBulkDeleteConfirm(false);
+    } catch (error) {
+      console.error("Error deleting users:", error);
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
   const getRoleBadge = (role: string) => {
@@ -212,9 +225,48 @@ export default function UsersTable({
 
   return (
     <>
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDeleteUser}
+        title="Hapus Pengguna"
+        message={
+          userToDelete ? (
+            <p>
+              Apakah Anda yakin ingin menghapus pengguna &quot;
+              {userToDelete.fullName}&quot;? Tindakan ini tidak dapat
+              dibatalkan.
+            </p>
+          ) : (
+            ""
+          )
+        }
+        confirmText="Hapus"
+        isLoading={isDeleting}
+        loadingText="Menghapus..."
+      />
+
+      {/* Bulk Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showBulkDeleteConfirm}
+        onClose={() => setShowBulkDeleteConfirm(false)}
+        onConfirm={confirmBulkDelete}
+        title="Hapus Pengguna Terpilih"
+        message={
+          <p>
+            Apakah Anda yakin ingin menghapus {selectedItems.length} pengguna
+            yang dipilih? Tindakan ini tidak dapat dibatalkan.
+          </p>
+        }
+        confirmText="Hapus Semua"
+        isLoading={isBulkDeleting}
+        loadingText="Menghapus..."
+      />
+
       <AnimatePresence>
         {showEditUser && (
-          <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center">
+          <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center">
             <motion.div
               key="verify-email"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -232,33 +284,60 @@ export default function UsersTable({
                 initialStatus={selectedUser?.status || ""}
                 onSubmit={handleEditUser}
                 onClose={() => setShowEditUser(false)}
-              />{" "}
+              />
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* Bulk Actions */}
+      {/* Enhanced Bulk Actions Bar */}
       {selectedItems.length > 0 && (
-        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className={`mb-4 p-4 rounded-lg border transition-colors duration-300 ${
+            isDark
+              ? "bg-blue-900/20 border-blue-700 shadow-lg shadow-blue-900/20"
+              : "bg-blue-50 border-blue-200 shadow-sm"
+          }`}
+        >
           <div className="flex items-center justify-between">
-            <span className="text-sm text-blue-700 dark:text-blue-300">
-              {selectedItems.length} pengguna dipilih
-            </span>
-            <button
-              onClick={handleBulkDelete}
-              className="px-3 py-1.5 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
-            >
-              <Icon
-                icon="mingcute:delete-fill"
-                className="inline mr-1"
-                width={14}
-                height={14}
-              />
-              Hapus yang dipilih
-            </button>
+            <div className="flex items-center gap-3">
+              <div
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${
+                  isDark
+                    ? "bg-blue-700/50 text-blue-300"
+                    : "bg-blue-100 text-blue-700"
+                }`}
+              >
+                <Icon icon="mdi:check-all" className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {selectedItems.length} pengguna dipilih
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSelectedItems([])}
+                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                  isDark
+                    ? "text-gray-300 hover:bg-gray-700"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                className="px-4 py-1.5 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition-colors flex items-center gap-2"
+              >
+                <Icon icon="mingcute:delete-fill" className="w-4 h-4" />
+                Hapus yang dipilih
+              </button>
+            </div>
           </div>
-        </div>
+        </motion.div>
       )}
       {/* Loading State */}
       {loading && (
@@ -289,217 +368,210 @@ export default function UsersTable({
       {/* Desktop Table View - Hidden on mobile */}
       {!loading && datas.length > 0 && (
         <div
-          className={`hidden md:block rounded-xl w-full transition-colors duration-300 border ${
+          className={`hidden md:block w-full overflow-x-auto rounded-xl transition-colors duration-300 border ${
             isDark ? "bg-gray-800 border-gray-600" : "bg-white border-gray-200"
           }`}
         >
-          {/* Horizontal scroll wrapper for mobile */}
-          <div className="w-full overflow-x-auto">
-            <table
-              className={`w-full min-w-full ${isDark ? "bg-gray-800" : "bg-white"}`}
-            >
-              <thead>
-                <tr
-                  className={`border-b transition-colors duration-300 ${
-                    isDark
-                      ? "bg-blue-600/20 border-gray-600"
-                      : "bg-[#367AF2]/12 border-gray-200"
+          <table
+            className={`w-full min-w-full rounded-xl overflow-hidden ${isDark ? "bg-gray-800" : "bg-white"}`}
+          >
+            <thead>
+              <tr
+                className={`border-b transition-colors duration-300 rounded-t-xl overflow-hidden ${
+                  isDark
+                    ? "bg-blue-600/20 border-gray-600"
+                    : "bg-[#367AF2]/12 border-gray-200"
+                }`}
+              >
+                <th className="py-2 md:py-3 px-2 md:px-4 w-12">
+                  <div className="flex items-center justify-center">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 md:h-5 md:w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none hover:cursor-pointer hover:bg-[#367AF2]/10"
+                      checked={
+                        selectedItems.length === datas.length &&
+                        datas.length > 0
+                      }
+                      onChange={toggleSelectAll}
+                    />
+                    {selectedItems.length === datas.length && (
+                      <Icon
+                        icon="mdi:check"
+                        className="absolute text-white h-3 w-3 pointer-events-none"
+                      />
+                    )}
+                  </div>
+                </th>
+                <th
+                  className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[60px] ${
+                    isDark ? "text-gray-300" : "text-black"
                   }`}
                 >
-                  <th className="py-2 md:py-3 px-2 md:px-4 w-12">
+                  No
+                </th>
+                <th
+                  className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[150px] ${
+                    isDark ? "text-gray-300" : "text-black"
+                  }`}
+                >
+                  Nama Lengkap
+                </th>
+                <th
+                  className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[120px] ${
+                    isDark ? "text-gray-300" : "text-black"
+                  }`}
+                >
+                  Username
+                </th>
+                <th
+                  className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[200px] ${
+                    isDark ? "text-gray-300" : "text-black"
+                  }`}
+                >
+                  Email
+                </th>
+                <th
+                  className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[100px] ${
+                    isDark ? "text-gray-300" : "text-black"
+                  }`}
+                >
+                  Auth Provider
+                </th>
+                <th
+                  className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[120px] ${
+                    isDark ? "text-gray-300" : "text-black"
+                  }`}
+                >
+                  Role
+                </th>
+                <th
+                  className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[100px] ${
+                    isDark ? "text-gray-300" : "text-black"
+                  }`}
+                >
+                  Status
+                </th>
+                <th
+                  className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[100px] ${
+                    isDark ? "text-gray-300" : "text-black"
+                  }`}
+                >
+                  Aksi
+                </th>
+              </tr>
+            </thead>
+            <tbody
+              className={`divide-y transition-colors duration-300 ${
+                isDark ? "divide-gray-600" : "divide-gray-200"
+              }`}
+            >
+              {datas.map((report, index) => (
+                <tr
+                  key={report.id}
+                  className={`transition-colors duration-300 ${
+                    isDark ? "hover:bg-gray-700" : "hover:bg-gray-50"
+                  } ${index === datas.length - 1 ? "last:rounded-b-xl" : ""}`}
+                >
+                  <td className="py-2 md:py-4 px-2 md:px-4 w-12">
                     <div className="flex items-center justify-center">
                       <input
                         type="checkbox"
-                        className="h-4 w-4 md:h-5 md:w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none hover:cursor-pointer hover:bg-[#367AF2]/10"
-                        checked={
-                          selectedItems.length === datas.length &&
-                          datas.length > 0
-                        }
-                        onChange={toggleSelectAll}
+                        className="h-4 w-4 md:h-5 md:w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none"
+                        checked={selectedItems.includes(report.id.toString())}
+                        onChange={() => toggleSelectItem(report.id.toString())}
                       />
-                      {selectedItems.length === datas.length && (
+                      {selectedItems.includes(report.id.toString()) && (
                         <Icon
                           icon="mdi:check"
                           className="absolute text-white h-3 w-3 pointer-events-none"
                         />
                       )}
                     </div>
-                  </th>
-                  <th
-                    className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[60px] ${
-                      isDark ? "text-gray-300" : "text-black"
+                  </td>
+                  <td
+                    className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
+                      isDark ? "text-gray-300" : "text-gray-900"
                     }`}
                   >
-                    No
-                  </th>
-                  <th
-                    className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[150px] ${
-                      isDark ? "text-gray-300" : "text-black"
+                    {index + 1}
+                  </td>
+                  <td
+                    className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm font-medium ${
+                      isDark ? "text-gray-300" : "text-gray-900"
                     }`}
                   >
-                    Nama Lengkap
-                  </th>
-                  <th
-                    className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[120px] ${
-                      isDark ? "text-gray-300" : "text-black"
+                    {report.fullName}
+                  </td>
+                  <td
+                    className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
+                      isDark ? "text-gray-300" : "text-gray-900"
                     }`}
                   >
-                    Username
-                  </th>
-                  <th
-                    className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[200px] ${
-                      isDark ? "text-gray-300" : "text-black"
+                    {report.username || "-"}
+                  </td>
+                  <td
+                    className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
+                      isDark ? "text-gray-300" : "text-gray-900"
                     }`}
                   >
-                    {" "}
-                    Email
-                  </th>
-                  <th
-                    className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[100px] ${
-                      isDark ? "text-gray-300" : "text-black"
+                    {report.email}
+                  </td>
+                  <td
+                    className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
+                      isDark ? "text-gray-300" : "text-gray-900"
                     }`}
                   >
-                    Auth Provider
-                  </th>
-                  <th
-                    className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[120px] ${
-                      isDark ? "text-gray-300" : "text-black"
+                    <AuthProviderBadge user={report} />
+                  </td>
+                  <td
+                    className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
+                      isDark ? "text-gray-300" : "text-gray-900"
                     }`}
                   >
-                    Role
-                  </th>
-                  <th
-                    className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[100px] ${
-                      isDark ? "text-gray-300" : "text-black"
+                    {getRoleBadge(report.role)}
+                  </td>
+                  <td
+                    className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
+                      isDark ? "text-gray-300" : "text-gray-900"
                     }`}
                   >
-                    Status
-                  </th>
-                  <th
-                    className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[100px] ${
-                      isDark ? "text-gray-300" : "text-black"
-                    }`}
-                  >
-                    Aksi
-                  </th>
-                </tr>
-              </thead>
-              <tbody
-                className={`divide-y transition-colors duration-300 ${
-                  isDark ? "divide-gray-600" : "divide-gray-200"
-                }`}
-              >
-                {datas.map((report, index) => (
-                  <tr
-                    key={report.id}
-                    className={`transition-colors duration-300 ${
-                      isDark ? "hover:bg-gray-700" : "hover:bg-gray-50"
-                    } ${index === datas.length - 1 ? "last:rounded-b-xl" : ""}`}
-                  >
-                    <td className="py-2 md:py-4 px-2 md:px-4 w-12">
-                      <div className="flex items-center justify-center">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 md:h-5 md:w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none"
-                          checked={selectedItems.includes(report.id.toString())}
-                          onChange={() =>
-                            toggleSelectItem(report.id.toString())
-                          }
+                    {getStatusBadge(report.status)}
+                  </td>
+                  <td className="py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm">
+                    <div className="flex flex-col md:flex-row gap-1 md:gap-2">
+                      <button
+                        className="border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm hover:opacity-80 hover:cursor-pointer disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15 whitespace-nowrap"
+                        onClick={() => {
+                          setSelectedUser(report);
+                          setShowEditUser(true);
+                        }}
+                      >
+                        <Icon
+                          icon="mage:edit-fill"
+                          className="inline mr-1"
+                          width={12}
+                          height={12}
                         />
-                        {selectedItems.includes(report.id.toString()) && (
-                          <Icon
-                            icon="mdi:check"
-                            className="absolute text-white h-3 w-3 pointer-events-none"
-                          />
-                        )}
-                      </div>
-                    </td>
-                    <td
-                      className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
-                        isDark ? "text-gray-300" : "text-gray-900"
-                      }`}
-                    >
-                      {index + 1}
-                    </td>
-                    <td
-                      className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm font-medium ${
-                        isDark ? "text-gray-300" : "text-gray-900"
-                      }`}
-                    >
-                      {report.fullName}
-                    </td>
-                    <td
-                      className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
-                        isDark ? "text-gray-300" : "text-gray-900"
-                      }`}
-                    >
-                      {report.username || "-"}
-                    </td>
-                    <td
-                      className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
-                        isDark ? "text-gray-300" : "text-gray-900"
-                      }`}
-                    >
-                      {report.email}
-                    </td>{" "}
-                    <td
-                      className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
-                        isDark ? "text-gray-300" : "text-gray-900"
-                      }`}
-                    >
-                      <AuthProviderBadge user={report} />
-                    </td>
-                    <td
-                      className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
-                        isDark ? "text-gray-300" : "text-gray-900"
-                      }`}
-                    >
-                      {getRoleBadge(report.role)}
-                    </td>
-                    <td
-                      className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
-                        isDark ? "text-gray-300" : "text-gray-900"
-                      }`}
-                    >
-                      {getStatusBadge(report.status)}
-                    </td>
-                    <td className="py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm">
-                      <div className="flex flex-col md:flex-row gap-1 md:gap-2">
-                        <button
-                          className="border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm hover:opacity-80 hover:cursor-pointer disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15 whitespace-nowrap"
-                          onClick={() => {
-                            setSelectedUser(report);
-                            setShowEditUser(true);
-                          }}
-                        >
-                          <Icon
-                            icon="mage:edit-fill"
-                            className="inline mr-1"
-                            width={12}
-                            height={12}
-                          />
-                          <span className="hidden md:inline">Edit</span>
-                        </button>
-                        <button
-                          className="border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm hover:opacity-80 hover:cursor-pointer whitespace-nowrap"
-                          onClick={() => handleDeleteUser(report.id)}
-                        >
-                          {" "}
-                          <Icon
-                            icon="mingcute:delete-fill"
-                            className="inline mr-1"
-                            width={12}
-                            height={12}
-                          />
-                          <span className="hidden md:inline">Hapus</span>
-                        </button>{" "}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                        <span className="hidden md:inline">Edit</span>
+                      </button>
+                      <button
+                        className="border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm hover:opacity-80 hover:cursor-pointer whitespace-nowrap"
+                        onClick={() => handleDeleteUser(report)}
+                      >
+                        <Icon
+                          icon="mingcute:delete-fill"
+                          className="inline mr-1"
+                          width={12}
+                          height={12}
+                        />
+                        <span className="hidden md:inline">Hapus</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -545,7 +617,7 @@ export default function UsersTable({
                     >
                       #{index + 1}
                     </span>
-                  </div>{" "}
+                  </div>
                   <p
                     className={`text-sm ${
                       isDark ? "text-gray-300" : "text-gray-600"
@@ -596,10 +668,9 @@ export default function UsersTable({
                         : "bg-red-100 text-red-600 dark:bg-red-600/20 dark:text-red-400"
                     }`}
                   >
-                    {" "}
                     {user.status === "active" ? "Aktif" : "Tidak Aktif"}
                   </span>
-                </div>{" "}
+                </div>
                 <div className="flex justify-between items-center">
                   <span
                     className={`text-xs font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
@@ -636,7 +707,7 @@ export default function UsersTable({
                 </button>
                 <button
                   className="flex-1 border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-3 py-2 text-xs hover:opacity-80 hover:cursor-pointer flex items-center justify-center gap-1"
-                  onClick={() => handleDeleteUser(user.id)}
+                  onClick={() => handleDeleteUser(user)}
                 >
                   <Icon icon="mingcute:delete-fill" width={12} height={12} />
                   <span>Hapus</span>

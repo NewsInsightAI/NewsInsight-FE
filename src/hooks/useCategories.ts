@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   categoriesAPI,
   Category,
@@ -49,43 +49,59 @@ export function useCategories(): UseCategoriesReturn {
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({ status: "" });
 
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const doFetchCategories = async (params: GetCategoriesParams = {}) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await categoriesAPI.getAllCategories(params);
+
+      if (response.status === "success") {
+        setCategories(response.data);
+        setPagination(response.metadata.pagination);
+      } else {
+        setError(response.error?.message || "Failed to fetch categories");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchCategories = useCallback(
     async (params: GetCategoriesParams = {}) => {
-      try {
-        setLoading(true);
-        setError(null);
+      const finalParams = {
+        search: searchQuery,
+        status: filters.status as "active" | "inactive" | "",
+        page: 1,
+        limit: 10,
+        ...params,
+      };
 
-        const finalParams = {
-          search: searchQuery,
-          status: filters.status as "active" | "inactive" | "",
-          page: 1,
-          limit: 10,
-          ...params,
-        };
-
-        const response = await categoriesAPI.getAllCategories(finalParams);
-
-        if (response.status === "success") {
-          setCategories(response.data);
-          setPagination(response.metadata.pagination);
-        } else {
-          setError(response.error?.message || "Failed to fetch categories");
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
-      }
+      await doFetchCategories(finalParams);
     },
     [searchQuery, filters.status]
   );
+
+  const debouncedFetchCategories = useCallback(() => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    debounceTimeoutRef.current = setTimeout(() => {
+      fetchCategories();
+    }, 500);
+  }, [fetchCategories]);
 
   const createCategory = useCallback(
     async (categoryData: CreateCategoryData) => {
       try {
         setError(null);
         await categoriesAPI.createCategory(categoryData);
-        await fetchCategories(); // Refresh the list
+        await fetchCategories();
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to create category"
@@ -101,7 +117,7 @@ export function useCategories(): UseCategoriesReturn {
       try {
         setError(null);
         await categoriesAPI.updateCategory(id, categoryData);
-        await fetchCategories(); // Refresh the list
+        await fetchCategories();
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to update category"
@@ -117,7 +133,7 @@ export function useCategories(): UseCategoriesReturn {
       try {
         setError(null);
         await categoriesAPI.deleteCategory(id);
-        await fetchCategories(); // Refresh the list
+        await fetchCategories();
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to delete category"
@@ -133,7 +149,7 @@ export function useCategories(): UseCategoriesReturn {
       try {
         setError(null);
         await categoriesAPI.bulkDeleteCategories(categoryIds);
-        await fetchCategories(); // Refresh the list
+        await fetchCategories();
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to delete categories"
@@ -148,10 +164,23 @@ export function useCategories(): UseCategoriesReturn {
     return fetchCategories();
   }, [fetchCategories]);
 
-  // Effect to fetch categories when search query or filters change
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    doFetchCategories({
+      search: "",
+      page: 1,
+      limit: 10,
+    });
+  }, []);
+
+  useEffect(() => {
+    debouncedFetchCategories();
+
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [searchQuery, filters.status, debouncedFetchCategories]);
 
   return {
     categories,

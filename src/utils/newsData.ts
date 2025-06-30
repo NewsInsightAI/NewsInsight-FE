@@ -20,6 +20,10 @@ export const newsData = [
         id: 2,
         name: "Jane Smith",
       },
+      {
+        id: 3,
+        name: "Alice Johnson",
+      },
     ],
     publishedAt: "2023-10-01T12:00:00.000Z",
     status: "published",

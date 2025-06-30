@@ -1,5 +1,6 @@
 "use client";
 import NavbarDashboard from "@/components/NavbarDashboard";
+import DashboardGuard from "@/components/DashboardGuard";
 import { Inter } from "next/font/google";
 import { useEffect, useState } from "react";
 
@@ -37,7 +38,7 @@ export default function RootLayout({
         style={{ paddingTop: `${navbarDashboardHeight}px` }}
       >
         <main className="flex flex-col items-center justify-center h-full">
-          {children}
+          <DashboardGuard>{children}</DashboardGuard>
         </main>
       </div>
     </div>

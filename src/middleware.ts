@@ -35,10 +35,10 @@ export default withAuth(
         }
         if (pathname.startsWith("/dashboard")) {
           if (pathname.startsWith("/dashboard/users")) {
-            // Users page requires admin role
+            
             return !!token && token.backendUser?.role === "admin";
           }
-          // Other dashboard pages just require authentication
+          
           return !!token;
         }
 

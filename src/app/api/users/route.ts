@@ -5,12 +5,20 @@ import { authOptions } from "../../../lib/auth";
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
+    
+    console.log("Session debug:", {
+      hasSession: !!session,
+      hasBackendToken: !!session?.backendToken,
+      userEmail: session?.user?.email,
+      userRole: session?.user?.role,
+    });
 
     if (!session?.backendToken) {
+      console.log("No session or backend token found");
       return NextResponse.json(
         {
           status: "error",
-          message: "Unauthorized",
+          message: "Unauthorized - No session or backend token",
           data: null,
           error: { code: "UNAUTHORIZED" },
           metadata: null,
@@ -22,21 +30,36 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const queryString = searchParams.toString();
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    const apiRes = await fetch(
-      `${apiUrl}/users${queryString ? `?${queryString}` : ""}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.backendToken}`,
-        },
-      }
-    );
+    const apiUrl =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+    const fullUrl = `${apiUrl}/users${queryString ? `?${queryString}` : ""}`;
+
+    console.log("Making request to backend:", {
+      url: fullUrl,
+      hasToken: !!session.backendToken,
+      tokenPrefix: session.backendToken?.substring(0, 20) + "...",
+    });
+
+    const apiRes = await fetch(fullUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.backendToken}`,
+      },
+    });
 
     const data = await apiRes.json();
 
+    console.log("Backend response:", {
+      status: apiRes.status,
+      ok: apiRes.ok,
+      statusText: apiRes.statusText,
+      dataStatus: data.status,
+      message: data.message,
+    });
+
     if (!apiRes.ok) {
+      console.log("Backend returned error:", data);
       return NextResponse.json(data, { status: apiRes.status });
     }
 

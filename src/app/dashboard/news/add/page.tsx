@@ -1,5 +1,5 @@
 import React from "react";
-import AddNews from "./AddNews";
+import AddEditNews from "./AddEditNews";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function AddNewsPage() {
-  return <AddNews />;
+  return <AddEditNews mode="add" />;
 }

@@ -15,7 +15,7 @@ interface User {
   createdAt: string;
   updatedAt: string;
   googleId?: string | null;
-  authProvider?: "email" | "google"; // Proper auth provider field
+  authProvider?: "email" | "google";
 }
 
 interface UsersResponse {
@@ -83,6 +83,7 @@ class UsersAPI {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
     });
 
     if (!response.ok) {
@@ -98,6 +99,7 @@ class UsersAPI {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
     });
 
     if (!response.ok) {
@@ -113,6 +115,7 @@ class UsersAPI {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(userData),
     });
 
@@ -135,6 +138,7 @@ class UsersAPI {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(userData),
     });
 
@@ -154,6 +158,7 @@ class UsersAPI {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
     });
 
     if (!response.ok) {
@@ -178,6 +183,7 @@ class UsersAPI {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({ userIds }),
     });
 

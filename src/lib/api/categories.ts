@@ -1,3 +1,5 @@
+import { getSession } from "next-auth/react";
+
 const API_BASE_URL = "/api";
 
 interface ApiError {
@@ -69,10 +71,19 @@ class CategoriesAPI {
       "Content-Type": "application/json",
     };
 
-    // Get token from localStorage
-    const token = localStorage.getItem("token");
+    const session = await getSession();
+    console.log("Session:", session ? "Session exists" : "No session found");
+    const token = session?.backendToken;
+    console.log(
+      "Token from session:",
+      token ? "Token exists" : "No token found"
+    );
     if (token) {
       defaultHeaders.Authorization = `Bearer ${token}`;
+      console.log(
+        "Authorization header set:",
+        `Bearer ${token.substring(0, 10)}...`
+      );
     }
 
     const config: RequestInit = {

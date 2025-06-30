@@ -1,6 +1,7 @@
 "use client";
 import React, { ReactNode, useEffect, useState } from "react";
 import { useDarkMode } from "@/context/DarkModeContext";
+import AdminOnlyGuard from "@/components/AdminOnlyGuard";
 
 interface UsersLayoutProps {
   children: ReactNode;
@@ -20,13 +21,15 @@ export default function UsersLayout({ children }: UsersLayoutProps) {
     return () => window.removeEventListener("resize", updateHeight);
   }, []);
   return (
-    <div
-      className={`flex flex-col gap-6 justify-center items-start rounded-4xl w-full p-6 transition-colors duration-300 ${
-        isDark ? "bg-[#1A1A1A] text-white" : "bg-white text-black"
-      }`}
-      style={{ height: `calc(100vh - ${navbarHeight}px)` }}
-    >
-      {children}
-    </div>
+    <AdminOnlyGuard>
+      <div
+        className={`flex flex-col gap-6 justify-center items-start rounded-4xl w-full p-6 transition-colors duration-300 ${
+          isDark ? "bg-[#1A1A1A] text-white" : "bg-white text-black"
+        }`}
+        style={{ height: `calc(100vh - ${navbarHeight}px)` }}
+      >
+        {children}
+      </div>
+    </AdminOnlyGuard>
   );
 }

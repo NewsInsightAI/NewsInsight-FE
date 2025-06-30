@@ -216,7 +216,7 @@ export default function CompleteProfile() {
     <>
       <AnimatePresence>
         {showSummary && (
-          <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center">
+          <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center">
             <motion.div
               key="verify-email"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -246,7 +246,7 @@ export default function CompleteProfile() {
           </div>
         )}
         {showListNewsCategory && (
-          <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center">
+          <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center">
             <motion.div
               key="verify-email"
               initial={{ opacity: 0, scale: 0.95 }}

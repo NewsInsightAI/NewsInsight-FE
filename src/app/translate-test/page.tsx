@@ -10,7 +10,6 @@ export default function TranslateTestPage() {
   const [testText, setTestText] = useState("Selamat datang di NewsInsight");
   const { isDark, toggleDark } = useDarkMode();
 
-  // Only render on client side to avoid SSR issues
   useEffect(() => {
     setMounted(true);
   }, []);

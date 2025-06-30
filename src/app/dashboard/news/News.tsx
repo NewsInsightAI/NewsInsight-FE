@@ -1,15 +1,55 @@
 "use client";
 import NewsTable from "@/components/ui/NewsTable";
-import { newsData } from "@/utils/newsData";
+import Pagination from "@/components/ui/Pagination";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import React, { useState, useEffect, useCallback } from "react";
 import { useDarkMode } from "@/context/DarkModeContext";
+import { useSession } from "next-auth/react";
+import { useToast } from "@/context/ToastProvider";
+import { ClipLoader } from "react-spinners";
+
+interface AuthorProps {
+  id: number;
+  name: string;
+  avatarUrl?: string;
+  email?: string;
+  joinedAt?: string;
+}
+
+interface CategoryProps {
+  id: number;
+  name: string;
+}
+
+interface NewsData {
+  id: number;
+  createdAt: string;
+  updatedAt: string;
+  imageUrl: string;
+  title: string;
+  category: CategoryProps;
+  author: AuthorProps[];
+  publishedAt: string;
+  status: string;
+}
 
 export default function News() {
   const { isDark } = useDarkMode();
+  const { data: session } = useSession();
+  const { showToast } = useToast();
+  const router = useRouter();
   const [navbarDashboardHeight, setNavbarDashboardHeight] = useState(0);
+  const [newsData, setNewsData] = useState<NewsData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+  });
 
   useEffect(() => {
     const top = document.querySelector("#navbar-dashboard");
@@ -23,6 +63,181 @@ export default function News() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [navbarDashboardHeight]);
+
+  const fetchNewsData = useCallback(
+    async (search = "", page = 1) => {
+      try {
+        setLoading(true);
+        const token = session?.backendToken;
+
+        const searchParams = new URLSearchParams();
+        if (search.trim()) {
+          searchParams.append("search", search.trim());
+        }
+        searchParams.append("page", page.toString());
+        searchParams.append("limit", "10");
+
+        const url = `/api/news${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+
+        const response = await fetch(url, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch news data");
+        }
+
+        const data = await response.json();
+
+        console.log("API Response:", data);
+
+        if (data.data?.pagination) {
+          setPagination({
+            currentPage: data.data.pagination.currentPage || page,
+            totalPages: data.data.pagination.totalPages || 1,
+            totalItems:
+              data.data.pagination.totalNews || data.data.news?.length || 0,
+          });
+        } else {
+          setPagination({
+            currentPage: page,
+            totalPages: 1,
+            totalItems: data.data.news?.length || 0,
+          });
+        }
+
+        const transformedData: NewsData[] = data.data.news.map(
+          (news: {
+            id: number;
+            title: string;
+            category_id?: number;
+            category_name?: string;
+            status: string;
+            created_at: string;
+            updated_at: string;
+            published_at?: string;
+            featured_image?: string;
+            authors?: { author_name: string; name?: string }[] | string;
+            created_by_name?: string;
+          }) => {
+            console.log("Processing news item:", news);
+
+            let authors: AuthorProps[] = [];
+            if (news.authors && Array.isArray(news.authors)) {
+              authors = news.authors.map(
+                (
+                  author: { author_name?: string; name?: string },
+                  index: number
+                ) => ({
+                  id: index + 1,
+                  name: author.author_name || author.name || "Tidak Diketahui",
+                  avatarUrl: "/images/default_profile.png",
+                })
+              );
+            } else if (news.authors && typeof news.authors === "string") {
+              authors = news.authors
+                .split(", ")
+                .map((authorName: string, index: number) => ({
+                  id: index + 1,
+                  name: authorName,
+                  avatarUrl: "/images/default_profile.png",
+                }));
+            } else if (news.created_by_name) {
+              authors = [
+                {
+                  id: 1,
+                  name: news.created_by_name,
+                  avatarUrl: "/images/default_profile.png",
+                },
+              ];
+            } else {
+              authors = [
+                {
+                  id: 1,
+                  name: "Tidak Diketahui",
+                  avatarUrl: "/images/default_profile.png",
+                },
+              ];
+            }
+
+            return {
+              id: news.id,
+              title: news.title,
+              category: {
+                id: news.category_id || 0,
+                name: news.category_name || "Tanpa Kategori",
+              },
+              status: news.status,
+              createdAt: news.created_at,
+              updatedAt: news.updated_at,
+              publishedAt: news.published_at || news.created_at,
+              imageUrl: news.featured_image || "/images/main_news.png",
+              author: authors,
+            };
+          }
+        );
+
+        setNewsData(transformedData);
+      } catch (error) {
+        console.error("Error fetching news:", error);
+        showToast("Gagal memuat data berita", "error");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [session?.backendToken, showToast]
+  );
+
+  useEffect(() => {
+    if (!session) return;
+
+    const timeoutId = setTimeout(
+      () => {
+        fetchNewsData(searchTerm, 1);
+      },
+      searchTerm ? 500 : 0
+    );
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, session, fetchNewsData]);
+
+  const handlePageChange = (page: number) => {
+    fetchNewsData(searchTerm, page);
+  };
+
+  const handleEditNews = (newsId: number) => {
+    router.push(`/dashboard/news/edit/${newsId}`);
+  };
+
+  const handleDeleteNews = async (newsId: number) => {
+    try {
+      showToast("Menghapus berita...", "loading");
+      const token = session?.backendToken;
+
+      const response = await fetch(`/api/news/${newsId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete news");
+      }
+
+      showToast("Berita berhasil dihapus", "success");
+
+      fetchNewsData(searchTerm, pagination.currentPage);
+    } catch (error) {
+      console.error("Error deleting news:", error);
+      showToast("Gagal menghapus berita", "error");
+    }
+  };
+
   return (
     <div className="flex flex-col justify-start items-start gap-3 md:gap-4 h-full w-full p-2 md:p-0 overflow-hidden">
       {" "}
@@ -50,6 +265,8 @@ export default function News() {
               <input
                 type="text"
                 placeholder="Cari berita..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className={`w-full px-4 md:px-6 py-2.5 md:py-3 text-sm md:text-base border rounded-full transition-colors duration-300 ${
                   isDark
                     ? "border-gray-600 bg-gray-800 text-white placeholder:text-gray-400"
@@ -78,12 +295,64 @@ export default function News() {
       </div>{" "}
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto overflow-x-auto w-full">
-        <NewsTable
-          datas={newsData.map((news) => ({
-            ...news,
-            author: [...news.author],
-          }))}
-        />
+        {loading ? (
+          <div className="flex items-center justify-center h-full min-h-[400px]">
+            <div className="text-center">
+              <ClipLoader
+                color={isDark ? "#3B82F6" : "#2563EB"}
+                loading={true}
+                size={48}
+              />
+              <p
+                className={`text-sm mt-4 ${isDark ? "text-gray-400" : "text-gray-600"}`}
+              >
+                Memuat data berita...
+              </p>
+            </div>
+          </div>
+        ) : newsData.length === 0 ? (
+          <div className="flex items-center justify-center h-full min-h-[400px]">
+            <div className="text-center">
+              <p
+                className={`text-lg mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
+              >
+                {searchTerm
+                  ? "Tidak ada berita yang ditemukan"
+                  : "Belum ada berita"}
+              </p>
+              <p
+                className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
+              >
+                {searchTerm
+                  ? "Coba kata kunci yang berbeda"
+                  : "Mulai tambahkan berita pertama Anda"}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <NewsTable
+            datas={newsData.map((news) => ({
+              ...news,
+              author: [...news.author],
+            }))}
+            onEdit={handleEditNews}
+            onDelete={handleDeleteNews}
+          />
+        )}
+
+        {/* Pagination */}
+        {!loading && newsData.length > 0 && pagination.totalPages > 1 && (
+          <div className="mt-4">
+            <Pagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              totalItems={pagination.totalItems}
+              itemsPerPage={10}
+              onPageChange={handlePageChange}
+              loading={loading}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

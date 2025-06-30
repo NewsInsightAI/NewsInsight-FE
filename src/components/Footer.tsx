@@ -63,7 +63,9 @@ export default function Footer() {
     "/settings/account-security",
   ];
 
-  const isShowFooter = !hideFooterRoutes.includes(pathname);
+  const isShowFooter =
+    !hideFooterRoutes.includes(pathname) &&
+    !pathname.startsWith("/dashboard/news/edit/");
 
   if (!isShowFooter) return null;
   return (

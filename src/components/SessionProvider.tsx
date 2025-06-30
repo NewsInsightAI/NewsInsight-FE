@@ -10,5 +10,13 @@ interface Props {
 }
 
 export default function NextAuthSessionProvider({ children, session }: Props) {
-  return <SessionProvider session={session}>{children}</SessionProvider>;
+  return (
+    <SessionProvider
+      session={session}
+      refetchOnWindowFocus={false}
+      refetchWhenOffline={false}
+    >
+      {children}
+    </SessionProvider>
+  );
 }

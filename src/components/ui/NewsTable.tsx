@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Icon } from "@iconify/react";
 import { useDarkMode } from "@/context/DarkModeContext";
+import { motion } from "framer-motion";
+import ConfirmationModal from "./ConfirmationModal";
 
 interface NewsData {
   id: number;
@@ -19,6 +21,9 @@ interface NewsData {
 interface AuthorProps {
   id: number;
   name: string;
+  avatarUrl?: string;
+  email?: string;
+  joinedAt?: string; 
 }
 
 interface CategoryProps {
@@ -28,15 +33,38 @@ interface CategoryProps {
 
 interface NewsTableProps {
   datas: NewsData[];
+  onEdit?: (newsId: number) => void;
+  onDelete?: (newsId: number) => void;
+  onBulkDelete?: (newsIds: number[]) => void;
+  loading?: boolean;
 }
 
-export default function NewsTable({ datas }: NewsTableProps) {
+export default function NewsTable({
+  datas,
+  onEdit,
+  onDelete,
+  onBulkDelete,
+  loading,
+}: NewsTableProps) {
   const { isDark } = useDarkMode();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [selectedPhoto, setSelectedPhoto] = useState<{
     id: string;
     image: string;
   } | null>(null);
+  const [hoveredAuthor, setHoveredAuthor] = useState<{
+    id: number;
+    anchor: HTMLElement | null;
+  } | null>(null);
+  const [showAuthorsModal, setShowAuthorsModal] = useState<{
+    authors: AuthorProps[];
+    anchor: HTMLElement | null;
+  } | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [newsToDelete, setNewsToDelete] = useState<NewsData | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const toggleSelectItem = (id: string) => {
     setSelectedItems((prev) =>
@@ -122,26 +150,193 @@ export default function NewsTable({ datas }: NewsTableProps) {
     return date.toLocaleString("id-ID", options);
   };
 
-  const formatAuthorNames = (authors: AuthorProps[]): string => {
-    if (!authors || authors.length === 0) {
-      return "";
+  
+  function getTenure(joinedAt?: string): string | null {
+    if (!joinedAt) return null;
+    const joined = new Date(joinedAt);
+    const now = new Date();
+    let years = now.getFullYear() - joined.getFullYear();
+    let months = now.getMonth() - joined.getMonth();
+    if (months < 0) {
+      years--;
+      months += 12;
     }
-    if (authors.length === 1) {
-      return authors[0].name;
-    }
-    if (authors.length === 2) {
-      return `${authors[0].name} dan ${authors[1].name}`;
-    }
+    if (years < 0) return null;
+    if (years === 0 && months === 0) return null;
+    const result = [];
+    if (years > 0) result.push(`${years} tahun`);
+    if (months > 0) result.push(`${months} bulan`);
+    return result.join(" ");
+  }
 
-    const namesExceptLast = authors
-      .slice(0, -1)
-      .map((a) => a.name)
-      .join(", ");
-    const lastName = authors[authors.length - 1].name;
-    return `${namesExceptLast} dan ${lastName}`;
+  
+  const handleEdit = (news: NewsData) => {
+    if (onEdit) {
+      onEdit(news.id);
+    }
   };
+
+  const handleDelete = (news: NewsData) => {
+    setNewsToDelete(news);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!newsToDelete || isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      if (onDelete) {
+        await onDelete(newsToDelete.id);
+      }
+      setShowDeleteConfirm(false);
+      setNewsToDelete(null);
+    } catch (error) {
+      console.error("Error deleting news:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedItems.length === 0) return;
+    setShowBulkDeleteConfirm(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    if (selectedItems.length === 0 || isBulkDeleting) return;
+
+    setIsBulkDeleting(true);
+    try {
+      if (onBulkDelete) {
+        const newsIds = selectedItems.map((id) => parseInt(id));
+        await onBulkDelete(newsIds);
+      }
+      setSelectedItems([]);
+      setShowBulkDeleteConfirm(false);
+    } catch (error) {
+      console.error("Error deleting news:", error);
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
   return (
     <>
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDelete}
+        title="Hapus Berita"
+        message={
+          newsToDelete ? (
+            <p>
+              Apakah Anda yakin ingin menghapus berita &quot;
+              {newsToDelete.title}&quot;? Tindakan ini tidak dapat dibatalkan.
+            </p>
+          ) : (
+            ""
+          )
+        }
+        confirmText="Hapus"
+        isLoading={isDeleting}
+        loadingText="Menghapus..."
+      />
+
+      {/* Bulk Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showBulkDeleteConfirm}
+        onClose={() => setShowBulkDeleteConfirm(false)}
+        onConfirm={confirmBulkDelete}
+        title="Hapus Berita Terpilih"
+        message={
+          <p>
+            Apakah Anda yakin ingin menghapus {selectedItems.length} berita yang
+            dipilih? Tindakan ini tidak dapat dibatalkan.
+          </p>
+        }
+        confirmText="Hapus Semua"
+        isLoading={isBulkDeleting}
+        loadingText="Menghapus..."
+      />
+
+      {/* Enhanced Bulk Actions Bar */}
+      {selectedItems.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className={`mb-4 p-4 rounded-lg border transition-colors duration-300 ${
+            isDark
+              ? "bg-blue-900/20 border-blue-700 shadow-lg shadow-blue-900/20"
+              : "bg-blue-50 border-blue-200 shadow-sm"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${
+                  isDark
+                    ? "bg-blue-700/50 text-blue-300"
+                    : "bg-blue-100 text-blue-700"
+                }`}
+              >
+                <Icon icon="mdi:check-all" className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {selectedItems.length} berita dipilih
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSelectedItems([])}
+                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                  isDark
+                    ? "text-gray-300 hover:bg-gray-700"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                className="px-4 py-1.5 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition-colors flex items-center gap-2"
+              >
+                <Icon icon="mingcute:delete-fill" className="w-4 h-4" />
+                Hapus yang dipilih
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <span className="ml-2 text-gray-600 dark:text-gray-400">
+            Memuat data...
+          </span>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && datas.length === 0 && (
+        <div className="flex flex-col justify-center items-center py-12">
+          <Icon
+            icon="fluent:news-28-regular"
+            className="w-16 h-16 text-gray-400 mb-4"
+          />
+          <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400 mb-2">
+            Tidak ada berita ditemukan
+          </h3>
+          <p className="text-sm text-gray-400 dark:text-gray-500">
+            Belum ada berita yang tersedia dalam sistem
+          </p>
+        </div>
+      )}
+
       {/* Desktop Table View - Hidden on mobile */}
       <div
         className={`hidden md:block w-full overflow-x-auto rounded-xl transition-colors duration-300 border ${
@@ -188,7 +383,7 @@ export default function NewsTable({ datas }: NewsTableProps) {
                 }`}
               >
                 Gambar
-              </th>{" "}
+              </th>
               <th
                 className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[250px] md:min-w-[300px] ${
                   isDark ? "text-gray-300" : "text-black"
@@ -202,14 +397,14 @@ export default function NewsTable({ datas }: NewsTableProps) {
                 }`}
               >
                 Kategori
-              </th>{" "}
+              </th>
               <th
                 className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[120px] md:min-w-[150px] ${
                   isDark ? "text-gray-300" : "text-black"
                 }`}
               >
-                Penulis{" "}
-              </th>{" "}
+                Penulis
+              </th>
               <th
                 className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[180px] md:min-w-[200px] ${
                   isDark ? "text-gray-300" : "text-black"
@@ -223,7 +418,7 @@ export default function NewsTable({ datas }: NewsTableProps) {
                 }`}
               >
                 Status
-              </th>{" "}
+              </th>
               <th
                 className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[160px] md:min-w-[180px] ${
                   isDark ? "text-gray-300" : "text-black"
@@ -290,7 +485,7 @@ export default function NewsTable({ datas }: NewsTableProps) {
                       />
                     </div>
                   )}
-                </td>{" "}
+                </td>
                 <td
                   className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
                     isDark ? "text-gray-300" : "text-gray-900"
@@ -305,28 +500,163 @@ export default function NewsTable({ datas }: NewsTableProps) {
                 </td>
                 <td
                   className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
-                    isDark ? "text-gray-300" : "text-gray-900"
+                    isDark ? "text-gray-300" : "text-black"
                   }`}
                 >
-                  {report.category.name}{" "}
-                </td>{" "}
+                  {report.category.name}
+                </td>
                 <td
                   className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
-                    isDark ? "text-gray-300" : "text-gray-900"
+                    isDark ? "text-gray-300" : "text-black"
                   }`}
                 >
-                  <div
-                    className="max-w-[100px] md:max-w-24 truncate"
-                    title={
-                      report.author.length > 0
-                        ? formatAuthorNames(report.author)
-                        : "Tidak ada penulis"
-                    }
-                  >
-                    {report.author.length > 0
-                      ? formatAuthorNames(report.author)
-                      : "Tidak ada penulis"}
+                  <div className="flex flex-wrap gap-1 max-w-[100px] md:max-w-24">
+                    {report.author.length > 0 ? (
+                      <>
+                        {report.author.slice(0, 2).map((a) => (
+                          <span
+                            key={a.id}
+                            className={`px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap cursor-pointer transition-colors duration-150 ${
+                              isDark
+                                ? "bg-blue-600/20 text-blue-300 hover:bg-blue-700/40"
+                                : "bg-blue-100 text-blue-600 hover:bg-blue-200"
+                            }`}
+                            onMouseEnter={(e) =>
+                              setHoveredAuthor({
+                                id: a.id,
+                                anchor: e.currentTarget,
+                              })
+                            }
+                            onMouseLeave={() => setHoveredAuthor(null)}
+                          >
+                            {a.name}
+                          </span>
+                        ))}
+                        {report.author.length > 2 && (
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap cursor-pointer border border-blue-400 bg-white text-blue-600 hover:bg-blue-50`}
+                            onClick={(e) =>
+                              setShowAuthorsModal({
+                                authors: report.author,
+                                anchor: e.currentTarget,
+                              })
+                            }
+                          >
+                            +{report.author.length - 2}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-gray-400">Tidak ada penulis</span>
+                    )}
                   </div>
+                  {/* Compact Profile Tooltip */}
+                  {hoveredAuthor &&
+                    report.author.some((a) => a.id === hoveredAuthor.id) && (
+                      <div
+                        style={{
+                          position: "fixed",
+                          zIndex: 50,
+                          left:
+                            hoveredAuthor.anchor?.getBoundingClientRect()
+                              .left ?? 0,
+                          top:
+                            (hoveredAuthor.anchor?.getBoundingClientRect()
+                              .bottom ?? 0) + 6,
+                        }}
+                        className={`shadow-lg rounded-lg px-4 py-3 bg-white dark:bg-gray-800 border ${isDark ? "border-gray-600" : "border-gray-200"} min-w-[220px] flex gap-3 items-center`}
+                        onMouseEnter={() => setHoveredAuthor(hoveredAuthor)}
+                        onMouseLeave={() => setHoveredAuthor(null)}
+                      >
+                        {(() => {
+                          const author = report.author.find(
+                            (a) => a.id === hoveredAuthor.id
+                          );
+                          if (!author) return null;
+                          return (
+                            <>
+                              <img
+                                src={
+                                  author.avatarUrl ||
+                                  "/images/default_profile.png"
+                                }
+                                alt={author.name}
+                                className="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-gray-700"
+                              />
+                              <div className="flex flex-col min-w-0">
+                                <span className="font-semibold text-sm text-blue-600 dark:text-blue-300 truncate">
+                                  {author.name}
+                                </span>
+                                {author.email && (
+                                  <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                    {author.email}
+                                  </span>
+                                )}
+                                {author.joinedAt && (
+                                  <span className="text-xs text-gray-400 mt-1">
+                                    {getTenure(author.joinedAt)
+                                      ? `Bergabung ${getTenure(author.joinedAt)} lalu`
+                                      : null}
+                                  </span>
+                                )}
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  {/* Modal for all authors */}
+                  {showAuthorsModal && (
+                    <div
+                      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+                      onClick={() => setShowAuthorsModal(null)}
+                    >
+                      <div
+                        className={`bg-white dark:bg-gray-800 rounded-xl p-6 max-w-xs w-full border ${isDark ? "border-gray-600" : "border-gray-200"}`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="mb-3 font-semibold text-base text-blue-600 dark:text-blue-300">
+                          Daftar Penulis
+                        </div>
+                        <div className="space-y-3">
+                          {showAuthorsModal.authors.map((a) => (
+                            <div key={a.id} className="flex items-center gap-3">
+                              <img
+                                src={
+                                  a.avatarUrl || "/images/default_profile.png"
+                                }
+                                alt={a.name}
+                                className="w-9 h-9 rounded-full object-cover border border-gray-300 dark:border-gray-700"
+                              />
+                              <div className="flex flex-col min-w-0">
+                                <span className="font-semibold text-sm text-blue-600 dark:text-blue-300 truncate">
+                                  {a.name}
+                                </span>
+                                {a.email && (
+                                  <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                    {a.email}
+                                  </span>
+                                )}
+                                {a.joinedAt && (
+                                  <span className="text-xs text-gray-400 mt-1">
+                                    {getTenure(a.joinedAt)
+                                      ? `Bergabung ${getTenure(a.joinedAt)} lalu`
+                                      : null}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <button
+                          className="mt-4 w-full py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                          onClick={() => setShowAuthorsModal(null)}
+                        >
+                          Tutup
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </td>
                 <td
                   className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
@@ -343,13 +673,12 @@ export default function NewsTable({ datas }: NewsTableProps) {
                   }`}
                 >
                   {getStatusBadge(report.status)}
-                </td>{" "}
+                </td>
                 <td className="py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm">
-                  {" "}
                   <div className="flex flex-row gap-1 sm:gap-2 justify-start">
                     <button
                       className="border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm hover:opacity-80 hover:cursor-pointer disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15 flex items-center justify-center min-w-0"
-                      onClick={() => console.log(`Edit report ${report.id}`)}
+                      onClick={() => handleEdit(report)}
                     >
                       <Icon
                         icon="mage:edit-fill"
@@ -359,19 +688,22 @@ export default function NewsTable({ datas }: NewsTableProps) {
                       />
                       <span className="hidden sm:inline">Edit</span>
                     </button>
-                    <button className="border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm hover:opacity-80 hover:cursor-pointer flex items-center justify-center min-w-0">
+                    <button
+                      className="border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm hover:opacity-80 hover:cursor-pointer flex items-center justify-center min-w-0"
+                      onClick={() => handleDelete(report)}
+                    >
                       <Icon
                         icon="mingcute:delete-fill"
                         className="sm:mr-1"
                         width={12}
                         height={12}
                       />
-                      <span className="hidden sm:inline">Hapus</span>{" "}
+                      <span className="hidden sm:inline">Hapus</span>
                     </button>
-                  </div>{" "}
+                  </div>
                 </td>
               </tr>
-            ))}{" "}
+            ))}
           </tbody>
         </table>
       </div>
@@ -456,46 +788,118 @@ export default function NewsTable({ datas }: NewsTableProps) {
                 >
                   Penulis:
                 </span>
-                <span
-                  className={`text-xs ${isDark ? "text-gray-300" : "text-gray-900"}`}
-                >
-                  {report.author.length > 0
-                    ? formatAuthorNames(report.author)
-                    : "Tidak ada penulis"}
-                </span>
+                <div className="flex flex-wrap gap-1 max-w-[120px] justify-end">
+                  {report.author.length > 0 ? (
+                    <>
+                      {report.author.slice(0, 2).map((a) => (
+                        <span
+                          key={a.id}
+                          className={`px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap cursor-pointer transition-colors duration-150 ${
+                            isDark
+                              ? "bg-blue-600/20 text-blue-300 hover:bg-blue-700/40"
+                              : "bg-blue-100 text-blue-600 hover:bg-blue-200"
+                          }`}
+                          onClick={() => {
+                            
+                            setShowAuthorsModal({ authors: [a], anchor: null });
+                          }}
+                        >
+                          <span className="inline-block align-middle">
+                            <img
+                              src={a.avatarUrl || "/images/default_profile.png"}
+                              alt={a.name}
+                              className="w-5 h-5 rounded-full object-cover border border-gray-300 dark:border-gray-700 mr-1 inline-block align-middle"
+                            />
+                          </span>
+                          <span className="align-middle">{a.name}</span>
+                        </span>
+                      ))}
+                      {report.author.length > 2 && (
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap cursor-pointer border border-blue-400 bg-white text-blue-600 hover:bg-blue-50`}
+                          onClick={() =>
+                            setShowAuthorsModal({
+                              authors: report.author,
+                              anchor: null,
+                            })
+                          }
+                        >
+                          +{report.author.length - 2}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-gray-400">Tidak ada penulis</span>
+                  )}
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span
-                  className={`text-xs font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
+              {/* Modal for author(s) on mobile */}
+              {showAuthorsModal && (
+                <div
+                  className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+                  onClick={() => setShowAuthorsModal(null)}
                 >
-                  Publikasi:
-                </span>
-                <span
-                  className={`text-xs ${isDark ? "text-gray-300" : "text-gray-900"}`}
-                >
-                  {getDateTimeWithTimezone(report.publishedAt)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span
-                  className={`text-xs font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
-                >
-                  Status:
-                </span>
-                <div>{getStatusBadge(report.status)}</div>
-              </div>
+                  <div
+                    className={`bg-white dark:bg-gray-800 rounded-xl p-6 max-w-xs w-full border ${isDark ? "border-gray-600" : "border-gray-200"}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="mb-3 font-semibold text-base text-blue-600 dark:text-blue-300">
+                      {showAuthorsModal.authors.length > 1
+                        ? "Daftar Penulis"
+                        : "Profil Penulis"}
+                    </div>
+                    <div className="space-y-3">
+                      {showAuthorsModal.authors.map((a) => (
+                        <div key={a.id} className="flex items-center gap-3">
+                          <img
+                            src={a.avatarUrl || "/images/default_profile.png"}
+                            alt={a.name}
+                            className="w-9 h-9 rounded-full object-cover border border-gray-300 dark:border-gray-700"
+                          />
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-semibold text-sm text-blue-600 dark:text-blue-300 truncate">
+                              {a.name}
+                            </span>
+                            {a.email && (
+                              <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                {a.email}
+                              </span>
+                            )}
+                            {a.joinedAt && (
+                              <span className="text-xs text-gray-400 mt-1">
+                                {getTenure(a.joinedAt)
+                                  ? `Bergabung ${getTenure(a.joinedAt)} lalu`
+                                  : null}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      className="mt-4 w-full py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                      onClick={() => setShowAuthorsModal(null)}
+                    >
+                      Tutup
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Card Actions */}
             <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
               <button
                 className="flex-1 border bg-[#3B82F6]/15 border-[#3B82F6] text-[#3B82F6] rounded-full px-3 py-2 text-xs hover:opacity-80 hover:cursor-pointer disabled:border-[#DFDFDF] disabled:text-[#DFDFDF] disabled:bg-[#F5F5F5]/15 flex items-center justify-center gap-1"
-                onClick={() => console.log(`Edit report ${report.id}`)}
+                onClick={() => handleEdit(report)}
               >
                 <Icon icon="mage:edit-fill" width={12} height={12} />
                 <span>Edit</span>
               </button>
-              <button className="flex-1 border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-3 py-2 text-xs hover:opacity-80 hover:cursor-pointer flex items-center justify-center gap-1">
+              <button
+                className="flex-1 border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-3 py-2 text-xs hover:opacity-80 hover:cursor-pointer flex items-center justify-center gap-1"
+                onClick={() => handleDelete(report)}
+              >
                 <Icon icon="mingcute:delete-fill" width={12} height={12} />
                 <span>Hapus</span>
               </button>

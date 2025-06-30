@@ -144,7 +144,7 @@ export default function MFASetup({ onClose, onSetupComplete }: MFASetupProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[1px] flex items-center justify-center">
+    <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
