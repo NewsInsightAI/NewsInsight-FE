@@ -5,13 +5,20 @@ const API_BASE_URL =
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ hashedId: string; slug: string }> }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const params = await context.params;
-    const { hashedId, slug } = params;
+    const resolvedParams = await params;
+    const { slug } = resolvedParams;
 
-    const response = await fetch(`${API_BASE_URL}/news/${hashedId}/${slug}`, {
+    if (!slug) {
+      return NextResponse.json(
+        { error: "Slug parameter is required" },
+        { status: 400 }
+      );
+    }
+
+    const response = await fetch(`${API_BASE_URL}/categories/slug/${slug}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -22,14 +29,14 @@ export async function GET(
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: data.message || "Failed to fetch news" },
+        { error: data.message || "Failed to fetch category" },
         { status: response.status }
       );
     }
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Single news API error:", error);
+    console.error("Category by slug API error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

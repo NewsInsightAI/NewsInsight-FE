@@ -5,21 +5,25 @@ const API_BASE_URL =
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ categorySlug: string }> }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const resolvedParams = await params;
+    const { slug } = resolvedParams;
     const { searchParams } = new URL(request.url);
     const page = searchParams.get("page") || "1";
-    const limit = searchParams.get("limit") || "10";
-    const params = await context.params;
-    const { categorySlug } = params;
+    const limit = searchParams.get("limit") || "12";
+    const sortBy = searchParams.get("sortBy") || "published_at";
+    const sortOrder = searchParams.get("sortOrder") || "DESC";
 
-    const urlParams = new URLSearchParams();
-    if (page) urlParams.append("page", page);
-    if (limit) urlParams.append("limit", limit);
+    const queryParams = new URLSearchParams();
+    if (page) queryParams.append("page", page);
+    if (limit) queryParams.append("limit", limit);
+    if (sortBy) queryParams.append("sortBy", sortBy);
+    if (sortOrder) queryParams.append("sortOrder", sortOrder);
 
     const response = await fetch(
-      `${API_BASE_URL}/news/category/${categorySlug}?${urlParams.toString()}`,
+      `${API_BASE_URL}/news/category/${slug}?${queryParams.toString()}`,
       {
         method: "GET",
         headers: {

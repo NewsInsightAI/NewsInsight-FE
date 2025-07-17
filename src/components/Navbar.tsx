@@ -13,6 +13,7 @@ import { useDarkMode } from "@/context/DarkModeContext";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { TranslatedText } from "@/components/TranslatedText";
 import { useLanguage } from "@/context/LanguageContext";
+import { CategoriesDropdown } from "@/components/CategoriesDropdown";
 
 interface ProfileData {
   id: number;
@@ -102,7 +103,6 @@ export const Navbar = () => {
     checkBackendConnection();
   }, [checkBackendConnection]);
 
-  
   useEffect(() => {
     const handleAuthStateChange = () => {
       console.log(
@@ -263,7 +263,8 @@ export const Navbar = () => {
   return (
     <nav
       id="navbar"
-      className={`flex flex-col md:flex-row justify-start gap-2 md:gap-4 items-center p-4 fixed top-0 w-full px-4 md:px-8 z-50 ${isDark ? "bg-[#1A1A1A] text-white shadow-2xl shadow-blue-500/10" : "bg-white text-black"} transition-all duration-300`}
+      data-navbar="true"
+      className={`navbar-container flex flex-col md:flex-row justify-start gap-2 md:gap-4 items-center p-4 fixed top-0 w-full px-4 md:px-8 z-50 ${isDark ? "bg-[#1A1A1A] text-white shadow-2xl shadow-blue-500/10" : "bg-white text-black"} transition-all duration-300`}
     >
       <div className="flex w-full justify-between items-center">
         <div className="flex items-center gap-4 md:gap-10">
@@ -298,11 +299,7 @@ export const Navbar = () => {
           {/* Desktop menu */}{" "}
           <ul className="hidden md:flex space-x-10">
             <li>
-              {" "}
-              <div className="hover:text-gray-400 flex items-center gap-2 cursor-pointer">
-                <TranslatedText>Kategori</TranslatedText>
-                <Icon icon="mingcute:down-line" className="inline-block" />
-              </div>
+              <CategoriesDropdown />
             </li>
             <li>
               <Link href="/about-us" className="hover:text-gray-400">
@@ -592,10 +589,10 @@ export const Navbar = () => {
               >
                 <TranslatedText>Tentang Kami</TranslatedText>
               </Link>{" "}
-              <div className="py-2 flex items-center gap-2">
-                <TranslatedText>Kategori</TranslatedText>
-                <Icon icon="mingcute:down-line" />
-              </div>
+              <CategoriesDropdown
+                isMobile={true}
+                onCategoryClick={() => setShowMobileMenu(false)}
+              />
               {/* Language selector for mobile */}{" "}
               <div className="py-2 border-t border-gray-200 dark:border-gray-700 mt-2 pt-4">
                 <div className="mb-2 text-sm font-medium opacity-75">

@@ -15,6 +15,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { TranslatedText } from "@/components/TranslatedText";
 import { TranslatedContent } from "@/components/TranslatedContent";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import CommentsSection from "@/components/CommentsSection";
 import { Vibrant } from "node-vibrant/browser";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { formatTimestamp } from "@/utils/formatTimestamp";
@@ -35,7 +36,7 @@ export default function NewsDetailPage() {
   );
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  
+
   const [translatedContentForTTS, setTranslatedContentForTTS] =
     useState<string>("");
   const imgRef = useRef<HTMLImageElement>(null);
@@ -190,7 +191,6 @@ export default function NewsDetailPage() {
     }
   }, [params]);
 
-  
   useEffect(() => {
     if (news && news.imageUrl) {
       Vibrant.from(news.imageUrl)
@@ -206,7 +206,7 @@ export default function NewsDetailPage() {
         });
     }
   }, [news]);
-  
+
   useEffect(() => {
     const style = document.createElement("style");
     style.textContent = `
@@ -787,11 +787,17 @@ export default function NewsDetailPage() {
               </div>
             )}
           </div>
+          {/* Comments Section */}
+          <div className="mt-8">
+            <CommentsSection
+              newsId={typeof news.id === "string" ? parseInt(news.id) : news.id}
+            />
+          </div>
         </div>
 
         {/* Area Kanan - Sidebar Rekomendasi (25%) */}
         <div className="lg:col-span-1 px-3 sm:px-6 lg:px-4">
-          <div className="mb-8 sticky" style={{ top: navbarHeight + 24 }}>
+          <div className="sticky" style={{ top: navbarHeight + 24 }}>
             {/* Berita Kategori Sama */}
             <div className="mb-8">
               {" "}
