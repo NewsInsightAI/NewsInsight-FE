@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import { useDarkMode } from "@/context/DarkModeContext";
 import { AnimatePresence, motion } from "framer-motion";
@@ -43,6 +43,8 @@ interface CommentTableProps {
   onReject?: (commentId: number) => void;
   onDelete?: (commentId: number) => void;
   onBulkDelete?: (commentIds: number[]) => void;
+  selectedItems?: string[];
+  onSelectionChange?: (selectedItems: string[]) => void;
   loading?: boolean;
   pagination?: {
     currentPage: number;
@@ -58,12 +60,20 @@ export default function CommentTable({
   onReject,
   onDelete,
   onBulkDelete,
+  selectedItems = [],
+  onSelectionChange,
   loading,
   pagination,
 }: CommentTableProps) {
   const { isDark } = useDarkMode();
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [localSelectedItems, setLocalSelectedItems] =
+    useState<string[]>(selectedItems);
   const [showAddComment, setShowAddComment] = useState(false);
+
+  // Sync with external selection state
+  useEffect(() => {
+    setLocalSelectedItems(selectedItems);
+  }, [selectedItems]);
   const [selectedComment, setSelectedComment] = useState<CommentData | null>(
     null
   );
@@ -76,17 +86,22 @@ export default function CommentTable({
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const toggleSelectItem = (id: string) => {
-    setSelectedItems((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+    const newSelection = localSelectedItems.includes(id)
+      ? localSelectedItems.filter((item) => item !== id)
+      : [...localSelectedItems, id];
+
+    setLocalSelectedItems(newSelection);
+    onSelectionChange?.(newSelection);
   };
 
   const toggleSelectAll = () => {
-    if (selectedItems.length === datas.length) {
-      setSelectedItems([]);
-    } else {
-      setSelectedItems(datas.map((item) => item.id.toString()));
-    }
+    const newSelection =
+      localSelectedItems.length === datas.length
+        ? []
+        : datas.map((item) => item.id.toString());
+
+    setLocalSelectedItems(newSelection);
+    onSelectionChange?.(newSelection);
   };
 
   const getDateTimeWithTimezone = (dateString: string) => {
@@ -231,20 +246,22 @@ export default function CommentTable({
   };
 
   const handleBulkDelete = () => {
-    if (selectedItems.length === 0) return;
+    if (localSelectedItems.length === 0) return;
     setShowBulkDeleteConfirm(true);
   };
 
   const confirmBulkDelete = async () => {
-    if (selectedItems.length === 0 || isBulkDeleting) return;
+    if (localSelectedItems.length === 0 || isBulkDeleting) return;
 
     setIsBulkDeleting(true);
     try {
       if (onBulkDelete) {
-        const commentIds = selectedItems.map((id) => parseInt(id));
+        const commentIds = localSelectedItems.map((id) => parseInt(id));
         await onBulkDelete(commentIds);
       }
-      setSelectedItems([]);
+      const newSelection: string[] = [];
+      setLocalSelectedItems(newSelection);
+      onSelectionChange?.(newSelection);
       setShowBulkDeleteConfirm(false);
     } catch (error) {
       console.error("Error deleting comments:", error);
@@ -285,8 +302,8 @@ export default function CommentTable({
         title="Hapus Komentar Terpilih"
         message={
           <p>
-            Apakah Anda yakin ingin menghapus {selectedItems.length} komentar
-            yang dipilih? Tindakan ini tidak dapat dibatalkan.
+            Apakah Anda yakin ingin menghapus {localSelectedItems.length}{" "}
+            komentar yang dipilih? Tindakan ini tidak dapat dibatalkan.
           </p>
         }
         confirmText="Hapus Semua"
@@ -295,7 +312,7 @@ export default function CommentTable({
       />
 
       {/* Enhanced Bulk Actions Bar */}
-      {selectedItems.length > 0 && (
+      {localSelectedItems.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -317,13 +334,17 @@ export default function CommentTable({
               >
                 <Icon icon="mdi:check-all" className="w-4 h-4" />
                 <span className="text-sm font-medium">
-                  {selectedItems.length} komentar dipilih
+                  {localSelectedItems.length} komentar dipilih
                 </span>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setSelectedItems([])}
+                onClick={() => {
+                  const newSelection: string[] = [];
+                  setLocalSelectedItems(newSelection);
+                  onSelectionChange?.(newSelection);
+                }}
                 className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                   isDark
                     ? "text-gray-300 hover:bg-gray-700"
@@ -422,11 +443,12 @@ export default function CommentTable({
                     type="checkbox"
                     className="h-4 w-4 md:h-5 md:w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none hover:cursor-pointer hover:bg-[#367AF2]/10"
                     checked={
-                      selectedItems.length === datas.length && datas.length > 0
+                      localSelectedItems.length === datas.length &&
+                      datas.length > 0
                     }
                     onChange={toggleSelectAll}
                   />
-                  {selectedItems.length === datas.length && (
+                  {localSelectedItems.length === datas.length && (
                     <Icon
                       icon="mdi:check"
                       className="absolute text-white h-3 w-3 pointer-events-none"
@@ -516,10 +538,12 @@ export default function CommentTable({
                     <input
                       type="checkbox"
                       className="h-4 w-4 md:h-5 md:w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none"
-                      checked={selectedItems.includes(report.id.toString())}
+                      checked={localSelectedItems.includes(
+                        report.id.toString()
+                      )}
                       onChange={() => toggleSelectItem(report.id.toString())}
                     />
-                    {selectedItems.includes(report.id.toString()) && (
+                    {localSelectedItems.includes(report.id.toString()) && (
                       <Icon
                         icon="mdi:check"
                         className="absolute text-white h-3 w-3 pointer-events-none"
@@ -685,10 +709,10 @@ export default function CommentTable({
                 <input
                   type="checkbox"
                   className="h-4 w-4 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none"
-                  checked={selectedItems.includes(comment.id.toString())}
+                  checked={localSelectedItems.includes(comment.id.toString())}
                   onChange={() => toggleSelectItem(comment.id.toString())}
                 />
-                {selectedItems.includes(comment.id.toString()) && (
+                {localSelectedItems.includes(comment.id.toString()) && (
                   <Icon
                     icon="mdi:check"
                     className="absolute text-white h-2.5 w-2.5 pointer-events-none"

@@ -16,6 +16,7 @@ export default function Users() {
   const { user, isAdmin, isAuthenticated } = useAuth();
   const [navbarDashboardHeight, setNavbarDashboardHeight] = useState(0);
   const [showAddUser, setShowAddUser] = useState(false);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
 
   const {
     users,
@@ -177,6 +178,8 @@ export default function Users() {
             datas={users}
             loading={loading}
             onRefresh={refreshUsers}
+            selectedItems={selectedUserIds}
+            onSelectionChange={setSelectedUserIds}
             pagination={{
               currentPage: pagination?.currentPage || 1,
               totalPages: pagination?.totalPages || 1,

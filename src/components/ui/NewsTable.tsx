@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import { useDarkMode } from "@/context/DarkModeContext";
 import { motion } from "framer-motion";
@@ -23,7 +23,7 @@ interface AuthorProps {
   name: string;
   avatarUrl?: string;
   email?: string;
-  joinedAt?: string; 
+  joinedAt?: string;
 }
 
 interface CategoryProps {
@@ -37,6 +37,8 @@ interface NewsTableProps {
   onDelete?: (newsId: number) => void;
   onBulkDelete?: (newsIds: number[]) => void;
   loading?: boolean;
+  selectedItems?: string[];
+  onSelectionChange?: (selectedIds: string[]) => void;
   pagination?: {
     currentPage: number;
     totalPages: number;
@@ -51,10 +53,14 @@ export default function NewsTable({
   onDelete,
   onBulkDelete,
   loading,
+  selectedItems: externalSelectedItems,
+  onSelectionChange,
   pagination,
 }: NewsTableProps) {
   const { isDark } = useDarkMode();
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [selectedItems, setSelectedItems] = useState<string[]>(
+    externalSelectedItems || []
+  );
   const [selectedPhoto, setSelectedPhoto] = useState<{
     id: string;
     image: string;
@@ -73,17 +79,37 @@ export default function NewsTable({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
+  // Sync external selection with internal state
+  useEffect(() => {
+    if (externalSelectedItems) {
+      setSelectedItems(externalSelectedItems);
+    }
+  }, [externalSelectedItems]);
+
   const toggleSelectItem = (id: string) => {
-    setSelectedItems((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+    const newSelectedItems = selectedItems.includes(id)
+      ? selectedItems.filter((item) => item !== id)
+      : [...selectedItems, id];
+
+    setSelectedItems(newSelectedItems);
+
+    // Notify parent component about selection change
+    if (onSelectionChange) {
+      onSelectionChange(newSelectedItems);
+    }
   };
 
   const toggleSelectAll = () => {
-    if (selectedItems.length === datas.length) {
-      setSelectedItems([]);
-    } else {
-      setSelectedItems(datas.map((item) => item.id.toString()));
+    const newSelectedItems =
+      selectedItems.length === datas.length
+        ? []
+        : datas.map((item) => item.id.toString());
+
+    setSelectedItems(newSelectedItems);
+
+    // Notify parent component about selection change
+    if (onSelectionChange) {
+      onSelectionChange(newSelectedItems);
     }
   };
   const getStatusBadge = (level: string) => {
@@ -217,7 +243,6 @@ export default function NewsTable({
         const newsIds = selectedItems.map((id) => parseInt(id));
         await onBulkDelete(newsIds);
       }
-      setSelectedItems([]);
       setShowBulkDeleteConfirm(false);
     } catch (error) {
       console.error("Error deleting news:", error);
@@ -295,7 +320,12 @@ export default function NewsTable({
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setSelectedItems([])}
+                onClick={() => {
+                  setSelectedItems([]);
+                  if (onSelectionChange) {
+                    onSelectionChange([]);
+                  }
+                }}
                 className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                   isDark
                     ? "text-gray-300 hover:bg-gray-700"

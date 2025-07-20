@@ -4,25 +4,9 @@
  * @returns Relative time string
  */
 export const formatRelativeTime = (timestamp: string): string => {
-  if (!timestamp) {
-    return "Waktu tidak tersedia";
-  }
-
   const now = new Date();
   const date = new Date(timestamp);
-
-  // Check if date is valid
-  if (isNaN(date.getTime())) {
-    console.warn("Invalid timestamp:", timestamp);
-    return "Waktu tidak valid";
-  }
-
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-  // Check for negative difference (future date)
-  if (diffInSeconds < 0) {
-    return "Baru saja";
-  }
 
   // Less than 1 minute
   if (diffInSeconds < 60) {

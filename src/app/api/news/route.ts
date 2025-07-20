@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
     if (sortBy) params.append("sortBy", sortBy);
     if (sortOrder) params.append("sortOrder", sortOrder);
 
-    const endpoint = isPublic ? "/api/v1/news/public" : "/api/v1/news";
+    const endpoint = isPublic ? "/news/public" : "/news";
     const token = request.headers.get("authorization");
 
     const headers: Record<string, string> = {
@@ -43,6 +44,27 @@ export async function GET(request: NextRequest) {
         headers,
       }
     );
+
+    // Debug: Log response details
+    console.log("Response status:", response.status);
+    console.log(
+      "Response headers:",
+      Object.fromEntries(response.headers.entries())
+    );
+
+    // Check content type before parsing as JSON
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      const textResponse = await response.text();
+      console.error(
+        "Non-JSON response received:",
+        textResponse.substring(0, 200)
+      );
+      return NextResponse.json(
+        { error: "Server returned non-JSON response" },
+        { status: 502 }
+      );
+    }
 
     const data = await response.json();
 
@@ -142,4 +164,3 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
-

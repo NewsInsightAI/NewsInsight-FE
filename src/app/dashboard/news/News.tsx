@@ -46,6 +46,7 @@ export default function News() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [hasInitialFetch, setHasInitialFetch] = useState(false);
+  const [selectedNewsIds, setSelectedNewsIds] = useState<number[]>([]);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -236,10 +237,48 @@ export default function News() {
 
       showToast("Berita berhasil dihapus", "success");
 
+      // Remove deleted news from selected items
+      setSelectedNewsIds((prev) => prev.filter((id) => id !== newsId));
+
       fetchNewsData(searchTerm, pagination.currentPage);
     } catch (error) {
       console.error("Error deleting news:", error);
       showToast("Gagal menghapus berita", "error");
+    }
+  };
+
+  const handleBulkDeleteNews = async (newsIds: number[]) => {
+    try {
+      showToast("Menghapus berita terpilih...", "loading");
+      const token = session?.backendToken;
+
+      // Delete each news item
+      const deletePromises = newsIds.map(async (newsId) => {
+        const response = await fetch(`/api/news/${newsId}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to delete news ${newsId}`);
+        }
+        return newsId;
+      });
+
+      await Promise.all(deletePromises);
+
+      showToast(`${newsIds.length} berita berhasil dihapus`, "success");
+
+      // Remove deleted news from selected items
+      setSelectedNewsIds((prev) => prev.filter((id) => !newsIds.includes(id)));
+
+      fetchNewsData(searchTerm, pagination.currentPage);
+    } catch (error) {
+      console.error("Error bulk deleting news:", error);
+      showToast("Gagal menghapus berita terpilih", "error");
     }
   };
 
@@ -342,6 +381,11 @@ export default function News() {
             }))}
             onEdit={handleEditNews}
             onDelete={handleDeleteNews}
+            onBulkDelete={handleBulkDeleteNews}
+            selectedItems={selectedNewsIds.map((id) => id.toString())}
+            onSelectionChange={(selectedIds) => {
+              setSelectedNewsIds(selectedIds.map((id) => parseInt(id)));
+            }}
             pagination={{
               currentPage: pagination.currentPage,
               totalPages: pagination.totalPages,

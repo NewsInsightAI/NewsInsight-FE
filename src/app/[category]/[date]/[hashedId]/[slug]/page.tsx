@@ -51,20 +51,30 @@ export default function NewsDetailPage() {
 
   const [translatedContentForTTS, setTranslatedContentForTTS] =
     useState<string>("");
+  const trackingRef = useRef<boolean>(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
   // Custom hooks for news interactions
   const newsId =
-    typeof news?.id === "string"
-      ? parseInt(news.id.replace(/[^0-9]/g, "")) || 1
-      : news?.id || 1;
+    typeof news?.id === "number"
+      ? news.id
+      : typeof news?.id === "string" && !news.id.startsWith("news-")
+        ? parseInt(news.id) || 1
+        : 1;
 
-  const { isSaved, loading: saveLoading, toggleSave } = useSavedNews(newsId);
+  // Don't initialize hooks if news is not loaded yet
+  const shouldInitializeHooks = news !== null;
+
+  const {
+    isSaved,
+    loading: saveLoading,
+    toggleSave,
+  } = useSavedNews(shouldInitializeHooks ? newsId : 0);
   const {
     summary,
     loading: summaryLoading,
     loadSummary,
-  } = useNewsSummary(newsId);
+  } = useNewsSummary(shouldInitializeHooks ? newsId : 0);
   const newsInteractions = useNewsInteractions();
   const { addReadingHistory } = useReadingHistory();
   const { showToast } = useToast();
@@ -165,11 +175,30 @@ export default function NewsDetailPage() {
   // Handler functions for news interactions
   const handleSummaryClick = async () => {
     try {
+      // Check if this is a dummy news item (from listNews)
+      if (
+        news?.id &&
+        typeof news.id === "string" &&
+        news.id.startsWith("news-")
+      ) {
+        showToast(
+          "Fitur ringkasan hanya tersedia untuk berita dari database",
+          "info"
+        );
+        return;
+      }
+
       await loadSummary();
       setShowSummary(true);
     } catch (error) {
       console.error("Error loading summary:", error);
-      alert("Terjadi kesalahan saat memuat ringkasan berita");
+      if (error instanceof Error && error.message.includes("401")) {
+        showToast("Sesi Anda telah berakhir. Silakan login kembali", "error");
+      } else if (error instanceof Error && error.message.includes("404")) {
+        showToast("Ringkasan tidak tersedia untuk berita ini", "error");
+      } else {
+        showToast("Terjadi kesalahan saat memuat ringkasan berita", "error");
+      }
     }
   };
 
@@ -293,51 +322,99 @@ export default function NewsDetailPage() {
     const { category, date, hashedId, slug } = params;
 
     if (category && date && hashedId && slug) {
-      const foundNews = listNews.find((item) => {
-        const itemHashedId = generateHashedId(item.id.toString());
-        const itemSlug = generateSlug(item.title);
-        const itemDate = formatDateForUrl(item.timestamp);
-
-        const categoryStr = Array.isArray(category) ? category[0] : category;
-        const matchesCategory =
-          item.category.toLowerCase() === categoryStr.toLowerCase();
-        const matchesDate = itemDate === date;
-        const matchesHashedId = itemHashedId === hashedId;
-        const matchesSlug = itemSlug === slug;
-
-        return matchesCategory && matchesDate && matchesHashedId && matchesSlug;
-      });
-
-      if (foundNews) {
-        setNews(foundNews);
-      }
-      setLoading(false);
-    }
-  }, [params]);
-
-  // Track reading history when news is loaded
-  useEffect(() => {
-    console.log("=== Reading History Tracking ===");
-    console.log("News:", !!news);
-    console.log("Session token:", !!session?.backendToken);
-    console.log("News ID:", newsId);
-
-    if (news && session?.backendToken) {
-      const trackReading = async () => {
+      const fetchNewsFromAPI = async () => {
         try {
-          console.log("Tracking reading history for news ID:", newsId);
-          await addReadingHistory(newsId, 0, 0); // Initial tracking with 0 duration and percentage
-          console.log("✅ Reading history tracked successfully");
+          // Coba ambil data dari API backend terlebih dahulu menggunakan hashedId dan slug
+          const response = await fetch(`/api/news/by-slug/${hashedId}/${slug}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.data) {
+              const newsItem = data.data;
+
+              // Transform data API ke format NewsItem
+              const transformedNews: NewsItem = {
+                id: newsItem.id, // Use numeric ID for interactions
+                source: newsItem.authors?.[0]?.author_name || "NewsInsight",
+                title: newsItem.title,
+                imageUrl: newsItem.featured_image || "/images/main_news.png",
+                timestamp: newsItem.published_at || newsItem.created_at,
+                category: newsItem.category_name || "Berita",
+                content: newsItem.content || null, // Konten lengkap dari database
+                link: window.location.pathname, // Current path
+                // Extract reporters and editors from authors data
+                reporters:
+                  newsItem.authors?.map(
+                    (author: { author_name: string; location?: string }) =>
+                      author.location
+                        ? `${author.author_name} di ${author.location}`
+                        : author.author_name
+                  ) || [],
+                editors: [], // Backend belum provide data editors, bisa ditambah nanti
+              };
+
+              setNews(transformedNews);
+              setLoading(false);
+              return;
+            }
+          }
+
+          // Fallback ke data dummy jika tidak ditemukan di API
+          const foundNews = listNews.find((item) => {
+            const itemHashedId = generateHashedId(item.id.toString());
+            const itemSlug = generateSlug(item.title);
+            const itemDate = formatDateForUrl(item.timestamp);
+
+            const categoryStr = Array.isArray(category)
+              ? category[0]
+              : category;
+            const matchesCategory =
+              item.category.toLowerCase() === categoryStr.toLowerCase();
+            const matchesDate = itemDate === date;
+            const matchesHashedId = itemHashedId === hashedId;
+            const matchesSlug = itemSlug === slug;
+
+            return (
+              matchesCategory && matchesDate && matchesHashedId && matchesSlug
+            );
+          });
+
+          if (foundNews) {
+            setNews(foundNews);
+          }
         } catch (error) {
-          console.error("❌ Failed to track reading history:", error);
+          console.error("Error fetching news:", error);
+
+          // Fallback ke data dummy jika terjadi error
+          const foundNews = listNews.find((item) => {
+            const itemHashedId = generateHashedId(item.id.toString());
+            const itemSlug = generateSlug(item.title);
+            const itemDate = formatDateForUrl(item.timestamp);
+
+            const categoryStr = Array.isArray(category)
+              ? category[0]
+              : category;
+            const matchesCategory =
+              item.category.toLowerCase() === categoryStr.toLowerCase();
+            const matchesDate = itemDate === date;
+            const matchesHashedId = itemHashedId === hashedId;
+            const matchesSlug = itemSlug === slug;
+
+            return (
+              matchesCategory && matchesDate && matchesHashedId && matchesSlug
+            );
+          });
+
+          if (foundNews) {
+            setNews(foundNews);
+          }
+        } finally {
+          setLoading(false);
         }
       };
 
-      // Delay tracking to ensure page is fully loaded
-      const timer = setTimeout(trackReading, 2000);
-      return () => clearTimeout(timer);
+      fetchNewsFromAPI();
     }
-  }, [news, session?.backendToken, newsId, addReadingHistory]);
+  }, [params]);
 
   useEffect(() => {
     if (news && news.imageUrl) {
@@ -422,6 +499,44 @@ export default function NewsDetailPage() {
       document.head.removeChild(style);
     };
   }, [isDark]);
+
+  // Track reading history when news is loaded
+  useEffect(() => {
+    if (
+      news &&
+      session?.backendToken &&
+      !trackingRef.current &&
+      typeof news.id === "number" &&
+      newsId !== 1 // Skip default fallback ID
+    ) {
+      trackingRef.current = true;
+
+      // Set reading start time
+      const startTime = Date.now();
+
+      // Track after a short delay to ensure user actually starts reading
+      const timer = setTimeout(async () => {
+        try {
+          const readDuration = Date.now() - startTime;
+          const readPercentage = 0.1;
+
+          console.log("Tracking reading history:", {
+            newsId,
+            readDuration,
+            readPercentage,
+          });
+
+          await addReadingHistory(newsId, readDuration, readPercentage);
+          console.log("Reading history tracked successfully");
+        } catch (error) {
+          console.error("Failed to track reading history:", error);
+          trackingRef.current = false; // Reset on error so it can retry
+        }
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [news, newsId, session?.backendToken, addReadingHistory]);
 
   if (loading) {
     return (
@@ -585,8 +700,23 @@ export default function NewsDetailPage() {
               {!showSummary ? (
                 <button
                   onClick={handleSummaryClick}
-                  disabled={summaryLoading}
-                  className="flex-1 inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium text-white bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] hover:from-[#2DD4FF] hover:to-[#4F46E5] transition-all duration-300 shadow-lg hover:shadow-xl whitespace-nowrap disabled:opacity-50"
+                  disabled={
+                    summaryLoading ||
+                    Boolean(
+                      news?.id &&
+                        typeof news.id === "string" &&
+                        news.id.startsWith("news-")
+                    )
+                  }
+                  className={`flex-1 inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium text-white transition-all duration-300 shadow-lg hover:shadow-xl whitespace-nowrap ${
+                    news?.id &&
+                    typeof news.id === "string" &&
+                    news.id.startsWith("news-")
+                      ? "bg-gray-500 cursor-not-allowed opacity-50"
+                      : summaryLoading
+                        ? "bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] opacity-50 cursor-not-allowed"
+                        : "bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] hover:from-[#2DD4FF] hover:to-[#4F46E5]"
+                  }`}
                 >
                   {summaryLoading ? (
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
@@ -597,7 +727,13 @@ export default function NewsDetailPage() {
                     />
                   )}
                   <TranslatedText>
-                    {summaryLoading ? "Memuat..." : "Ringkas Berita"}
+                    {summaryLoading
+                      ? "Memuat..."
+                      : news?.id &&
+                          typeof news.id === "string" &&
+                          news.id.startsWith("news-")
+                        ? "Tidak Tersedia"
+                        : "Ringkas Berita"}
                   </TranslatedText>
                 </button>
               ) : null}
@@ -765,6 +901,15 @@ export default function NewsDetailPage() {
                           className="w-5 h-5 mr-2 text-blue-500"
                         />
                         <TranslatedText>Ringkasan Berita</TranslatedText>
+                        <span
+                          className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                            isDark
+                              ? "bg-green-800 text-green-100"
+                              : "bg-green-100 text-green-800"
+                          }`}
+                        >
+                          <TranslatedText>Tersimpan</TranslatedText>
+                        </span>
                       </h3>
                       <button
                         onClick={() => setShowSummary(false)}

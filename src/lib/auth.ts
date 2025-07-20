@@ -35,7 +35,7 @@ export const authOptions: AuthOptions = {
 
         if (credentials.password === "__MFA_TOKEN__" && credentials.mfaToken) {
           try {
-            const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/verify-mfa-token`;
+            const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/auth/verify-mfa-token`;
             const response = await fetch(backendUrl, {
               method: "POST",
               headers: {
@@ -71,7 +71,7 @@ export const authOptions: AuthOptions = {
         }
 
         try {
-          const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/login`;
+          const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/auth/login`;
           console.log("Calling backend URL:", backendUrl);
 
           const response = await fetch(backendUrl, {
@@ -145,7 +145,7 @@ export const authOptions: AuthOptions = {
 
       if (account?.provider === "google") {
         try {
-          const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/google`;
+          const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
           console.log("Calling backend URL:", backendUrl);
 
           const response = await fetch(backendUrl, {
@@ -210,7 +210,7 @@ export const authOptions: AuthOptions = {
         console.log("JWT callback triggered by session update");
 
         try {
-          const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/user-info`;
+          const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/auth/user-info`;
           const response = await fetch(backendUrl, {
             method: "GET",
             headers: {

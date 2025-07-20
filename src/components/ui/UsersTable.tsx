@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import { useDarkMode } from "@/context/DarkModeContext";
 import UserForm from "../popup/AddEditUser";
@@ -25,6 +25,8 @@ interface UsersTableProps {
   datas: UsersData[];
   loading?: boolean;
   onRefresh?: () => Promise<void>;
+  selectedItems?: string[];
+  onSelectionChange?: (selectedItems: string[]) => void;
   pagination?: {
     currentPage: number;
     totalPages: number;
@@ -32,7 +34,6 @@ interface UsersTableProps {
     itemsPerPage: number;
   };
 }
-
 
 const isGoogleUser = (user: UsersData): boolean => {
   if (user.authProvider === "google") {
@@ -71,10 +72,22 @@ const AuthProviderBadge = ({ user }: { user: UsersData }) => {
   );
 };
 
-export default function UsersTable({ datas, loading = false, pagination }: UsersTableProps) {
+export default function UsersTable({
+  datas,
+  loading = false,
+  selectedItems = [],
+  onSelectionChange,
+  pagination,
+}: UsersTableProps) {
   const { isDark } = useDarkMode();
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [localSelectedItems, setLocalSelectedItems] =
+    useState<string[]>(selectedItems);
   const [showEditUser, setShowEditUser] = useState(false);
+
+  // Sync with external selection state
+  useEffect(() => {
+    setLocalSelectedItems(selectedItems);
+  }, [selectedItems]);
   const [selectedUser, setSelectedUser] = useState<UsersData | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
@@ -84,17 +97,22 @@ export default function UsersTable({ datas, loading = false, pagination }: Users
 
   const { updateUser, deleteUser, bulkDeleteUsers } = useUsers();
   const toggleSelectItem = (id: string) => {
-    setSelectedItems((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+    const newSelection = localSelectedItems.includes(id)
+      ? localSelectedItems.filter((item) => item !== id)
+      : [...localSelectedItems, id];
+
+    setLocalSelectedItems(newSelection);
+    onSelectionChange?.(newSelection);
   };
 
   const toggleSelectAll = () => {
-    if (selectedItems.length === datas.length) {
-      setSelectedItems([]);
-    } else {
-      setSelectedItems(datas.map((item) => item.id.toString()));
-    }
+    const newSelection =
+      localSelectedItems.length === datas.length
+        ? []
+        : datas.map((item) => item.id.toString());
+
+    setLocalSelectedItems(newSelection);
+    onSelectionChange?.(newSelection);
   };
 
   const handleEditUser = async (data: {
@@ -149,18 +167,20 @@ export default function UsersTable({ datas, loading = false, pagination }: Users
   };
 
   const handleBulkDelete = () => {
-    if (selectedItems.length === 0) return;
+    if (localSelectedItems.length === 0) return;
     setShowBulkDeleteConfirm(true);
   };
 
   const confirmBulkDelete = async () => {
-    if (selectedItems.length === 0 || isBulkDeleting) return;
+    if (localSelectedItems.length === 0 || isBulkDeleting) return;
 
     setIsBulkDeleting(true);
     try {
-      const userIds = selectedItems.map((id) => parseInt(id));
+      const userIds = localSelectedItems.map((id) => parseInt(id));
       await bulkDeleteUsers(userIds);
-      setSelectedItems([]);
+      const newSelection: string[] = [];
+      setLocalSelectedItems(newSelection);
+      onSelectionChange?.(newSelection);
       setShowBulkDeleteConfirm(false);
     } catch (error) {
       console.error("Error deleting users:", error);
@@ -198,6 +218,16 @@ export default function UsersTable({ datas, loading = false, pagination }: Users
               className="w-3 h-3 md:w-4 md:h-4 mr-1"
             />
             Kontributor
+          </span>
+        );
+      case "user":
+        return (
+          <span className="bg-[#64748B]/15 text-[#64748B] border border-[#64748B] px-2 md:px-3 py-1 md:py-2 rounded-full flex items-center justify-center w-fit text-xs md:text-sm">
+            <Icon
+              icon="heroicons:user"
+              className="w-3 h-3 md:w-4 md:h-4 mr-1"
+            />
+            User
           </span>
         );
       default:
@@ -258,8 +288,8 @@ export default function UsersTable({ datas, loading = false, pagination }: Users
         title="Hapus Pengguna Terpilih"
         message={
           <p>
-            Apakah Anda yakin ingin menghapus {selectedItems.length} pengguna
-            yang dipilih? Tindakan ini tidak dapat dibatalkan.
+            Apakah Anda yakin ingin menghapus {localSelectedItems.length}{" "}
+            pengguna yang dipilih? Tindakan ini tidak dapat dibatalkan.
           </p>
         }
         confirmText="Hapus Semua"
@@ -294,7 +324,7 @@ export default function UsersTable({ datas, loading = false, pagination }: Users
       </AnimatePresence>
 
       {/* Enhanced Bulk Actions Bar */}
-      {selectedItems.length > 0 && (
+      {localSelectedItems.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -316,13 +346,17 @@ export default function UsersTable({ datas, loading = false, pagination }: Users
               >
                 <Icon icon="mdi:check-all" className="w-4 h-4" />
                 <span className="text-sm font-medium">
-                  {selectedItems.length} pengguna dipilih
+                  {localSelectedItems.length} pengguna dipilih
                 </span>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setSelectedItems([])}
+                onClick={() => {
+                  const newSelection: string[] = [];
+                  setLocalSelectedItems(newSelection);
+                  onSelectionChange?.(newSelection);
+                }}
                 className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                   isDark
                     ? "text-gray-300 hover:bg-gray-700"
@@ -392,12 +426,12 @@ export default function UsersTable({ datas, loading = false, pagination }: Users
                       type="checkbox"
                       className="h-4 w-4 md:h-5 md:w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none hover:cursor-pointer hover:bg-[#367AF2]/10"
                       checked={
-                        selectedItems.length === datas.length &&
+                        localSelectedItems.length === datas.length &&
                         datas.length > 0
                       }
                       onChange={toggleSelectAll}
                     />
-                    {selectedItems.length === datas.length && (
+                    {localSelectedItems.length === datas.length && (
                       <Icon
                         icon="mdi:check"
                         className="absolute text-white h-3 w-3 pointer-events-none"
@@ -480,10 +514,12 @@ export default function UsersTable({ datas, loading = false, pagination }: Users
                       <input
                         type="checkbox"
                         className="h-4 w-4 md:h-5 md:w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none"
-                        checked={selectedItems.includes(report.id.toString())}
+                        checked={localSelectedItems.includes(
+                          report.id.toString()
+                        )}
                         onChange={() => toggleSelectItem(report.id.toString())}
                       />
-                      {selectedItems.includes(report.id.toString()) && (
+                      {localSelectedItems.includes(report.id.toString()) && (
                         <Icon
                           icon="mdi:check"
                           className="absolute text-white h-3 w-3 pointer-events-none"

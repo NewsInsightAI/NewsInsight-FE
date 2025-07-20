@@ -16,6 +16,7 @@ interface Category {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  newsCount?: number;
 }
 
 interface CategoriesResponse {

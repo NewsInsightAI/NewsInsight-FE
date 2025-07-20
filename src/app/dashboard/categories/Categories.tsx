@@ -19,6 +19,7 @@ export default function Categories() {
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [selectedCategory] = useState<Category | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const {
     categories,
     loading,
@@ -273,6 +274,8 @@ export default function Categories() {
               onEdit={handleEditCategory}
               onDelete={handleDeleteCategory}
               onBulkDelete={handleBulkDeleteCategories}
+              selectedItems={selectedCategoryIds}
+              onSelectionChange={setSelectedCategoryIds}
               onSort={handleSortChange}
               sortOrder={sortOrder}
               pagination={{

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import { AnimatePresence, motion } from "framer-motion";
 import CategoryForm from "../popup/AddEditCategory";
@@ -16,6 +16,7 @@ interface CategoryData {
   createdAt: string;
   updatedAt: string;
   totalNews?: number;
+  newsCount?: number;
 }
 
 interface CategoryTableProps {
@@ -29,6 +30,8 @@ interface CategoryTableProps {
   }) => void;
   onDelete?: (id: number) => void;
   onBulkDelete?: (ids: number[]) => void;
+  selectedItems?: string[];
+  onSelectionChange?: (selectedItems: string[]) => void;
   onSort?: (order: "asc" | "desc") => void;
   sortOrder?: "asc" | "desc";
   pagination?: {
@@ -46,15 +49,23 @@ export default function CategoryTable({
   onEdit,
   onDelete,
   onBulkDelete,
+  selectedItems = [],
+  onSelectionChange,
   onSort,
   sortOrder = "asc",
   pagination,
 }: CategoryTableProps) {
   const { isDark } = useDarkMode();
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [localSelectedItems, setLocalSelectedItems] =
+    useState<string[]>(selectedItems);
   const [selectedCategory, setSelectedCategory] = useState<CategoryData | null>(
     null
   );
+
+  // Sync with external selection state
+  useEffect(() => {
+    setLocalSelectedItems(selectedItems);
+  }, [selectedItems]);
 
   const [showEditCategory, setShowEditCategory] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -85,7 +96,7 @@ export default function CategoryTable({
   };
 
   const handleBulkDelete = () => {
-    if (selectedItems.length > 0) {
+    if (localSelectedItems.length > 0) {
       setShowBulkDeleteConfirm(true);
     }
   };
@@ -115,16 +126,18 @@ export default function CategoryTable({
   };
 
   const confirmBulkDelete = async () => {
-    if (selectedItems.length === 0 || isDeleting) return;
+    if (localSelectedItems.length === 0 || isDeleting) return;
 
     setIsDeleting(true);
     try {
-      const categoryIds = selectedItems.map((id) => parseInt(id));
+      const categoryIds = localSelectedItems.map((id) => parseInt(id));
       if (onBulkDelete) {
         await onBulkDelete(categoryIds);
       }
       setShowBulkDeleteConfirm(false);
-      setSelectedItems([]);
+      const newSelection: string[] = [];
+      setLocalSelectedItems(newSelection);
+      onSelectionChange?.(newSelection);
     } catch (error) {
       console.error("Error bulk deleting categories:", error);
     } finally {
@@ -133,17 +146,22 @@ export default function CategoryTable({
   };
 
   const toggleSelectItem = (id: string) => {
-    setSelectedItems((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+    const newSelection = localSelectedItems.includes(id)
+      ? localSelectedItems.filter((item) => item !== id)
+      : [...localSelectedItems, id];
+
+    setLocalSelectedItems(newSelection);
+    onSelectionChange?.(newSelection);
   };
 
   const toggleSelectAll = () => {
-    if (selectedItems.length === datas.length) {
-      setSelectedItems([]);
-    } else {
-      setSelectedItems(datas.map((item) => item.id.toString()));
-    }
+    const newSelection =
+      localSelectedItems.length === datas.length
+        ? []
+        : datas.map((item) => item.id.toString());
+
+    setLocalSelectedItems(newSelection);
+    onSelectionChange?.(newSelection);
   };
 
   return (
@@ -214,17 +232,17 @@ export default function CategoryTable({
         title="Hapus Beberapa Kategori"
         message={
           <p>
-            Apakah Anda yakin ingin menghapus {selectedItems.length} kategori
-            yang dipilih? Tindakan ini tidak dapat dibatalkan.
+            Apakah Anda yakin ingin menghapus {localSelectedItems.length}{" "}
+            kategori yang dipilih? Tindakan ini tidak dapat dibatalkan.
           </p>
         }
-        confirmText={`Hapus ${selectedItems.length} Kategori`}
+        confirmText={`Hapus ${localSelectedItems.length} Kategori`}
         isLoading={isDeleting}
         loadingText="Menghapus..."
       />
 
       {/* Enhanced Bulk Actions Bar */}
-      {selectedItems.length > 0 && (
+      {localSelectedItems.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -246,13 +264,17 @@ export default function CategoryTable({
               >
                 <Icon icon="mdi:check-all" className="w-4 h-4" />
                 <span className="text-sm font-medium">
-                  {selectedItems.length} kategori dipilih
+                  {localSelectedItems.length} kategori dipilih
                 </span>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setSelectedItems([])}
+                onClick={() => {
+                  const newSelection: string[] = [];
+                  setLocalSelectedItems(newSelection);
+                  onSelectionChange?.(newSelection);
+                }}
                 className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                   isDark
                     ? "text-gray-300 hover:bg-gray-700"
@@ -298,12 +320,12 @@ export default function CategoryTable({
                       type="checkbox"
                       className="h-4 w-4 md:h-5 md:w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none hover:cursor-pointer hover:bg-[#367AF2]/10"
                       checked={
-                        selectedItems.length === datas.length &&
+                        localSelectedItems.length === datas.length &&
                         datas.length > 0
                       }
                       onChange={toggleSelectAll}
                     />
-                    {selectedItems.length === datas.length && (
+                    {localSelectedItems.length === datas.length && (
                       <Icon
                         icon="mdi:check"
                         className="absolute text-white h-3 w-3 pointer-events-none"
@@ -368,6 +390,13 @@ export default function CategoryTable({
                     isDark ? "text-gray-300" : "text-black"
                   }`}
                 >
+                  Jumlah Berita
+                </th>
+                <th
+                  className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[120px] ${
+                    isDark ? "text-gray-300" : "text-black"
+                  }`}
+                >
                   Status
                 </th>
                 <th
@@ -396,10 +425,12 @@ export default function CategoryTable({
                       <input
                         type="checkbox"
                         className="h-4 w-4 md:h-5 md:w-5 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none"
-                        checked={selectedItems.includes(report.id.toString())}
+                        checked={localSelectedItems.includes(
+                          report.id.toString()
+                        )}
                         onChange={() => toggleSelectItem(report.id.toString())}
                       />
-                      {selectedItems.includes(report.id.toString()) && (
+                      {localSelectedItems.includes(report.id.toString()) && (
                         <Icon
                           icon="mdi:check"
                           className="absolute text-white h-3 w-3 pointer-events-none"
@@ -431,6 +462,22 @@ export default function CategoryTable({
                   >
                     <div title={report.description || ""}>
                       {report.description || "-"}
+                    </div>
+                  </td>
+                  <td
+                    className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
+                      isDark ? "text-gray-300" : "text-gray-900"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon
+                        icon="material-symbols:article-outline"
+                        className="w-4 h-4 text-blue-500"
+                      />
+                      <span className="font-medium">
+                        {report.newsCount || report.totalNews || 0}
+                      </span>
+                      <span className="text-xs text-gray-500">berita</span>
                     </div>
                   </td>
                   <td
@@ -512,10 +559,10 @@ export default function CategoryTable({
                 <input
                   type="checkbox"
                   className="h-4 w-4 rounded border-gray-300 appearance-none checked:bg-blue-600 checked:border-transparent ring-1 ring-[#367AF2] focus:outline-none"
-                  checked={selectedItems.includes(category.id.toString())}
+                  checked={localSelectedItems.includes(category.id.toString())}
                   onChange={() => toggleSelectItem(category.id.toString())}
                 />
-                {selectedItems.includes(category.id.toString()) && (
+                {localSelectedItems.includes(category.id.toString()) && (
                   <Icon
                     icon="mdi:check"
                     className="absolute text-white h-2.5 w-2.5 pointer-events-none"
@@ -552,6 +599,24 @@ export default function CategoryTable({
             </div>
             {/* Card Content */}
             <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span
+                  className={`text-xs font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                >
+                  Jumlah Berita:
+                </span>
+                <div className="flex items-center gap-1">
+                  <Icon
+                    icon="material-symbols:article-outline"
+                    className="w-3 h-3 text-blue-500"
+                  />
+                  <span
+                    className={`text-xs font-medium ${isDark ? "text-gray-300" : "text-gray-900"}`}
+                  >
+                    {category.newsCount || category.totalNews || 0} berita
+                  </span>
+                </div>
+              </div>
               <div className="flex justify-between items-center">
                 <span
                   className={`text-xs font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}

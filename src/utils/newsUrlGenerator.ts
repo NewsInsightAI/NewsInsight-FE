@@ -30,7 +30,12 @@ export function generateNewsUrl(
   id?: string
 ): string {
   const formattedDate = formatDateForUrl(publishDate);
-  const hashedId = generateHashedId(id || `${title}-${publishDate}`);
+  // Jika id sudah ada (dari database), gunakan langsung sebagai hashedId
+  // Jika tidak ada, generate hashedId baru (untuk data dummy)
+  const hashedId =
+    id && id.length > 8
+      ? id
+      : generateHashedId(id || `${title}-${publishDate}`);
   const slug = generateSlug(title);
   const categorySlug = generateSlug(category);
 

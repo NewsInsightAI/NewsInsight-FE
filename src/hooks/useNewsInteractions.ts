@@ -69,7 +69,7 @@ export const useNewsInteractions = (): NewsInteractionAPI => {
 
   const toggleSaveNews = async (newsId: number): Promise<SavedNewsResponse> => {
     try {
-      const response = await fetch(`/api/v1/news/${newsId}/save`, {
+      const response = await fetch(`/api/news/${newsId}/save`, {
         method: "POST",
         headers: getAuthHeaders(),
       });
@@ -89,7 +89,7 @@ export const useNewsInteractions = (): NewsInteractionAPI => {
     newsId: number
   ): Promise<SavedNewsResponse> => {
     try {
-      const response = await fetch(`/api/v1/news/${newsId}/saved-status`, {
+      const response = await fetch(`/api/news/${newsId}/saved-status`, {
         headers: getAuthHeaders(),
       });
 
@@ -106,7 +106,7 @@ export const useNewsInteractions = (): NewsInteractionAPI => {
 
   const trackShare = async (newsId: number, data: ShareTrackingData) => {
     try {
-      const response = await fetch(`/api/v1/news/${newsId}/share`, {
+      const response = await fetch(`/api/news/${newsId}/share`, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify(data),
@@ -125,7 +125,7 @@ export const useNewsInteractions = (): NewsInteractionAPI => {
 
   const reportNews = async (newsId: number, data: ReportData) => {
     try {
-      const response = await fetch(`/api/v1/news/${newsId}/report`, {
+      const response = await fetch(`/api/news/${newsId}/report`, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify(data),
@@ -144,9 +144,11 @@ export const useNewsInteractions = (): NewsInteractionAPI => {
 
   const generateSummary = async (newsId: number): Promise<SummaryResponse> => {
     try {
-      const response = await fetch(`/api/v1/news/${newsId}/summary`, {
+      const response = await fetch(`/api/news/${newsId}/summary`, {
         method: "POST",
-        headers: getAuthHeaders(),
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
@@ -162,8 +164,10 @@ export const useNewsInteractions = (): NewsInteractionAPI => {
 
   const getSummary = async (newsId: number): Promise<SummaryResponse> => {
     try {
-      const response = await fetch(`/api/v1/news/${newsId}/summary`, {
-        headers: getAuthHeaders(),
+      const response = await fetch(`/api/news/${newsId}/summary`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
@@ -203,7 +207,7 @@ export const useSavedNews = (newsId: number) => {
         Authorization: `Bearer ${session.backendToken}`,
       };
 
-      const response = await fetch(`/api/v1/news/${newsId}/saved-status`, {
+      const response = await fetch(`/api/news/${newsId}/saved-status`, {
         headers,
       });
 
@@ -232,7 +236,7 @@ export const useSavedNews = (newsId: number) => {
         Authorization: `Bearer ${session.backendToken}`,
       };
 
-      const response = await fetch(`/api/v1/news/${newsId}/save`, {
+      const response = await fetch(`/api/news/${newsId}/save`, {
         method: "POST",
         headers,
       });

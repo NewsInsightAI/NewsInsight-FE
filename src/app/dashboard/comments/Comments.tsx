@@ -67,6 +67,7 @@ export default function Comments() {
     totalItems: 0,
     itemsPerPage: 10,
   });
+  const [selectedCommentIds, setSelectedCommentIds] = useState<string[]>([]);
   const hasFetchedRef = useRef(false);
 
   useEffect(() => {
@@ -334,6 +335,42 @@ export default function Comments() {
     }
   };
 
+  const handleBulkDeleteComments = async (commentIds: number[]) => {
+    try {
+      showToast("Menghapus komentar yang dipilih...", "loading");
+
+      // Delete comments in parallel
+      const deletePromises = commentIds.map(async (commentId) => {
+        const response = await fetch(`/api/comments/${commentId}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            ...(session?.backendToken && {
+              Authorization: `Bearer ${session.backendToken}`,
+            }),
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to delete comment ${commentId}`);
+        }
+
+        return commentId;
+      });
+
+      await Promise.all(deletePromises);
+
+      // Clear selection after successful deletion
+      setSelectedCommentIds([]);
+
+      showToast(`${commentIds.length} komentar berhasil dihapus`, "success");
+      fetchCommentsData(searchTerm);
+    } catch (error) {
+      console.error("Error deleting comments:", error);
+      showToast("Gagal menghapus beberapa komentar", "error");
+    }
+  };
+
   return (
     <>
       <div className="flex flex-col justify-start items-start gap-3 md:gap-4 h-full w-full p-2 md:p-0 overflow-hidden">
@@ -533,6 +570,9 @@ export default function Comments() {
               onApprove={handleApproveComment}
               onReject={handleRejectComment}
               onDelete={handleDeleteComment}
+              onBulkDelete={handleBulkDeleteComments}
+              selectedItems={selectedCommentIds}
+              onSelectionChange={setSelectedCommentIds}
               pagination={pagination}
             />
           )}
