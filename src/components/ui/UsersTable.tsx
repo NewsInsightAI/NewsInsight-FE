@@ -25,6 +25,12 @@ interface UsersTableProps {
   datas: UsersData[];
   loading?: boolean;
   onRefresh?: () => Promise<void>;
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
 }
 
 
@@ -65,10 +71,7 @@ const AuthProviderBadge = ({ user }: { user: UsersData }) => {
   );
 };
 
-export default function UsersTable({
-  datas,
-  loading = false,
-}: UsersTableProps) {
+export default function UsersTable({ datas, loading = false, pagination }: UsersTableProps) {
   const { isDark } = useDarkMode();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showEditUser, setShowEditUser] = useState(false);
@@ -493,7 +496,10 @@ export default function UsersTable({
                       isDark ? "text-gray-300" : "text-gray-900"
                     }`}
                   >
-                    {index + 1}
+                    {((pagination?.currentPage || 1) - 1) *
+                      (pagination?.itemsPerPage || 10) +
+                      index +
+                      1}
                   </td>
                   <td
                     className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm font-medium ${
@@ -615,7 +621,11 @@ export default function UsersTable({
                     <span
                       className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}
                     >
-                      #{index + 1}
+                      #
+                      {((pagination?.currentPage || 1) - 1) *
+                        (pagination?.itemsPerPage || 10) +
+                        index +
+                        1}
                     </span>
                   </div>
                   <p

@@ -275,6 +275,13 @@ export default function Categories() {
               onBulkDelete={handleBulkDeleteCategories}
               onSort={handleSortChange}
               sortOrder={sortOrder}
+              pagination={{
+                currentPage: pagination?.currentPage || 1,
+                totalPages: pagination?.totalPages || 1,
+                totalItems:
+                  pagination?.totalCategories || sortedCategories.length,
+                itemsPerPage: 10,
+              }}
             />
           )}
 

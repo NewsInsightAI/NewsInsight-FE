@@ -3,9 +3,10 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useDarkMode } from "@/context/DarkModeContext";
-import { useLanguage } from "@/context/LanguageContext";
 import { TranslatedText } from "@/components/TranslatedText";
-import { formatTimestamp } from "@/utils/formatTimestamp";
+import { formatRelativeTime } from "@/utils/formatRelativeTime";
+import { formatMetricNumber, getMetricIcon } from "@/utils/formatMetrics";
+import { Icon } from "@iconify/react";
 
 interface CompactNewsCard {
   id?: string;
@@ -15,6 +16,8 @@ interface CompactNewsCard {
   timestamp: string;
   category?: string;
   link: string;
+  viewCount?: number;
+  shareCount?: number;
 }
 
 export default function CompactNewsCard({
@@ -27,12 +30,13 @@ export default function CompactNewsCard({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   category,
   link,
+  viewCount = 0,
+  shareCount = 0,
 }: CompactNewsCard) {
   const { isDark } = useDarkMode();
-  const { currentLanguage } = useLanguage();
   const router = useRouter();
 
-  const formattedTimestamp = formatTimestamp(timestamp, currentLanguage.code);
+  const relativeTime = formatRelativeTime(timestamp);
 
   return (
     <div onClick={() => router.push(link)} className="cursor-pointer w-full">
@@ -55,11 +59,44 @@ export default function CompactNewsCard({
             <p
               className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
             >
-              {formattedTimestamp}
+              {relativeTime}
             </p>
           </div>
+
+          {/* Metrics Row - Compact version - Only show if there are metrics */}
+          {(viewCount > 0 || shareCount > 0) && (
+            <div className="flex items-center gap-2 mt-1">
+              {viewCount > 0 && (
+                <div className="flex items-center gap-1">
+                  <Icon
+                    icon={getMetricIcon("views")}
+                    className={`w-3 h-3 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                  />
+                  <span
+                    className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                  >
+                    {formatMetricNumber(viewCount)}
+                  </span>
+                </div>
+              )}
+              {shareCount > 0 && (
+                <div className="flex items-center gap-1">
+                  <Icon
+                    icon={getMetricIcon("shares")}
+                    className={`w-3 h-3 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                  />
+                  <span
+                    className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                  >
+                    {formatMetricNumber(shareCount)}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
           <p
-            className={`${isDark ? "text-white" : "text-black"} font-medium text-sm sm:text-base line-clamp-2 sm:line-clamp-3 transition-colors duration-300`}
+            className={`${isDark ? "text-white" : "text-black"} font-medium text-sm sm:text-base line-clamp-2 sm:line-clamp-3 transition-colors duration-300 ${viewCount > 0 || shareCount > 0 ? "mt-2" : "mt-1"}`}
             style={{
               display: "-webkit-box",
               WebkitLineClamp: 3,

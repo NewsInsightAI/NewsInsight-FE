@@ -18,7 +18,7 @@ export async function GET() {
         { status: 401 }
       );
     }
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
     const apiRes = await fetch(`${apiUrl}/profile/me`, {
       method: "GET",
       headers: {
@@ -83,7 +83,7 @@ export async function PUT(req: NextRequest) {
       );
     }
     const body = await req.json();
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
     const apiRes = await fetch(`${apiUrl}/profile/me`, {
       method: "PUT",
       headers: {
@@ -131,3 +131,4 @@ export async function PUT(req: NextRequest) {
     );
   }
 }
+

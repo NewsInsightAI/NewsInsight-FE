@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,7 +25,7 @@ export async function GET(request: NextRequest) {
     if (sortBy) params.append("sortBy", sortBy);
     if (sortOrder) params.append("sortOrder", sortOrder);
 
-    const endpoint = isPublic ? "/news/public" : "/news";
+    const endpoint = isPublic ? "/api/v1/news/public" : "/api/v1/news";
     const token = request.headers.get("authorization");
 
     const headers: Record<string, string> = {
@@ -143,3 +142,4 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
+

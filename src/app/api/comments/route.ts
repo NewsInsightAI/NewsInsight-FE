@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const newsId = searchParams.get("newsId");
+    const user_email = searchParams.get("user_email");
     const sort = searchParams.get("sort");
     const page = searchParams.get("page") || "1";
     const limit = searchParams.get("limit") || "10";
@@ -20,6 +20,9 @@ export async function GET(request: NextRequest) {
     // If newsId is provided, get comments for specific news (public use)
     if (newsId) {
       url = `${BACKEND_URL}/comments/news/${newsId}`;
+      if (user_email) {
+        url += `?user_email=${encodeURIComponent(user_email)}`;
+      }
     } else {
       // For admin dashboard - get all comments with pagination and filters
       const params = new URLSearchParams();
@@ -68,20 +71,20 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { newsId, content, readerName, readerEmail } = body;
+    const { news_id, content, reader_name, reader_email } = body;
 
     console.log("API Route received:", {
-      newsId,
+      news_id,
       content,
-      readerName,
-      readerEmail,
+      reader_name,
+      reader_email,
     });
 
-    if (!newsId || !content || !readerName) {
+    if (!news_id || !content || !reader_name) {
       console.log("Validation failed:", {
-        hasNewsId: !!newsId,
+        hasNewsId: !!news_id,
         hasContent: !!content,
-        hasReaderName: !!readerName,
+        hasReaderName: !!reader_name,
       });
       return NextResponse.json(
         { error: "News ID, content, and reader name are required" },
@@ -105,10 +108,10 @@ export async function POST(request: NextRequest) {
       method: "POST",
       headers,
       body: JSON.stringify({
-        news_id: newsId,
+        news_id: news_id,
         content: content,
-        reader_name: readerName,
-        reader_email: readerEmail,
+        reader_name: reader_name,
+        reader_email: reader_email,
       }),
     });
 

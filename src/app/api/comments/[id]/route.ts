@@ -11,8 +11,8 @@ export async function DELETE(
     const authHeader = request.headers.get("Authorization");
 
     const backendUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-    const response = await fetch(`${backendUrl}/api/v1/comments/${id}`, {
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+    const response = await fetch(`${backendUrl}/comments/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",

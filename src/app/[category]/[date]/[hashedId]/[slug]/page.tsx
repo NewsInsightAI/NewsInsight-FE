@@ -16,13 +16,24 @@ import { TranslatedText } from "@/components/TranslatedText";
 import { TranslatedContent } from "@/components/TranslatedContent";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CommentsSection from "@/components/CommentsSection";
+import NewsReportModal from "@/components/NewsReportModal";
 import { Vibrant } from "node-vibrant/browser";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { formatTimestamp } from "@/utils/formatTimestamp";
+import {
+  useSavedNews,
+  useNewsSummary,
+  useNewsInteractions,
+} from "@/hooks/useNewsInteractions";
+import { useReadingHistory } from "@/hooks/useReadingHistory";
+import { useToast } from "@/context/ToastProvider";
+import { motion, AnimatePresence } from "framer-motion";
+import { useSession } from "next-auth/react";
 
 export default function NewsDetailPage() {
   const { isDark } = useDarkMode();
   const { currentLanguage } = useLanguage();
+  const { data: session } = useSession();
   const params = useParams();
   const [news, setNews] = useState<NewsItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,11 +46,28 @@ export default function NewsDetailPage() {
     "medium"
   );
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
 
   const [translatedContentForTTS, setTranslatedContentForTTS] =
     useState<string>("");
   const imgRef = useRef<HTMLImageElement>(null);
+
+  // Custom hooks for news interactions
+  const newsId =
+    typeof news?.id === "string"
+      ? parseInt(news.id.replace(/[^0-9]/g, "")) || 1
+      : news?.id || 1;
+
+  const { isSaved, loading: saveLoading, toggleSave } = useSavedNews(newsId);
+  const {
+    summary,
+    loading: summaryLoading,
+    loadSummary,
+  } = useNewsSummary(newsId);
+  const newsInteractions = useNewsInteractions();
+  const { addReadingHistory } = useReadingHistory();
+  const { showToast } = useToast();
 
   const calculateReadingTime = (text: string): number => {
     const wordsPerMinute = 200;
@@ -132,8 +160,104 @@ export default function NewsDetailPage() {
   };
 
   const articleContent = getPlainTextContent();
-
   const readingTime = calculateReadingTime(articleContent);
+
+  // Handler functions for news interactions
+  const handleSummaryClick = async () => {
+    try {
+      await loadSummary();
+      setShowSummary(true);
+    } catch (error) {
+      console.error("Error loading summary:", error);
+      alert("Terjadi kesalahan saat memuat ringkasan berita");
+    }
+  };
+
+  const handleSaveClick = async () => {
+    if (!session?.backendToken) {
+      showToast(
+        "Silakan login terlebih dahulu untuk menyimpan berita",
+        "error"
+      );
+      return;
+    }
+
+    try {
+      const result = await toggleSave();
+
+      if (result.saved) {
+        showToast("Berita berhasil disimpan", "success");
+      } else {
+        showToast("Berita berhasil dihapus dari simpanan", "success");
+      }
+    } catch (error) {
+      console.error("Error saving news:", error);
+
+      // Check if it's an authentication error
+      if (error instanceof Error && error.message.includes("401")) {
+        showToast("Sesi Anda telah berakhir. Silakan login kembali", "error");
+        // Optionally redirect to login or refresh token
+      } else {
+        showToast("Terjadi kesalahan saat menyimpan berita", "error");
+      }
+    }
+  };
+
+  const handleShareClick = async () => {
+    try {
+      // Track the share action
+      if (navigator.share) {
+        await navigator.share({
+          title: news?.title,
+          text: `Baca berita: ${news?.title}`,
+          url: window.location.href,
+        });
+
+        // Track native share
+        await newsInteractions.trackShare(newsId, {
+          shareType: "native_share",
+        });
+
+        showToast("Berita berhasil dibagikan", "success");
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(window.location.href);
+        showToast("Link berhasil disalin!", "success");
+
+        // Track clipboard copy
+        await newsInteractions.trackShare(newsId, {
+          shareType: "link_copy",
+        });
+      }
+    } catch (error) {
+      console.error("Error sharing news:", error);
+      // Fallback if both methods fail
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        showToast("Link berhasil disalin!", "success");
+        await newsInteractions.trackShare(newsId, {
+          shareType: "link_copy",
+        });
+      } catch (clipboardError) {
+        console.error("Clipboard also failed:", clipboardError);
+        // Manual copy fallback
+        try {
+          const textArea = document.createElement("textarea");
+          textArea.value = window.location.href;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textArea);
+          showToast("Link berhasil disalin!", "success");
+        } catch {
+          showToast(
+            "Gagal menyalin link. Silakan salin manual dari address bar",
+            "error"
+          );
+        }
+      }
+    }
+  };
 
   useEffect(() => {
     const navbar = document.querySelector("#navbar");
@@ -190,6 +314,30 @@ export default function NewsDetailPage() {
       setLoading(false);
     }
   }, [params]);
+
+  // Track reading history when news is loaded
+  useEffect(() => {
+    console.log("=== Reading History Tracking ===");
+    console.log("News:", !!news);
+    console.log("Session token:", !!session?.backendToken);
+    console.log("News ID:", newsId);
+
+    if (news && session?.backendToken) {
+      const trackReading = async () => {
+        try {
+          console.log("Tracking reading history for news ID:", newsId);
+          await addReadingHistory(newsId, 0, 0); // Initial tracking with 0 duration and percentage
+          console.log("✅ Reading history tracked successfully");
+        } catch (error) {
+          console.error("❌ Failed to track reading history:", error);
+        }
+      };
+
+      // Delay tracking to ensure page is fully loaded
+      const timer = setTimeout(trackReading, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [news, session?.backendToken, newsId, addReadingHistory]);
 
   useEffect(() => {
     if (news && news.imageUrl) {
@@ -433,14 +581,27 @@ export default function NewsDetailPage() {
           {/* Action Buttons */}
           <div className="pb-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex gap-3 overflow-x-auto no-scrollbar">
-              {/* Ringkas Berita - Urutan Pertama dengan flex-1 */}
-              <button className="flex-1 inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium text-white bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] hover:from-[#2DD4FF] hover:to-[#4F46E5] transition-all duration-300 shadow-lg hover:shadow-xl whitespace-nowrap">
-                <Icon
-                  icon="material-symbols:summarize"
-                  className="w-4 h-4 mr-2"
-                />
-                <TranslatedText>Ringkas Berita</TranslatedText>
-              </button>
+              {/* Ringkas Berita - Expandable */}
+              {!showSummary ? (
+                <button
+                  onClick={handleSummaryClick}
+                  disabled={summaryLoading}
+                  className="flex-1 inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium text-white bg-gradient-to-r from-[#3BD5FF] to-[#367AF2] hover:from-[#2DD4FF] hover:to-[#4F46E5] transition-all duration-300 shadow-lg hover:shadow-xl whitespace-nowrap disabled:opacity-50"
+                >
+                  {summaryLoading ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  ) : (
+                    <Icon
+                      icon="material-symbols:summarize"
+                      className="w-4 h-4 mr-2"
+                    />
+                  )}
+                  <TranslatedText>
+                    {summaryLoading ? "Memuat..." : "Ringkas Berita"}
+                  </TranslatedText>
+                </button>
+              ) : null}
+
               {/* Reading Time */}
               <div
                 className={`inline-flex items-center px-4 py-2 rounded-lg font-medium whitespace-nowrap ${
@@ -525,7 +686,8 @@ export default function NewsDetailPage() {
               </button>
               {/* Simpan */}
               <button
-                onClick={() => setIsSaved(!isSaved)}
+                onClick={handleSaveClick}
+                disabled={saveLoading}
                 className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
                   isSaved
                     ? isDark
@@ -534,9 +696,11 @@ export default function NewsDetailPage() {
                     : isDark
                       ? "bg-gray-800 text-white hover:bg-gray-700"
                       : "bg-gray-100 text-gray-900 hover:bg-gray-200"
-                }`}
+                } ${saveLoading ? "opacity-50 cursor-not-allowed" : ""}`}
               >
-                {isSaved ? (
+                {saveLoading ? (
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                ) : isSaved ? (
                   <Icon
                     icon="material-symbols:bookmark"
                     className="w-4 h-4 mr-2"
@@ -548,25 +712,12 @@ export default function NewsDetailPage() {
                   />
                 )}
                 <TranslatedText>
-                  {isSaved ? "Tersimpan" : "Simpan"}
+                  {saveLoading ? "..." : isSaved ? "Tersimpan" : "Simpan"}
                 </TranslatedText>
               </button>
               {/* Bagikan */}
               <button
-                onClick={() => {
-                  if (navigator.share) {
-                    navigator
-                      .share({
-                        title: news?.title,
-                        text: `Baca berita: ${news?.title}`,
-                        url: window.location.href,
-                      })
-                      .catch(console.error);
-                  } else {
-                    navigator.clipboard.writeText(window.location.href);
-                    alert("Link berhasil disalin!");
-                  }
-                }}
+                onClick={handleShareClick}
                 className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
                   isDark
                     ? "bg-gray-800 text-white hover:bg-gray-700"
@@ -578,6 +729,7 @@ export default function NewsDetailPage() {
               </button>
               {/* Laporkan */}
               <button
+                onClick={() => setShowReportModal(true)}
                 className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
                   isDark
                     ? "bg-gray-800 text-white hover:bg-gray-700"
@@ -588,6 +740,83 @@ export default function NewsDetailPage() {
                 <TranslatedText>Laporkan</TranslatedText>
               </button>
             </div>
+
+            {/* Summary Expandable Section */}
+            <AnimatePresence>
+              {showSummary && summary && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className={`mt-4 rounded-2xl overflow-hidden ${
+                    isDark
+                      ? "bg-gradient-to-br from-blue-900/30 to-purple-900/30 border border-blue-500/30"
+                      : "bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200"
+                  }`}
+                >
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3
+                        className={`text-lg font-bold flex items-center ${isDark ? "text-white" : "text-gray-900"}`}
+                      >
+                        <Icon
+                          icon="material-symbols:summarize"
+                          className="w-5 h-5 mr-2 text-blue-500"
+                        />
+                        <TranslatedText>Ringkasan Berita</TranslatedText>
+                      </h3>
+                      <button
+                        onClick={() => setShowSummary(false)}
+                        className={`p-2 rounded-full transition-colors ${
+                          isDark
+                            ? "hover:bg-gray-700 text-gray-400 hover:text-white"
+                            : "hover:bg-gray-200 text-gray-500 hover:text-gray-700"
+                        }`}
+                      >
+                        <Icon
+                          icon="material-symbols:close"
+                          className="w-5 h-5"
+                        />
+                      </button>
+                    </div>
+
+                    <div
+                      className={`prose max-w-none ${isDark ? "prose-invert" : ""}`}
+                    >
+                      <p
+                        className={`text-sm leading-relaxed mb-4 ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                      >
+                        {summary.summaryText}
+                      </p>
+
+                      {summary.keyPoints && summary.keyPoints.length > 0 && (
+                        <div>
+                          <h4
+                            className={`text-sm font-semibold mb-3 ${isDark ? "text-white" : "text-gray-900"}`}
+                          >
+                            <TranslatedText>Poin-poin Penting:</TranslatedText>
+                          </h4>
+                          <ul className="space-y-2">
+                            {summary.keyPoints.map(
+                              (point: string, index: number) => (
+                                <li
+                                  key={index}
+                                  className={`flex items-start text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                                >
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0" />
+                                  <span>{point}</span>
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
           {/* Konten Artikel */}
           <div className="py-4">
@@ -790,7 +1019,11 @@ export default function NewsDetailPage() {
           {/* Comments Section */}
           <div className="mt-8">
             <CommentsSection
-              newsId={typeof news.id === "string" ? parseInt(news.id) : news.id}
+              newsId={
+                typeof news.id === "string"
+                  ? parseInt(news.id.replace(/[^0-9]/g, "")) || 1
+                  : news.id
+              }
             />
           </div>
         </div>
@@ -937,6 +1170,16 @@ export default function NewsDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Report Modal */}
+      {news && (
+        <NewsReportModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          newsId={newsId}
+          newsTitle={news.title}
+        />
+      )}
     </div>
   );
 }

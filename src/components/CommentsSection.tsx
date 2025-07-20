@@ -7,6 +7,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { TranslatedText } from "./TranslatedText";
 import { formatTimestamp } from "@/utils/formatTimestamp";
 import { useSession, signIn } from "next-auth/react";
+import ReportModal from "./ReportModal";
 
 interface Comment {
   id: number;
@@ -15,6 +16,11 @@ interface Comment {
   content: string;
   created_at: string;
   updated_at: string;
+  parent_id?: number;
+  status: string;
+  likes: number;
+  dislikes: number;
+  user_like_type?: "like" | "dislike" | null;
   user: {
     email: string;
     profile?: {
@@ -39,6 +45,18 @@ export default function CommentsSection({ newsId }: CommentsSectionProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [replyContent, setReplyContent] = useState("");
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [reportingComment, setReportingComment] = useState<number | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [commentToReport, setCommentToReport] = useState<number | null>(null);
+
+  // Debug logging
+  console.log(
+    "CommentsSection received newsId:",
+    newsId,
+    "Type:",
+    typeof newsId
+  );
 
   // Get user from session
   const user = session?.user
@@ -57,7 +75,20 @@ export default function CommentsSection({ newsId }: CommentsSectionProps) {
     try {
       setLoading(true);
 
-      const response = await fetch(`/api/comments?newsId=${newsId}`);
+      // Validate newsId
+      if (!newsId || isNaN(newsId)) {
+        console.error("Invalid newsId:", newsId);
+        setComments([]);
+        return;
+      }
+
+      // Build URL with user_email if user is logged in
+      let url = `/api/comments?newsId=${newsId}`;
+      if (user?.email) {
+        url += `&user_email=${encodeURIComponent(user.email)}`;
+      }
+
+      const response = await fetch(url);
       const data = await response.json();
 
       if (response.ok && data.success) {
@@ -72,6 +103,24 @@ export default function CommentsSection({ newsId }: CommentsSectionProps) {
             content: string;
             created_at: string;
             updated_at: string;
+            status: string;
+            likes: number;
+            dislikes: number;
+            user_like_type?: "like" | "dislike" | null;
+            replies?: {
+              id: number;
+              news_id: number;
+              reader_name: string;
+              reader_email: string;
+              content: string;
+              created_at: string;
+              updated_at: string;
+              parent_id: number;
+              status: string;
+              likes: number;
+              dislikes: number;
+              user_like_type?: "like" | "dislike" | null;
+            }[];
           }) => ({
             id: comment.id,
             user_id: comment.reader_email, // Use email as user identifier
@@ -79,6 +128,10 @@ export default function CommentsSection({ newsId }: CommentsSectionProps) {
             content: comment.content,
             created_at: comment.created_at,
             updated_at: comment.updated_at,
+            status: comment.status,
+            likes: comment.likes || 0,
+            dislikes: comment.dislikes || 0,
+            user_like_type: comment.user_like_type || null,
             user: {
               email: comment.reader_email || "anonymous@example.com",
               profile: {
@@ -86,7 +139,29 @@ export default function CommentsSection({ newsId }: CommentsSectionProps) {
                 avatar: undefined,
               },
             },
-            replies: [], // TODO: Implement replies if needed
+            replies: comment.replies
+              ? comment.replies.map((reply) => ({
+                  id: reply.id,
+                  user_id: reply.reader_email,
+                  news_id: reply.news_id,
+                  content: reply.content,
+                  created_at: reply.created_at,
+                  updated_at: reply.updated_at,
+                  parent_id: reply.parent_id,
+                  status: reply.status,
+                  likes: reply.likes || 0,
+                  dislikes: reply.dislikes || 0,
+                  user_like_type: reply.user_like_type || null,
+                  user: {
+                    email: reply.reader_email || "anonymous@example.com",
+                    profile: {
+                      full_name: reply.reader_name,
+                      avatar: undefined,
+                    },
+                  },
+                  replies: [],
+                }))
+              : [],
           })
         );
         setComments(transformedComments);
@@ -100,23 +175,70 @@ export default function CommentsSection({ newsId }: CommentsSectionProps) {
     } finally {
       setLoading(false);
     }
-  }, [newsId]);
+  }, [newsId, user?.email]);
 
   useEffect(() => {
     fetchComments();
   }, [fetchComments]);
 
+  // Auto-update current time every second for real-time timestamps
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Function to get real-time relative timestamp
+  const getRelativeTime = (timestamp: string) => {
+    const now = currentTime;
+    const commentTime = new Date(timestamp);
+    const diffInSeconds = Math.floor(
+      (now.getTime() - commentTime.getTime()) / 1000
+    );
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    // If less than 1 day, show real-time format
+    if (diffInDays < 1) {
+      if (diffInSeconds < 0) {
+        // Handle negative time difference (server-client time mismatch)
+        return "Baru saja";
+      } else if (diffInSeconds < 60) {
+        return diffInSeconds === 0
+          ? "Baru saja"
+          : `${diffInSeconds} detik yang lalu`;
+      } else if (diffInMinutes < 60) {
+        return `${diffInMinutes} menit yang lalu`;
+      } else {
+        return `${diffInHours} jam yang lalu`;
+      }
+    }
+
+    // If 1 day or more, use the original formatted timestamp
+    return formatTimestamp(timestamp, currentLanguage.code);
+  };
+
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim() || !user) return;
 
+    // Validate newsId before submitting
+    if (!newsId || isNaN(newsId)) {
+      console.error("Invalid newsId:", newsId);
+      alert("Error: Invalid news ID. Please refresh the page and try again.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const commentData = {
-        newsId: newsId,
+        news_id: newsId, // Change this to match backend expectation
         content: newComment,
-        readerName: user.profile?.full_name || user.email.split("@")[0],
-        readerEmail: user.email,
+        reader_name: user.profile?.full_name || user.email.split("@")[0],
+        reader_email: user.email,
       };
 
       console.log("Submitting comment data:", commentData);
@@ -139,8 +261,12 @@ export default function CommentsSection({ newsId }: CommentsSectionProps) {
           user_id: data.data.reader_email,
           news_id: data.data.news_id,
           content: data.data.content,
-          created_at: data.data.created_at,
+          created_at: new Date().toISOString(), // Use current client time for real-time display
           updated_at: data.data.updated_at,
+          status: data.data.status || "waiting",
+          likes: 0,
+          dislikes: 0,
+          user_like_type: null,
           user: {
             email: data.data.reader_email,
             profile: {
@@ -167,34 +293,191 @@ export default function CommentsSection({ newsId }: CommentsSectionProps) {
   const handleReply = async (parentId: number) => {
     if (!replyContent.trim() || !user) return;
 
+    // Validate newsId before submitting
+    if (!newsId || isNaN(newsId)) {
+      console.error("Invalid newsId:", newsId);
+      alert("Error: Invalid news ID. Please refresh the page and try again.");
+      return;
+    }
+
     try {
-      // Simulated reply submission
-      const replyData: Comment = {
-        id: Date.now(),
-        user_id: user.id,
+      const replyData = {
         news_id: newsId,
         content: replyContent,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        user: user,
-        replies: [],
+        reader_name: user.profile?.full_name || user.email.split("@")[0],
+        reader_email: user.email,
       };
 
-      // Add reply to the parent comment
-      setComments((prev) =>
-        prev.map((comment) =>
-          comment.id === parentId
-            ? { ...comment, replies: [...(comment.replies || []), replyData] }
-            : comment
-        )
-      );
+      console.log("Submitting reply data:", replyData);
 
-      setReplyContent("");
-      setReplyingTo(null);
+      const response = await fetch(`/api/comments/${parentId}/reply`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(replyData),
+      });
+
+      const data = await response.json();
+      console.log("Reply response data:", data);
+
+      if (response.ok && data.success) {
+        // Transform the new reply to match frontend interface
+        const newReplyData: Comment = {
+          id: data.data.id,
+          user_id: data.data.reader_email,
+          news_id: data.data.news_id,
+          content: data.data.content,
+          created_at: new Date().toISOString(), // Use current client time for real-time display
+          updated_at: data.data.updated_at,
+          parent_id: data.data.parent_id,
+          status: data.data.status || "waiting",
+          likes: 0,
+          dislikes: 0,
+          user_like_type: null,
+          user: {
+            email: data.data.reader_email,
+            profile: {
+              full_name: data.data.reader_name,
+              avatar: user.profile?.avatar,
+            },
+          },
+          replies: [],
+        };
+
+        // Add reply to the parent comment
+        setComments((prev) =>
+          prev.map((comment) =>
+            comment.id === parentId
+              ? {
+                  ...comment,
+                  replies: [...(comment.replies || []), newReplyData],
+                }
+              : comment
+          )
+        );
+
+        setReplyContent("");
+        setReplyingTo(null);
+      } else {
+        throw new Error(data.error || "Failed to submit reply");
+      }
     } catch (error) {
       console.error("Error submitting reply:", error);
       alert("Gagal mengirim balasan. Silakan coba lagi.");
     }
+  };
+
+  const handleLike = async (
+    commentId: number,
+    likeType: "like" | "dislike"
+  ) => {
+    if (!user) {
+      alert("Silakan masuk untuk memberikan like/dislike");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/comments/${commentId}/likes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_email: user.email,
+          like_type: likeType,
+        }),
+      });
+
+      const data = await response.json();
+      console.log("Like response data:", data);
+
+      if (response.ok && data.success) {
+        // Update the comment in the state
+        setComments((prev) =>
+          prev.map((comment) => {
+            if (comment.id === commentId) {
+              return {
+                ...comment,
+                likes: data.data.likes,
+                dislikes: data.data.dislikes,
+                user_like_type: data.data.like_type,
+              };
+            }
+            // Also update replies
+            if (comment.replies) {
+              const updatedReplies = comment.replies.map((reply) => {
+                if (reply.id === commentId) {
+                  return {
+                    ...reply,
+                    likes: data.data.likes,
+                    dislikes: data.data.dislikes,
+                    user_like_type: data.data.like_type,
+                  };
+                }
+                return reply;
+              });
+              return { ...comment, replies: updatedReplies };
+            }
+            return comment;
+          })
+        );
+      } else {
+        throw new Error(data.error || "Failed to like comment");
+      }
+    } catch (error) {
+      console.error("Error liking comment:", error);
+      alert("Gagal memberikan like/dislike. Silakan coba lagi.");
+    }
+  };
+
+  const handleReportComment = async (commentId: number) => {
+    if (!user) {
+      alert("Silakan masuk untuk melaporkan komentar");
+      return;
+    }
+
+    setCommentToReport(commentId);
+    setShowReportModal(true);
+  };
+
+  const handleSubmitReport = async (reason: string) => {
+    if (!commentToReport || !user) return;
+
+    setReportingComment(commentToReport);
+
+    try {
+      const response = await fetch(`/api/comments/${commentToReport}/report`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_email: user.email,
+          reason: reason,
+        }),
+      });
+
+      if (response.ok) {
+        // Success - close modal
+        setShowReportModal(false);
+        setCommentToReport(null);
+        alert("Komentar berhasil dilaporkan. Terima kasih atas laporan Anda.");
+      } else {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to report comment");
+      }
+    } catch (error) {
+      console.error("Error reporting comment:", error);
+      alert("Gagal melaporkan komentar. Silakan coba lagi.");
+    } finally {
+      setReportingComment(null);
+    }
+  };
+
+  const handleCloseReportModal = () => {
+    setShowReportModal(false);
+    setCommentToReport(null);
   };
 
   const getUserDisplayName = (comment: Comment) => {
@@ -408,11 +691,19 @@ export default function CommentsSection({ newsId }: CommentsSectionProps) {
                     <span
                       className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
                     >
-                      {formatTimestamp(
-                        comment.created_at,
-                        currentLanguage.code
-                      )}
+                      {getRelativeTime(comment.created_at)}
                     </span>
+                    {comment.status === "waiting" && (
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full border ${
+                          isDark
+                            ? "bg-yellow-900/30 text-yellow-300 border-yellow-700"
+                            : "bg-yellow-100 text-yellow-800 border-yellow-300"
+                        }`}
+                      >
+                        <TranslatedText>Menunggu persetujuan</TranslatedText>
+                      </span>
+                    )}
                   </div>
                   <p
                     className={`${isDark ? "text-gray-300" : "text-gray-700"} leading-relaxed`}
@@ -434,14 +725,69 @@ export default function CommentsSection({ newsId }: CommentsSectionProps) {
                   <TranslatedText>Balas</TranslatedText>
                 </button>
                 <button
-                  className={`flex items-center gap-1 text-sm ${isDark ? "text-gray-400 hover:text-gray-300" : "text-gray-600 hover:text-gray-700"} transition-colors`}
+                  onClick={() => handleLike(comment.id, "like")}
+                  className={`flex items-center gap-1 text-sm transition-colors ${
+                    comment.user_like_type === "like"
+                      ? "text-blue-600"
+                      : isDark
+                        ? "text-gray-400 hover:text-gray-300"
+                        : "text-gray-600 hover:text-gray-700"
+                  }`}
                 >
                   <Icon
-                    icon="material-symbols:thumb-up-outline"
+                    icon={
+                      comment.user_like_type === "like"
+                        ? "material-symbols:thumb-up"
+                        : "material-symbols:thumb-up-outline"
+                    }
                     className="w-4 h-4"
                   />
-                  <span>0</span>
+                  <span>{comment.likes}</span>
                 </button>
+                <button
+                  onClick={() => handleLike(comment.id, "dislike")}
+                  className={`flex items-center gap-1 text-sm transition-colors ${
+                    comment.user_like_type === "dislike"
+                      ? "text-red-600"
+                      : isDark
+                        ? "text-gray-400 hover:text-gray-300"
+                        : "text-gray-600 hover:text-gray-700"
+                  }`}
+                >
+                  <Icon
+                    icon={
+                      comment.user_like_type === "dislike"
+                        ? "material-symbols:thumb-down"
+                        : "material-symbols:thumb-down-outline"
+                    }
+                    className="w-4 h-4"
+                  />
+                </button>
+                {user && (
+                  <button
+                    onClick={() => handleReportComment(comment.id)}
+                    disabled={reportingComment === comment.id}
+                    className={`flex items-center gap-1 text-sm transition-colors ${
+                      reportingComment === comment.id
+                        ? isDark
+                          ? "text-gray-600 cursor-not-allowed"
+                          : "text-gray-400 cursor-not-allowed"
+                        : isDark
+                          ? "text-gray-400 hover:text-red-400"
+                          : "text-gray-600 hover:text-red-600"
+                    }`}
+                  >
+                    <Icon
+                      icon={
+                        reportingComment === comment.id
+                          ? "eos-icons:loading"
+                          : "material-symbols:flag-outline"
+                      }
+                      className="w-4 h-4"
+                    />
+                    <TranslatedText>Laporkan</TranslatedText>
+                  </button>
+                )}
               </div>
 
               {/* Reply Form */}
@@ -530,17 +876,95 @@ export default function CommentsSection({ newsId }: CommentsSectionProps) {
                             <span
                               className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"}`}
                             >
-                              {formatTimestamp(
-                                reply.created_at,
-                                currentLanguage.code
-                              )}
+                              {getRelativeTime(reply.created_at)}
                             </span>
+                            {reply.status === "waiting" && (
+                              <span
+                                className={`px-1.5 py-0.5 text-xs rounded-full border ${
+                                  isDark
+                                    ? "bg-yellow-900/30 text-yellow-300 border-yellow-700"
+                                    : "bg-yellow-100 text-yellow-800 border-yellow-300"
+                                }`}
+                              >
+                                <TranslatedText>
+                                  Menunggu persetujuan
+                                </TranslatedText>
+                              </span>
+                            )}
                           </div>
                           <p
-                            className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"} leading-relaxed`}
+                            className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"} leading-relaxed mb-2`}
                           >
                             {reply.content}
                           </p>
+
+                          {/* Reply Actions */}
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => handleLike(reply.id, "like")}
+                              className={`flex items-center gap-1 text-xs transition-colors ${
+                                reply.user_like_type === "like"
+                                  ? "text-blue-600"
+                                  : isDark
+                                    ? "text-gray-400 hover:text-gray-300"
+                                    : "text-gray-600 hover:text-gray-700"
+                              }`}
+                            >
+                              <Icon
+                                icon={
+                                  reply.user_like_type === "like"
+                                    ? "material-symbols:thumb-up"
+                                    : "material-symbols:thumb-up-outline"
+                                }
+                                className="w-3 h-3"
+                              />
+                              <span>{reply.likes}</span>
+                            </button>
+                            <button
+                              onClick={() => handleLike(reply.id, "dislike")}
+                              className={`flex items-center gap-1 text-xs transition-colors ${
+                                reply.user_like_type === "dislike"
+                                  ? "text-red-600"
+                                  : isDark
+                                    ? "text-gray-400 hover:text-gray-300"
+                                    : "text-gray-600 hover:text-gray-700"
+                              }`}
+                            >
+                              <Icon
+                                icon={
+                                  reply.user_like_type === "dislike"
+                                    ? "material-symbols:thumb-down"
+                                    : "material-symbols:thumb-down-outline"
+                                }
+                                className="w-3 h-3"
+                              />
+                            </button>
+                            {user && (
+                              <button
+                                onClick={() => handleReportComment(reply.id)}
+                                disabled={reportingComment === reply.id}
+                                className={`flex items-center gap-1 text-xs transition-colors ${
+                                  reportingComment === reply.id
+                                    ? isDark
+                                      ? "text-gray-600 cursor-not-allowed"
+                                      : "text-gray-400 cursor-not-allowed"
+                                    : isDark
+                                      ? "text-gray-400 hover:text-red-400"
+                                      : "text-gray-600 hover:text-red-600"
+                                }`}
+                              >
+                                <Icon
+                                  icon={
+                                    reportingComment === reply.id
+                                      ? "eos-icons:loading"
+                                      : "material-symbols:flag-outline"
+                                  }
+                                  className="w-3 h-3"
+                                />
+                                <TranslatedText>Laporkan</TranslatedText>
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -570,6 +994,14 @@ export default function CommentsSection({ newsId }: CommentsSectionProps) {
           </p>
         </div>
       )}
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={handleCloseReportModal}
+        onSubmit={handleSubmitReport}
+        isSubmitting={reportingComment === commentToReport}
+      />
     </div>
   );
 }

@@ -37,6 +37,12 @@ interface NewsTableProps {
   onDelete?: (newsId: number) => void;
   onBulkDelete?: (newsIds: number[]) => void;
   loading?: boolean;
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
 }
 
 export default function NewsTable({
@@ -45,6 +51,7 @@ export default function NewsTable({
   onDelete,
   onBulkDelete,
   loading,
+  pagination,
 }: NewsTableProps) {
   const { isDark } = useDarkMode();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -150,7 +157,6 @@ export default function NewsTable({
     return date.toLocaleString("id-ID", options);
   };
 
-  
   function getTenure(joinedAt?: string): string | null {
     if (!joinedAt) return null;
     const joined = new Date(joinedAt);
@@ -169,7 +175,6 @@ export default function NewsTable({
     return result.join(" ");
   }
 
-  
   const handleEdit = (news: NewsData) => {
     if (onEdit) {
       onEdit(news.id);
@@ -461,7 +466,12 @@ export default function NewsTable({
                     isDark ? "text-gray-300" : "text-gray-900"
                   }`}
                 >
-                  {index + 1}
+                  {pagination
+                    ? (pagination.currentPage - 1) *
+                        (pagination.itemsPerPage || 10) +
+                      index +
+                      1
+                    : index + 1}
                 </td>
                 <td
                   className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
@@ -774,7 +784,13 @@ export default function NewsTable({
                   <span
                     className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}
                   >
-                    #{index + 1}
+                    #
+                    {pagination
+                      ? (pagination.currentPage - 1) *
+                          (pagination.itemsPerPage || 10) +
+                        index +
+                        1
+                      : index + 1}
                   </span>
                 </div>
               </div>
@@ -800,7 +816,6 @@ export default function NewsTable({
                               : "bg-blue-100 text-blue-600 hover:bg-blue-200"
                           }`}
                           onClick={() => {
-                            
                             setShowAuthorsModal({ authors: [a], anchor: null });
                           }}
                         >

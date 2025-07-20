@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../../lib/auth";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
 
 export async function GET(request: NextRequest) {
   try {
@@ -84,3 +83,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

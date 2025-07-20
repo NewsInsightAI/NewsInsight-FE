@@ -33,6 +33,17 @@ interface CommentData {
   status: string;
   createdAt: string;
   updatedAt: string;
+  likes?: number;
+  dislikes?: number;
+  reports?: number;
+  parentId?: number | null;
+  parentComment?: {
+    id: number;
+    content: string;
+    reader: {
+      name: string;
+    };
+  } | null;
 }
 
 export default function Comments() {
@@ -50,6 +61,12 @@ export default function Comments() {
     "all" | "published" | "waiting"
   >("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10,
+  });
   const hasFetchedRef = useRef(false);
 
   useEffect(() => {
@@ -109,6 +126,12 @@ export default function Comments() {
             published_at?: string;
             news_id: number;
             news_title: string;
+            parent_id?: number;
+            likes?: number;
+            dislikes?: number;
+            reports?: number;
+            parent_content?: string;
+            parent_reader_name?: string;
           }) => ({
             id: comment.id,
             reader: {
@@ -127,6 +150,20 @@ export default function Comments() {
             status: comment.status === "published" ? "published" : "waiting",
             createdAt: comment.created_at,
             updatedAt: comment.updated_at,
+            likes: comment.likes || 0,
+            dislikes: comment.dislikes || 0,
+            reports: comment.reports || 0,
+            parentId: comment.parent_id || null,
+            parentComment:
+              comment.parent_id && comment.parent_content
+                ? {
+                    id: comment.parent_id,
+                    content: comment.parent_content,
+                    reader: {
+                      name: comment.parent_reader_name || "Unknown",
+                    },
+                  }
+                : null,
           })
         );
 
@@ -159,6 +196,25 @@ export default function Comments() {
         });
 
         setCommentsData(transformedData);
+
+        // Handle pagination if available in response
+        if (data.metadata?.pagination) {
+          setPagination({
+            currentPage: data.metadata.pagination.currentPage || 1,
+            totalPages: data.metadata.pagination.totalPages || 1,
+            totalItems:
+              data.metadata.pagination.totalComments || transformedData.length,
+            itemsPerPage: 10,
+          });
+        } else {
+          // Default pagination for client-side pagination
+          setPagination({
+            currentPage: 1,
+            totalPages: 1,
+            totalItems: transformedData.length,
+            itemsPerPage: 10,
+          });
+        }
       } catch (error) {
         console.error("Error fetching comments:", error);
         showToast("Gagal memuat data komentar", "error");
@@ -477,6 +533,7 @@ export default function Comments() {
               onApprove={handleApproveComment}
               onReject={handleRejectComment}
               onDelete={handleDeleteComment}
+              pagination={pagination}
             />
           )}
         </div>

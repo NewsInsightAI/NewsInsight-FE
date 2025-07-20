@@ -177,6 +177,12 @@ export default function Users() {
             datas={users}
             loading={loading}
             onRefresh={refreshUsers}
+            pagination={{
+              currentPage: pagination?.currentPage || 1,
+              totalPages: pagination?.totalPages || 1,
+              totalItems: pagination?.totalUsers || users.length,
+              itemsPerPage: 10,
+            }}
           />
           {/* Pagination */}
           {!loading && users.length > 0 && pagination && (

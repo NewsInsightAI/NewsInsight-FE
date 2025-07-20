@@ -14,6 +14,7 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { TranslatedText } from "@/components/TranslatedText";
 import { useLanguage } from "@/context/LanguageContext";
 import { CategoriesDropdown } from "@/components/CategoriesDropdown";
+import { SearchSidebar } from "@/components/SearchSidebar";
 
 interface ProfileData {
   id: number;
@@ -25,6 +26,16 @@ interface ProfileData {
   headline: string | null;
   biography: string | null;
   news_interest: string[] | null;
+}
+
+interface SearchResult {
+  id: string;
+  hashed_id: string;
+  title: string;
+  featured_image: string;
+  published_at: string;
+  category_name: string;
+  authors?: { author_name: string }[];
 }
 
 export const Navbar = () => {
@@ -39,6 +50,115 @@ export const Navbar = () => {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [isBackendConnected, setIsBackendConnected] = useState(false);
   const [isCheckingBackend, setIsCheckingBackend] = useState(true);
+
+  // Search states
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Search functionality
+  const performSearch = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      // 1. Save search history first (only for authenticated users)
+      if (isUserAuthenticated()) {
+        await saveSearchHistory(query);
+      }
+
+      // 2. Then perform news search
+      const response = await fetch(
+        `/api/news/search?q=${encodeURIComponent(query)}&limit=6`
+      );
+      const result = await response.json();
+
+      if (response.ok && result.status === "success") {
+        setSearchResults(result.data?.news || []);
+      } else {
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Save search history
+  const saveSearchHistory = async (query: string) => {
+    // Only save search history if user is logged in
+    if (!isUserAuthenticated()) {
+      console.log("User not authenticated, skipping search history save");
+      return;
+    }
+
+    try {
+      // Call directly to backend since we made it public with optional auth
+      const backendUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+
+      // Add auth header since user is logged in
+      const sessionWithToken = session as { backendToken?: string };
+      if (sessionWithToken?.backendToken) {
+        headers.Authorization = `Bearer ${sessionWithToken.backendToken}`;
+      }
+
+      await fetch(`${backendUrl}/search/history`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ searchQuery: query.trim() }),
+      });
+
+      // Trigger refresh search sidebar data after saving history
+      window.dispatchEvent(new CustomEvent("search-history-updated"));
+
+      console.log("Search history saved successfully for authenticated user");
+    } catch (error) {
+      console.error("Error saving search history:", error);
+      // Don't block the search if history saving fails
+    }
+  };
+
+  // Handle search input
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+
+    // Debounce search - kurangi delay agar lebih responsif
+    const timeoutId = setTimeout(() => {
+      performSearch(value);
+    }, 150); // Reduced from 300ms to 150ms
+
+    return () => clearTimeout(timeoutId);
+  };
+
+  // Handle search focus
+  const handleSearchFocus = () => {
+    console.log("Search focus - dispatching search-expanded event");
+    setIsSearchExpanded(true);
+    window.dispatchEvent(new CustomEvent("search-expanded"));
+  };
+
+  // Handle search blur
+  const handleSearchBlur = () => {
+    console.log("Search blur - will dispatch search-collapsed event");
+    // Delay blur to allow clicking on results
+    setTimeout(() => {
+      setIsSearchExpanded(false);
+      window.dispatchEvent(new CustomEvent("search-collapsed"));
+    }, 200);
+  };
   const checkBackendConnection = React.useCallback(async () => {
     if (status === "authenticated") {
       try {
@@ -625,11 +745,15 @@ export const Navbar = () => {
       {/* Search bar: mobile di bawah, desktop di tengah */}
       <div className="w-full md:w-[280px] mx-auto mt-2 md:mt-0 order-2 md:order-none">
         <div className="relative w-full">
-          {" "}
           <input
+            ref={searchInputRef}
             type="text"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            onFocus={handleSearchFocus}
+            onBlur={handleSearchBlur}
             placeholder={searchPlaceholder}
-            className={`w-full px-5 md:px-6 py-2.5 md:py-3 border ${isDark ? "border-gray-600 bg-[#1A1A1A] text-white placeholder:text-gray-400 shadow-lg shadow-blue-500/10" : "border-[#E2E2E2] bg-white text-black placeholder:text-[#818181]"} rounded-full focus:outline-[#367AF2] text-sm md:text-base transition-all duration-300`}
+            className={`w-full px-5 md:px-6 py-2.5 md:py-3 border ${isDark ? "border-gray-600 bg-[#1A1A1A] text-white placeholder:text-gray-400 shadow-lg shadow-blue-500/10" : "border-[#E2E2E2] bg-white text-black placeholder:text-[#818181]"} rounded-full focus:outline-[#367AF2] text-sm md:text-base transition-all duration-300 ${isSearchExpanded ? "z-50" : ""}`}
           />
           <Icon
             icon="material-symbols:search-rounded"
@@ -638,6 +762,22 @@ export const Navbar = () => {
           />
         </div>
       </div>
+
+      {/* Search Sidebar */}
+      <SearchSidebar
+        isVisible={isSearchExpanded}
+        searchQuery={searchQuery}
+        searchResults={searchResults}
+        isSearching={isSearching}
+        isUserLoggedIn={isUserAuthenticated()}
+        onSearchClick={(query) => {
+          setSearchQuery(query);
+          performSearch(query);
+          if (searchInputRef.current) {
+            searchInputRef.current.focus();
+          }
+        }}
+      />
     </nav>
   );
 };

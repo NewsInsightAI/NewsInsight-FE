@@ -4,26 +4,30 @@ import NewsCard from "@/components/NewsCard";
 import React, { useState, useEffect } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useDarkMode } from "@/context/DarkModeContext";
-import { useBookmarks } from "@/hooks/useBookmarks";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useSavedNews } from "@/hooks/useSavedNews";
 import { useReadingHistory } from "@/hooks/useReadingHistory";
-import { BookmarkData } from "@/lib/api/bookmarks";
+import { SavedNewsData } from "@/hooks/useSavedNews";
 import { ReadingHistoryData } from "@/lib/api/readingHistory";
 import { useProfileTab } from "@/context/ProfileTabContext";
 import Pagination from "@/components/ui/Pagination";
 
 export default function Profile() {
   const { isDark } = useDarkMode();
+  const { status } = useSession();
+  const router = useRouter();
   const { activeTab } = useProfileTab();
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true);
 
   const {
-    bookmarks,
-    loading: bookmarksLoading,
-    error: bookmarksError,
-    pagination: bookmarksPagination,
-    goToPage: goToBookmarksPage,
-    refetch: refetchBookmarks,
-  } = useBookmarks();
+    savedNews,
+    loading: savedNewsLoading,
+    error: savedNewsError,
+    pagination: savedNewsPagination,
+    goToPage: goToSavedNewsPage,
+    refetch: refetchSavedNews,
+  } = useSavedNews();
 
   const {
     history,
@@ -34,15 +38,45 @@ export default function Profile() {
     refetch: refetchHistory,
   } = useReadingHistory();
 
+  // Redirect ke login jika belum login
+  useEffect(() => {
+    if (status === "loading") return; // Masih loading
+
+    if (status === "unauthenticated") {
+      router.push("/login");
+      return;
+    }
+  }, [status, router]);
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      setLoading(false);
+      setPageLoading(false);
     }, 1000);
 
     return () => clearTimeout(timer);
   }, []);
 
-  const formatNewsData = (item: BookmarkData | ReadingHistoryData) => ({
+  // Jika belum login, tampilkan loading atau redirect
+  if (status === "loading") {
+    return (
+      <div
+        className={`min-h-screen flex items-center justify-center ${
+          isDark ? "bg-[#1A1A1A] text-white" : "bg-white text-black"
+        }`}
+      >
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-current mx-auto mb-4"></div>
+          <p>Memuat...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return null; // Akan redirect ke login
+  }
+
+  const formatNewsData = (item: SavedNewsData | ReadingHistoryData) => ({
     source: item.category_name || "NewsInsight",
     title: item.title,
     imageUrl: item.image_url,
@@ -51,17 +85,17 @@ export default function Profile() {
     category: item.category_name || "Umum",
   });
 
-  const currentData = activeTab === "bookmarks" ? bookmarks : history;
+  const currentData = activeTab === "bookmarks" ? savedNews : history;
   const currentLoading =
-    activeTab === "bookmarks" ? bookmarksLoading : historyLoading;
+    activeTab === "bookmarks" ? savedNewsLoading : historyLoading;
   const currentError =
-    activeTab === "bookmarks" ? bookmarksError : historyError;
+    activeTab === "bookmarks" ? savedNewsError : historyError;
   const currentPagination =
-    activeTab === "bookmarks" ? bookmarksPagination : historyPagination;
+    activeTab === "bookmarks" ? savedNewsPagination : historyPagination;
   const currentGoToPage =
-    activeTab === "bookmarks" ? goToBookmarksPage : goToHistoryPage;
+    activeTab === "bookmarks" ? goToSavedNewsPage : goToHistoryPage;
 
-  if (loading) {
+  if (pageLoading) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-[400px]">
         <div className="flex flex-col items-center gap-3">
@@ -92,7 +126,7 @@ export default function Profile() {
               className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
             >
               {activeTab === "bookmarks"
-                ? "Memuat bookmark..."
+                ? "Memuat simpanan..."
                 : "Memuat riwayat..."}
             </p>
           </div>
@@ -125,7 +159,7 @@ export default function Profile() {
           <button
             onClick={() => {
               if (activeTab === "bookmarks") {
-                refetchBookmarks();
+                refetchSavedNews();
               } else {
                 refetchHistory();
               }
@@ -158,7 +192,7 @@ export default function Profile() {
             }`}
           >
             {activeTab === "bookmarks"
-              ? "Belum Ada Bookmark"
+              ? "Belum Ada Simpanan"
               : "Belum Ada Riwayat"}
           </h3>
           <p
@@ -167,8 +201,8 @@ export default function Profile() {
             }`}
           >
             {activeTab === "bookmarks"
-              ? "Mulai bookmark artikel yang menarik untuk membacanya nanti."
-              : "Riwayat bacaan Anda akan muncul di sini setelah Anda membaca artikel."}
+              ? "Mulai simpan berita yang menarik untuk dibaca nanti."
+              : "Riwayat bacaan Anda akan muncul di sini setelah Anda membaca berita."}
           </p>
         </div>
       )}

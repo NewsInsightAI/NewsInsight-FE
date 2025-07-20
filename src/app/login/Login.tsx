@@ -88,7 +88,7 @@ export default function Login() {
   const advancedFeatures = [
     "Update berita real-time",
     "Komentar dan diskusi komunitas",
-    "Bookmark berita favorit",
+    "Simpan berita favorit",
     "Personalisasi kategori berita",
   ];
   const handleLogin = async (e?: React.FormEvent) => {

@@ -45,6 +45,7 @@ export default function News() {
   const [newsData, setNewsData] = useState<NewsData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [hasInitialFetch, setHasInitialFetch] = useState(false);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -92,14 +93,12 @@ export default function News() {
 
         const data = await response.json();
 
-        console.log("API Response:", data);
-
         if (data.data?.pagination) {
           setPagination({
             currentPage: data.data.pagination.currentPage || page,
             totalPages: data.data.pagination.totalPages || 1,
             totalItems:
-              data.data.pagination.totalNews || data.data.news?.length || 0,
+              data.data.pagination.totalCount || data.data.news?.length || 0,
           });
         } else {
           setPagination({
@@ -192,17 +191,23 @@ export default function News() {
   );
 
   useEffect(() => {
-    if (!session) return;
+    // Only fetch if we have a valid session token
+    if (!session?.backendToken) return;
 
-    const timeoutId = setTimeout(
-      () => {
+    // For search terms, always fetch with debounce
+    if (searchTerm) {
+      const timeoutId = setTimeout(() => {
         fetchNewsData(searchTerm, 1);
-      },
-      searchTerm ? 500 : 0
-    );
+      }, 500);
+      return () => clearTimeout(timeoutId);
+    }
 
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm, session, fetchNewsData]);
+    // For initial load, only fetch once
+    if (!hasInitialFetch) {
+      fetchNewsData("", 1);
+      setHasInitialFetch(true);
+    }
+  }, [searchTerm, session, fetchNewsData, hasInitialFetch]);
 
   const handlePageChange = (page: number) => {
     fetchNewsData(searchTerm, page);
@@ -337,6 +342,12 @@ export default function News() {
             }))}
             onEdit={handleEditNews}
             onDelete={handleDeleteNews}
+            pagination={{
+              currentPage: pagination.currentPage,
+              totalPages: pagination.totalPages,
+              totalItems: pagination.totalItems,
+              itemsPerPage: 10,
+            }}
           />
         )}
 

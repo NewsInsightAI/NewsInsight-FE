@@ -194,7 +194,7 @@ export default function Register() {
   const advancedFeatures = [
     "Update berita real-time",
     "Komentar dan diskusi komunitas",
-    "Bookmark berita favorit",
+    "Simpan berita favorit",
     "Personalisasi kategori berita",
   ];
 

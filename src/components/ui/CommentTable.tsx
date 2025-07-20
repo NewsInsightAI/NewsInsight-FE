@@ -24,6 +24,17 @@ interface CommentData {
   status: string;
   createdAt: string;
   updatedAt: string;
+  likes?: number;
+  dislikes?: number;
+  reports?: number;
+  parentId?: number | null;
+  parentComment?: {
+    id: number;
+    content: string;
+    reader: {
+      name: string;
+    };
+  } | null;
 }
 
 interface CommentTableProps {
@@ -33,6 +44,12 @@ interface CommentTableProps {
   onDelete?: (commentId: number) => void;
   onBulkDelete?: (commentIds: number[]) => void;
   loading?: boolean;
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
 }
 
 export default function CommentTable({
@@ -42,6 +59,7 @@ export default function CommentTable({
   onDelete,
   onBulkDelete,
   loading,
+  pagination,
 }: CommentTableProps) {
   const { isDark } = useDarkMode();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -84,9 +102,8 @@ export default function CommentTable({
     };
     return date.toLocaleString("id-ID", options);
   };
-  
+
   const getStatusBadge = (status: string) => {
-    
     switch (status) {
       case "published":
         return (
@@ -129,6 +146,66 @@ export default function CommentTable({
           </span>
         );
     }
+  };
+
+  const getCommentTypeBadge = (comment: CommentData) => {
+    if (comment.parentId) {
+      return (
+        <span className="flex items-center gap-1 px-2 md:px-3 py-1 md:py-2 rounded-full border border-[#8B5CF6] bg-[#8B5CF6]/15 text-[#8B5CF6] text-xs md:text-sm font-medium w-fit">
+          <Icon
+            icon="material-symbols:reply"
+            className="w-3 h-3 md:w-4 md:h-4"
+          />
+          <span className="hidden sm:inline md:inline">Balasan</span>
+        </span>
+      );
+    } else {
+      return (
+        <span className="flex items-center gap-1 px-2 md:px-3 py-1 md:py-2 rounded-full border border-[#0EA5E9] bg-[#0EA5E9]/15 text-[#0EA5E9] text-xs md:text-sm font-medium w-fit">
+          <Icon
+            icon="material-symbols:comment"
+            className="w-3 h-3 md:w-4 md:h-4"
+          />
+          <span className="hidden sm:inline md:inline">Induk</span>
+        </span>
+      );
+    }
+  };
+
+  const getEngagementStats = (comment: CommentData) => {
+    return (
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-3 text-xs">
+          <div className="flex items-center gap-1">
+            <Icon
+              icon="material-symbols:thumb-up"
+              className="w-3 h-3 text-green-500"
+            />
+            <span className={isDark ? "text-gray-300" : "text-gray-600"}>
+              {comment.likes || 0}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Icon
+              icon="material-symbols:thumb-down"
+              className="w-3 h-3 text-red-500"
+            />
+            <span className={isDark ? "text-gray-300" : "text-gray-600"}>
+              {comment.dislikes || 0}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Icon
+              icon="material-symbols:flag-outline"
+              className="w-3 h-3 text-orange-500"
+            />
+            <span className={isDark ? "text-gray-300" : "text-gray-600"}>
+              {comment.reports || 0}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const handleDeleteComment = (comment: CommentData) => {
@@ -379,6 +456,20 @@ export default function CommentTable({
                 Isi Komentar
               </th>
               <th
+                className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[120px] ${
+                  isDark ? "text-gray-300" : "text-black"
+                }`}
+              >
+                Tipe
+              </th>
+              <th
+                className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[150px] ${
+                  isDark ? "text-gray-300" : "text-black"
+                }`}
+              >
+                Engagement
+              </th>
+              <th
                 className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[200px] ${
                   isDark ? "text-gray-300" : "text-black"
                 }`}
@@ -441,7 +532,10 @@ export default function CommentTable({
                     isDark ? "text-gray-300" : "text-gray-900"
                   }`}
                 >
-                  {index + 1}
+                  {((pagination?.currentPage || 1) - 1) *
+                    (pagination?.itemsPerPage || 10) +
+                    index +
+                    1}
                 </td>
                 <td
                   className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm font-medium ${
@@ -461,6 +555,26 @@ export default function CommentTable({
                   >
                     {report.comment.content}
                   </div>
+                  {report.parentId && report.parentComment && (
+                    <div className="mt-1 text-xs text-gray-500 italic">
+                      Membalas: &quot;
+                      {report.parentComment.content.substring(0, 30)}...&quot;
+                    </div>
+                  )}
+                </td>
+                <td
+                  className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
+                    isDark ? "text-gray-300" : "text-gray-900"
+                  }`}
+                >
+                  {getCommentTypeBadge(report)}
+                </td>
+                <td
+                  className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
+                    isDark ? "text-gray-300" : "text-gray-900"
+                  }`}
+                >
+                  {getEngagementStats(report)}
                 </td>
                 <td
                   className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
@@ -593,7 +707,11 @@ export default function CommentTable({
                   <span
                     className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}
                   >
-                    #{index + 1}
+                    #
+                    {((pagination?.currentPage || 1) - 1) *
+                      (pagination?.itemsPerPage || 10) +
+                      index +
+                      1}
                   </span>
                 </div>
                 <p
@@ -608,7 +726,6 @@ export default function CommentTable({
 
             {/* Comment Content */}
             <div className="mb-3">
-              {" "}
               <p
                 className={`text-sm leading-5 ${
                   isDark ? "text-gray-300" : "text-gray-600"
@@ -616,10 +733,37 @@ export default function CommentTable({
               >
                 &ldquo;{comment.comment.content}&rdquo;
               </p>
+              {comment.parentId && comment.parentComment && (
+                <div className="mt-2 p-2 rounded-lg bg-gray-100 dark:bg-gray-700">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Membalas komentar dari {comment.parentComment.reader.name}:
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-300 italic mt-1">
+                    &quot;{comment.parentComment.content.substring(0, 50)}
+                    ...&quot;
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Card Content */}
             <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span
+                  className={`text-xs font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                >
+                  Tipe:
+                </span>
+                <div>{getCommentTypeBadge(comment)}</div>
+              </div>
+              <div className="flex justify-between items-center">
+                <span
+                  className={`text-xs font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                >
+                  Engagement:
+                </span>
+                <div>{getEngagementStats(comment)}</div>
+              </div>
               <div className="flex justify-between items-center">
                 <span
                   className={`text-xs font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}

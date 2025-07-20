@@ -30,8 +30,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const queryString = searchParams.toString();
 
-    const apiUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
     const fullUrl = `${apiUrl}/users${queryString ? `?${queryString}` : ""}`;
 
     console.log("Making request to backend:", {
@@ -180,3 +179,4 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
+

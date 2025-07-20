@@ -1,11 +1,11 @@
-"use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useDarkMode } from "@/context/DarkModeContext";
-import { useLanguage } from "@/context/LanguageContext";
 import { TranslatedText } from "@/components/TranslatedText";
-import { formatTimestamp } from "@/utils/formatTimestamp";
+import { formatRelativeTime } from "@/utils/formatRelativeTime";
+import { formatMetricNumber, getMetricIcon } from "@/utils/formatMetrics";
+import { Icon } from "@iconify/react";
 
 interface NewsCard {
   id?: string;
@@ -15,6 +15,9 @@ interface NewsCard {
   timestamp: string;
   category?: string;
   link: string;
+  viewCount?: number;
+  shareCount?: number;
+  commentCount?: number;
 }
 
 export default function NewsCard({
@@ -27,14 +30,23 @@ export default function NewsCard({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   category,
   link,
+  viewCount = 0,
+  shareCount = 0,
+  commentCount = 0,
 }: NewsCard) {
   const { isDark } = useDarkMode();
-  const { currentLanguage } = useLanguage();
   const router = useRouter();
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
 
-  const formattedTimestamp = formatTimestamp(timestamp, currentLanguage.code);
+  const relativeTime = formatRelativeTime(timestamp);
+
+  console.log("NewsCard Debug:", {
+    title: title.substring(0, 50),
+    imageUrl,
+    timestamp,
+    relativeTime,
+  });
 
   const blurDataURL =
     "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkrHB0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q==";
@@ -103,18 +115,64 @@ export default function NewsCard({
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-xs sm:text-sm font-bold bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text">
               {source}
-            </p>{" "}
+            </p>
             <div
               className={`h-1 w-1 ${isDark ? "bg-gray-500" : "bg-gray-400"} rounded-full`}
             />
             <p
               className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
             >
-              {formattedTimestamp}
+              {relativeTime}
             </p>
           </div>
+
+          {/* Metrics Row - Only show if there are metrics to display */}
+          {(viewCount > 0 || shareCount > 0 || commentCount > 0) && (
+            <div className="flex items-center gap-3 mt-1">
+              {viewCount > 0 && (
+                <div className="flex items-center gap-1">
+                  <Icon
+                    icon={getMetricIcon("views")}
+                    className={`w-3 h-3 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                  />
+                  <span
+                    className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                  >
+                    {formatMetricNumber(viewCount)}
+                  </span>
+                </div>
+              )}
+              {shareCount > 0 && (
+                <div className="flex items-center gap-1">
+                  <Icon
+                    icon={getMetricIcon("shares")}
+                    className={`w-3 h-3 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                  />
+                  <span
+                    className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                  >
+                    {formatMetricNumber(shareCount)}
+                  </span>
+                </div>
+              )}
+              {commentCount > 0 && (
+                <div className="hidden sm:flex items-center gap-1">
+                  <Icon
+                    icon={getMetricIcon("comments")}
+                    className={`w-3 h-3 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                  />
+                  <span
+                    className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                  >
+                    {formatMetricNumber(commentCount)}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
           <p
-            className={`${isDark ? "text-white" : "text-black"} font-medium text-sm sm:text-base leading-tight`}
+            className={`${isDark ? "text-white" : "text-black"} font-medium text-sm sm:text-base leading-tight ${viewCount > 0 || shareCount > 0 || commentCount > 0 ? "mt-2" : "mt-1"}`}
           >
             <TranslatedText>{title}</TranslatedText>
           </p>

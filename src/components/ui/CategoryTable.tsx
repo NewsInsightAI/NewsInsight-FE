@@ -31,6 +31,12 @@ interface CategoryTableProps {
   onBulkDelete?: (ids: number[]) => void;
   onSort?: (order: "asc" | "desc") => void;
   sortOrder?: "asc" | "desc";
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
 }
 
 export default function CategoryTable({
@@ -42,6 +48,7 @@ export default function CategoryTable({
   onBulkDelete,
   onSort,
   sortOrder = "asc",
+  pagination,
 }: CategoryTableProps) {
   const { isDark } = useDarkMode();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -405,7 +412,10 @@ export default function CategoryTable({
                       isDark ? "text-gray-300" : "text-gray-900"
                     }`}
                   >
-                    {index + 1}
+                    {((pagination?.currentPage || 1) - 1) *
+                      (pagination?.itemsPerPage || 10) +
+                      index +
+                      1}
                   </td>
                   <td
                     className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm font-medium ${
@@ -524,7 +534,11 @@ export default function CategoryTable({
                   <span
                     className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}
                   >
-                    #{index + 1}
+                    #
+                    {((pagination?.currentPage || 1) - 1) *
+                      (pagination?.itemsPerPage || 10) +
+                      index +
+                      1}
                   </span>
                 </div>
                 <p

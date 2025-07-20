@@ -4,8 +4,17 @@ import React from "react";
 import { useDarkMode } from "@/context/DarkModeContext";
 import { TranslatedText } from "@/components/TranslatedText";
 
+interface NewsItem {
+  id: number;
+  title: string;
+  hashed_id: string;
+  featured_image: string;
+  category_name: string;
+  view_count: number;
+}
+
 interface Props {
-  newsList: string[];
+  newsList: NewsItem[];
   category: string[];
 }
 
@@ -30,14 +39,14 @@ export default function PopularNewsCard({ newsList, category }: Props) {
         <div className="flex flex-col gap-2 overflow-y-auto pr-2 w-full flex-1 min-h-[100px] scrollbar-thin scrollbar-thumb-white/40 scrollbar-track-transparent">
           {newsList.map((news, index) => (
             <div
-              key={index}
-              className="flex items-start justify-start gap-2 border border-white/30 rounded-xl p-2 text-white hover:bg-white/10 transition"
+              key={news.id || index}
+              className="flex items-center justify-start gap-2 border border-white/30 rounded-xl p-2 text-white hover:bg-white/10 transition"
             >
               <p className="text-sm font-bold text-white/80 flex-shrink-0">
                 #{index + 1}
               </p>
-              <p className="text-xs leading-relaxed">
-                <TranslatedText>{news}</TranslatedText>
+              <p className="text-xs">
+                <TranslatedText>{news.title}</TranslatedText>
               </p>
             </div>
           ))}
