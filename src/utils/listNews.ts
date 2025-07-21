@@ -11,6 +11,7 @@ export interface NewsItem {
   content?: string;
   reporters?: string[];
   editors?: string[];
+  tags?: string[];
 }
 
 const newsData = [
@@ -27,6 +28,7 @@ const newsData = [
       "Harshita Meenaktshi di Bengaluru",
     ],
     editors: ["Mark Porter"],
+    tags: ["Google", "Gemini Advanced", "AI", "Pendidikan", "Amerika Serikat"],
     content: `
       <p>Google mengumumkan bahwa mereka akan memberikan akses gratis ke <strong>Gemini Advanced</strong> untuk para pelajar di Amerika Serikat. Program ini merupakan bagian dari inisiatif perusahaan untuk mendukung pendidikan dan teknologi AI.</p>
       
@@ -62,6 +64,13 @@ const newsData = [
     category: "Teknologi",
     reporters: ["Sarah Mitchell di San Francisco", "Ahmad Rahman di Jakarta"],
     editors: ["Jennifer Smith", "Michael Johnson"],
+    tags: [
+      "Meta",
+      "Instagram",
+      "WhatsApp",
+      "Artificial Intelligence",
+      "Social Media",
+    ],
   },
   {
     id: "news-003",
@@ -70,6 +79,7 @@ const newsData = [
     imageUrl: "/images/main_news.png",
     timestamp: "2025-04-26T00:00:00Z",
     category: "Politik",
+    tags: ["Pemerintah", "Energi Terbarukan", "Kebijakan", "Lingkungan"],
   },
   {
     id: "news-004",
@@ -78,6 +88,7 @@ const newsData = [
     imageUrl: "/images/main_news.png",
     timestamp: "2025-04-25T00:00:00Z",
     category: "Olahraga",
+    tags: ["Timnas Indonesia", "Piala Asia", "Final", "Sepak Bola"],
   },
   {
     id: "news-005",
@@ -86,6 +97,7 @@ const newsData = [
     imageUrl: "/images/main_news.png",
     timestamp: "2025-04-24T00:00:00Z",
     category: "Kesehatan",
+    tags: ["Kedokteran", "Terapi Gen", "Kanker", "Penelitian"],
   },
   {
     id: "news-006",

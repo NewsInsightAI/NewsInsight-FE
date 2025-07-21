@@ -99,7 +99,7 @@ export default function Home() {
                   const transformedNews = (newsResult.data?.news || []).map(
                     (news: ApiNewsItem) => ({
                       id: news.hashed_id || news.id,
-                      source: news.authors?.[0]?.author_name || "NewsInsight",
+                      source: news.category_name || categoryInfo.label,
                       title: news.title,
                       imageUrl: news.featured_image || "/images/main_news.png",
                       timestamp: news.published_at || news.created_at,
@@ -151,7 +151,7 @@ export default function Home() {
             const newsItem = data.data.news[0];
             const transformedNews: NewsItem = {
               id: newsItem.hashed_id || newsItem.id,
-              source: newsItem.authors?.[0]?.author_name || "NewsInsight",
+              source: newsItem.category_name || "Berita",
               title: newsItem.title,
               imageUrl: newsItem.featured_image || "/images/main_news.png",
               timestamp: newsItem.published_at || newsItem.created_at,
@@ -188,7 +188,7 @@ export default function Home() {
           if (data.data?.news) {
             const transformedNews = data.data.news.map((news: ApiNewsItem) => ({
               id: news.hashed_id || news.id,
-              source: news.authors?.[0]?.author_name || "NewsInsight",
+              source: news.category_name || "Berita",
               title: news.title,
               imageUrl: news.featured_image || "/images/main_news.png",
               timestamp: news.published_at || news.created_at,
@@ -225,7 +225,7 @@ export default function Home() {
           if (data.data?.news) {
             const transformedNews = data.data.news.map((news: ApiNewsItem) => ({
               id: news.hashed_id || news.id,
-              source: news.authors?.[0]?.author_name || "NewsInsight",
+              source: news.category_name || "Berita",
               title: news.title,
               imageUrl: news.featured_image || "/images/main_news.png",
               timestamp: news.published_at || news.created_at,
@@ -254,7 +254,7 @@ export default function Home() {
   const fallbackMainNews = {
     id: "main-news-001",
     category: "Teknologi",
-    source: "Reuters",
+    source: "Teknologi",
     timestamp: "2025-04-28T00:00:00Z",
     title:
       "Penghargaan Teknologi Ban Internasional untuk Inovasi dan Keunggulan 2025 - pemenangnya diumumkan!",
@@ -265,7 +265,6 @@ export default function Home() {
   const currentMainNews = mainNews || fallbackMainNews;
 
   const newsCategory = currentMainNews.category;
-  const newsAuthor = currentMainNews.source;
   const newsPublishDate = formatRelativeTime(currentMainNews.timestamp);
   const newsTitle = currentMainNews.title;
   const mainNewsUrl = currentMainNews.link;
@@ -491,9 +490,11 @@ export default function Home() {
 
               <div className="flex flex-col gap-1 sm:gap-2 w-full">
                 <p className="text-white text-xs sm:text-sm font-semibold">
-                  {newsAuthor || "Nama Penulis"} •{" "}
+                  <TranslatedText>NewsInsight</TranslatedText> •{" "}
                   <span className="font-normal">
-                    {newsPublishDate || "Tanggal Publikasi"}
+                    <TranslatedText>
+                      {newsPublishDate || "Tanggal Publikasi"}
+                    </TranslatedText>
                   </span>
                 </p>
                 <p className="text-white text-lg sm:text-2xl lg:text-[32px] font-semibold w-full sm:w-3/4 lg:w-1/2 leading-tight">

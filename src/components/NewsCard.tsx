@@ -23,11 +23,11 @@ interface NewsCard {
 export default function NewsCard({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   id,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   source,
   title,
   imageUrl,
   timestamp,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   category,
   link,
   viewCount = 0,
@@ -107,7 +107,7 @@ export default function NewsCard({
         <div className="p-3 sm:p-4 flex flex-col gap-1 sm:gap-2 w-full">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-xs sm:text-sm font-bold bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-transparent bg-clip-text">
-              {source}
+              <TranslatedText>{category || "Berita"}</TranslatedText>
             </p>
             <div
               className={`h-1 w-1 ${isDark ? "bg-gray-500" : "bg-gray-400"} rounded-full`}
@@ -115,7 +115,7 @@ export default function NewsCard({
             <p
               className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
             >
-              {relativeTime}
+              <TranslatedText>{relativeTime}</TranslatedText>
             </p>
           </div>
 

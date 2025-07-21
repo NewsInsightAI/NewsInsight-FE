@@ -9,6 +9,7 @@ import {
   generateHashedId,
   generateSlug,
   formatDateForUrl,
+  generateNewsUrl,
 } from "@/utils/newsUrlGenerator";
 import { useDarkMode } from "@/context/DarkModeContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -17,8 +18,8 @@ import { TranslatedContent } from "@/components/TranslatedContent";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CommentsSection from "@/components/CommentsSection";
 import NewsReportModal from "@/components/NewsReportModal";
-import { Vibrant } from "node-vibrant/browser";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import { Vibrant } from "node-vibrant/browser";
 import { formatTimestamp } from "@/utils/formatTimestamp";
 import {
   useSavedNews,
@@ -48,10 +49,15 @@ export default function NewsDetailPage() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+  const [relatedNews, setRelatedNews] = useState<NewsItem[]>([]);
+  const [trendingNews, setTrendingNews] = useState<NewsItem[]>([]);
+  const [loadingRelated, setLoadingRelated] = useState(true);
+  const [loadingTrending, setLoadingTrending] = useState(true);
 
   const [translatedContentForTTS, setTranslatedContentForTTS] =
     useState<string>("");
   const trackingRef = useRef<boolean>(false);
+  const lastTrackedNewsId = useRef<number | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
   // Custom hooks for news interactions
@@ -76,7 +82,7 @@ export default function NewsDetailPage() {
     loadSummary,
   } = useNewsSummary(shouldInitializeHooks ? newsId : 0);
   const newsInteractions = useNewsInteractions();
-  const { addReadingHistory } = useReadingHistory();
+  const { addReadingHistory, trackNewsView } = useReadingHistory();
   const { showToast } = useToast();
 
   const calculateReadingTime = (text: string): number => {
@@ -350,6 +356,7 @@ export default function NewsDetailPage() {
                         : author.author_name
                   ) || [],
                 editors: [], // Backend belum provide data editors, bisa ditambah nanti
+                tags: newsItem.tags || [], // Include tags from API
               };
 
               setNews(transformedNews);
@@ -432,6 +439,107 @@ export default function NewsDetailPage() {
     }
   }, [news]);
 
+  // Fetch related news and trending news from backend
+  useEffect(() => {
+    const fetchSidebarNews = async () => {
+      if (!news || !news.category) return;
+
+      try {
+        // Fetch related news (same category, exclude current news)
+        const relatedResponse = await fetch(
+          `/api/news/category/${news.category.toLowerCase()}?limit=6&public=true`
+        );
+
+        if (relatedResponse.ok) {
+          const relatedData = await relatedResponse.json();
+          if (relatedData.data?.news) {
+            const transformedRelated = relatedData.data.news
+              .filter((item: { id: number }) => item.id !== newsId) // Exclude current news
+              .slice(0, 4)
+              .map(
+                (newsItem: {
+                  id: number;
+                  hashed_id?: string;
+                  title: string;
+                  featured_image?: string;
+                  published_at?: string;
+                  created_at: string;
+                  category_name?: string;
+                  authors?: Array<{ author_name: string }>;
+                }) => ({
+                  id: newsItem.hashed_id || newsItem.id,
+                  source: newsItem.authors?.[0]?.author_name || "NewsInsight",
+                  title: newsItem.title,
+                  imageUrl: newsItem.featured_image || "/images/main_news.png",
+                  timestamp: newsItem.published_at || newsItem.created_at,
+                  category: newsItem.category_name || news.category,
+                  link: generateNewsUrl(
+                    newsItem.category_name || news.category,
+                    newsItem.title,
+                    newsItem.published_at || newsItem.created_at,
+                    newsItem.hashed_id || newsItem.id.toString()
+                  ),
+                })
+              );
+            setRelatedNews(transformedRelated);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching related news:", error);
+      } finally {
+        setLoadingRelated(false);
+      }
+
+      try {
+        // Fetch trending news
+        const trendingResponse = await fetch(
+          "/api/news?limit=6&sort=trending&public=true"
+        );
+
+        if (trendingResponse.ok) {
+          const trendingData = await trendingResponse.json();
+          if (trendingData.data?.news) {
+            const transformedTrending = trendingData.data.news
+              .filter((item: { id: number }) => item.id !== newsId) // Exclude current news
+              .slice(0, 5)
+              .map(
+                (newsItem: {
+                  id: number;
+                  hashed_id?: string;
+                  title: string;
+                  featured_image?: string;
+                  published_at?: string;
+                  created_at: string;
+                  category_name?: string;
+                  authors?: Array<{ author_name: string }>;
+                }) => ({
+                  id: newsItem.hashed_id || newsItem.id,
+                  source: newsItem.authors?.[0]?.author_name || "NewsInsight",
+                  title: newsItem.title,
+                  imageUrl: newsItem.featured_image || "/images/main_news.png",
+                  timestamp: newsItem.published_at || newsItem.created_at,
+                  category: newsItem.category_name || "Berita",
+                  link: generateNewsUrl(
+                    newsItem.category_name || "Berita",
+                    newsItem.title,
+                    newsItem.published_at || newsItem.created_at,
+                    newsItem.hashed_id || newsItem.id.toString()
+                  ),
+                })
+              );
+            setTrendingNews(transformedTrending);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching trending news:", error);
+      } finally {
+        setLoadingTrending(false);
+      }
+    };
+
+    fetchSidebarNews();
+  }, [news, newsId]);
+
   useEffect(() => {
     const style = document.createElement("style");
     style.textContent = `
@@ -500,43 +608,91 @@ export default function NewsDetailPage() {
     };
   }, [isDark]);
 
-  // Track reading history when news is loaded
+  // Track reading history and news views when news is loaded
   useEffect(() => {
+    console.log("=== TRACKING USEEFFECT DEBUG ===");
+    console.log("news:", news);
+    console.log("news?.id:", news?.id);
+    console.log("typeof news?.id:", typeof news?.id);
+    console.log("newsId:", newsId);
+    console.log("trackingRef.current:", trackingRef.current);
+    console.log("lastTrackedNewsId.current:", lastTrackedNewsId.current);
+    console.log("session:", session);
+    console.log("session?.backendToken:", session?.backendToken);
+
+    // Only track if we have news and haven't tracked this specific newsId yet
     if (
       news &&
-      session?.backendToken &&
-      !trackingRef.current &&
       typeof news.id === "number" &&
-      newsId !== 1 // Skip default fallback ID
+      newsId !== 1 &&
+      lastTrackedNewsId.current !== newsId
     ) {
-      trackingRef.current = true;
+      console.log("🔄 New news detected, preparing to track:", newsId);
+      lastTrackedNewsId.current = newsId;
+      trackingRef.current = false; // Reset for new news
 
-      // Set reading start time
-      const startTime = Date.now();
-
-      // Track after a short delay to ensure user actually starts reading
-      const timer = setTimeout(async () => {
+      // Track immediately for testing (reduced delay)
+      const trackView = async () => {
         try {
-          const readDuration = Date.now() - startTime;
+          // Prevent duplicate tracking
+          if (trackingRef.current) {
+            console.log("⚠️ Tracking already in progress, skipping");
+            return;
+          }
+
+          trackingRef.current = true;
+          console.log("🔥 EXECUTING TRACKING for newsId:", newsId);
+
+          const readDuration = 5000; // 5 seconds for testing
           const readPercentage = 0.1;
 
-          console.log("Tracking reading history:", {
+          console.log("📊 ATTEMPTING TO TRACK:", {
             newsId,
             readDuration,
             readPercentage,
+            hasUser: !!session?.backendToken,
           });
 
-          await addReadingHistory(newsId, readDuration, readPercentage);
-          console.log("Reading history tracked successfully");
+          if (session?.backendToken) {
+            console.log("👤 Tracking for logged-in user...");
+            console.log("About to call addReadingHistory with:", {
+              newsId,
+              readDuration,
+              readPercentage,
+            });
+            const result = await addReadingHistory(
+              newsId,
+              readDuration,
+              readPercentage
+            );
+            console.log("✅ Reading history result:", result);
+          } else {
+            console.log("👥 Tracking for anonymous user...");
+            console.log("About to call trackNewsView with:", { newsId });
+            const result = await trackNewsView(newsId);
+            console.log("✅ News view tracking result:", result);
+          }
         } catch (error) {
-          console.error("Failed to track reading history:", error);
+          console.error("❌ Failed to track news view/reading history:", error);
           trackingRef.current = false; // Reset on error so it can retry
         }
-      }, 3000);
+      };
 
-      return () => clearTimeout(timer);
+      // Track after 1 second (reduced delay for testing)
+      console.log("⏱️ Setting timer for 1 second...");
+      setTimeout(trackView, 1000);
+      console.log("✅ Timer set successfully, will execute in 1 second");
+    } else {
+      console.log("❌ Tracking conditions not met or already tracked");
+      console.log("Conditions:", {
+        hasNews: !!news,
+        isNumberType: typeof news?.id === "number",
+        notDefaultId: newsId !== 1,
+        notAlreadyTracked: lastTrackedNewsId.current !== newsId,
+      });
     }
-  }, [news, newsId, session?.backendToken, addReadingHistory]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [news, newsId]);
 
   if (loading) {
     return (
@@ -609,7 +765,7 @@ export default function NewsDetailPage() {
                   label:
                     news.category.charAt(0).toUpperCase() +
                     news.category.slice(1),
-                  href: `/${news.category}`,
+                  href: `/categories/${news.category.toLowerCase()}`,
                 },
                 {
                   label: news.title,
@@ -973,6 +1129,31 @@ export default function NewsDetailPage() {
               newsTitle={news.title}
               onTranslatedTextChange={setTranslatedContentForTTS}
             />{" "}
+            {/* Tags Section */}
+            {news.tags && news.tags.length > 0 && (
+              <div className="mt-6 mb-4">
+                <div className="flex flex-wrap gap-2">
+                  {news.tags.map((tag, index) => (
+                    <div
+                      key={index}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer hover:scale-105 ${
+                        isDark
+                          ? "bg-blue-900/30 border border-blue-600/50 text-blue-200 hover:bg-blue-900/50"
+                          : "bg-blue-50 border border-blue-300 text-blue-700 hover:bg-blue-100"
+                      }`}
+                    >
+                      <Icon
+                        icon="tabler:tag-filled"
+                        className="w-3 h-3 flex-shrink-0"
+                      />
+                      <span>
+                        <TranslatedText>{tag}</TranslatedText>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {/* Informasi Pelaporan */}
             {(news.reporters || news.editors) && (
               <div
@@ -1176,23 +1357,17 @@ export default function NewsDetailPage() {
         {/* Area Kanan - Sidebar Rekomendasi (25%) */}
         <div className="lg:col-span-1 px-3 sm:px-6 lg:px-4">
           <div className="sticky" style={{ top: navbarHeight + 24 }}>
-            {/* Berita Kategori Sama */}
-            <div className="mb-8">
-              {" "}
-              <h3
-                className={`text-xl font-bold mb-4 ${isDark ? "text-white" : "text-gray-900"}`}
-              >
-                <TranslatedText>Berita</TranslatedText> {news.category}{" "}
-                <TranslatedText>Lainnya</TranslatedText>
-              </h3>
-              <div className="space-y-4">
-                {listNews
-                  .filter(
-                    (item) =>
-                      item.category === news.category && item.id !== news.id
-                  )
-                  .slice(0, 4)
-                  .map((item) => (
+            {/* Berita Kategori Sama - Only show if there are related news */}
+            {!loadingRelated && relatedNews.length > 0 && (
+              <div className="mb-8">
+                <h3
+                  className={`text-xl font-bold mb-4 ${isDark ? "text-white" : "text-gray-900"}`}
+                >
+                  <TranslatedText>Berita</TranslatedText> {news.category}{" "}
+                  <TranslatedText>Lainnya</TranslatedText>
+                </h3>
+                <div className="space-y-4">
+                  {relatedNews.map((item) => (
                     <Link
                       key={item.id}
                       href={item.link}
@@ -1226,7 +1401,7 @@ export default function NewsDetailPage() {
                             }}
                           >
                             <TranslatedText>{item.title}</TranslatedText>
-                          </h4>{" "}
+                          </h4>
                           <p
                             className={`text-xs ${
                               isDark ? "text-gray-400" : "text-gray-600"
@@ -1242,8 +1417,52 @@ export default function NewsDetailPage() {
                       </div>
                     </Link>
                   ))}
+                </div>
               </div>
-            </div>{" "}
+            )}
+
+            {/* Loading state for related news */}
+            {loadingRelated && (
+              <div className="mb-8">
+                <h3
+                  className={`text-xl font-bold mb-4 ${isDark ? "text-white" : "text-gray-900"}`}
+                >
+                  <TranslatedText>Berita</TranslatedText> {news.category}{" "}
+                  <TranslatedText>Lainnya</TranslatedText>
+                </h3>
+                <div className="space-y-4">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <div
+                      key={`related-skeleton-${index}`}
+                      className={`p-4 rounded-lg ${
+                        isDark ? "bg-gray-800" : "bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex gap-3">
+                        <div
+                          className={`w-16 h-16 rounded-lg animate-pulse ${
+                            isDark ? "bg-gray-700" : "bg-gray-200"
+                          }`}
+                        />
+                        <div className="flex-1 space-y-2">
+                          <div
+                            className={`h-4 rounded animate-pulse ${
+                              isDark ? "bg-gray-700" : "bg-gray-200"
+                            }`}
+                          />
+                          <div
+                            className={`h-3 w-2/3 rounded animate-pulse ${
+                              isDark ? "bg-gray-700" : "bg-gray-200"
+                            }`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Berita Trending */}
             <div>
               <h3
@@ -1252,15 +1471,38 @@ export default function NewsDetailPage() {
                 <TranslatedText>Berita Trending</TranslatedText>
               </h3>
               <div className="space-y-4">
-                {listNews
-                  .filter((item) => item.id !== news.id)
-                  .sort(
-                    (a, b) =>
-                      new Date(b.timestamp).getTime() -
-                      new Date(a.timestamp).getTime()
-                  )
-                  .slice(0, 5)
-                  .map((item, index) => (
+                {loadingTrending ? (
+                  // Loading skeleton for trending news
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <div
+                      key={`trending-skeleton-${index}`}
+                      className={`p-3 rounded-lg ${
+                        isDark ? "bg-gray-800" : "bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex gap-3">
+                        <div
+                          className={`w-8 h-8 rounded-full animate-pulse ${
+                            isDark ? "bg-gray-700" : "bg-gray-200"
+                          }`}
+                        />
+                        <div className="flex-1 space-y-2">
+                          <div
+                            className={`h-4 rounded animate-pulse ${
+                              isDark ? "bg-gray-700" : "bg-gray-200"
+                            }`}
+                          />
+                          <div
+                            className={`h-3 w-2/3 rounded animate-pulse ${
+                              isDark ? "bg-gray-700" : "bg-gray-200"
+                            }`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : trendingNews.length > 0 ? (
+                  trendingNews.map((item, index) => (
                     <Link
                       key={item.id}
                       href={item.link}
@@ -1279,7 +1521,7 @@ export default function NewsDetailPage() {
                           }`}
                         >
                           {index + 1}
-                        </div>{" "}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <h4
                             className={`text-sm font-semibold mb-1 ${
@@ -1294,7 +1536,7 @@ export default function NewsDetailPage() {
                             }}
                           >
                             <TranslatedText>{item.title}</TranslatedText>
-                          </h4>{" "}
+                          </h4>
                           <p
                             className={`text-xs ${
                               isDark ? "text-gray-400" : "text-gray-600"
@@ -1309,7 +1551,19 @@ export default function NewsDetailPage() {
                         </div>
                       </div>
                     </Link>
-                  ))}
+                  ))
+                ) : (
+                  // No trending news fallback
+                  <div
+                    className={`p-4 text-center ${
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
+                    <TranslatedText>
+                      Tidak ada berita trending tersedia
+                    </TranslatedText>
+                  </div>
+                )}
               </div>
             </div>
           </div>

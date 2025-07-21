@@ -10,6 +10,7 @@ import { BookmarkData } from "@/lib/api/bookmarks";
 import { ReadingHistoryData } from "@/lib/api/readingHistory";
 import { useProfileTab } from "@/context/ProfileTabContext";
 import Pagination from "@/components/ui/Pagination";
+import { generateNewsUrl } from "@/utils/newsUrlGenerator";
 
 export default function Profile() {
   const { isDark } = useDarkMode();
@@ -47,7 +48,12 @@ export default function Profile() {
     title: item.title,
     imageUrl: item.image_url,
     timestamp: item.published_at,
-    link: `/news/${item.news_id}`,
+    link: generateNewsUrl(
+      item.category_name || "Berita",
+      item.title,
+      item.published_at,
+      item.hashed_id
+    ),
     category: item.category_name || "Umum",
   });
 

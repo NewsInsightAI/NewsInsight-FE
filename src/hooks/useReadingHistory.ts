@@ -76,6 +76,18 @@ export const useReadingHistory = () => {
     }
   };
 
+  const trackNewsView = async (newsId: number) => {
+    try {
+      await readingHistoryApi.trackNewsView(newsId);
+      return { success: true };
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to track news view";
+      console.error("Error tracking news view:", errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  };
+
   useEffect(() => {
     fetchReadingHistory();
   }, []);
@@ -88,6 +100,7 @@ export const useReadingHistory = () => {
     fetchReadingHistory,
     addReadingHistory,
     clearReadingHistory,
+    trackNewsView,
     goToPage,
     refetch: () => fetchReadingHistory(pagination.current_page),
   };

@@ -11,7 +11,8 @@ interface NewsData {
   categoryId: number;
   category_name: string;
   category_slug: string;
-  featuredImage: string;
+  featuredImage?: string;
+  featured_image?: string;
   status: string;
   published_at: string;
   authors: { author_name: string; location: string }[];
@@ -25,13 +26,16 @@ export default function EditNewsPage() {
   const [newsData, setNewsData] = useState<NewsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasFetchedNews, setHasFetchedNews] = useState(false);
 
   const newsId = params.id as string;
 
   useEffect(() => {
-    const fetchNewsData = async () => {
-      if (!newsId) return;
+    // Only fetch if we have a valid session token and haven't fetched yet
+    if (!session?.backendToken || hasFetchedNews) return;
+    if (!newsId) return;
 
+    const fetchNewsData = async () => {
       try {
         setLoading(true);
         const token = session?.backendToken;
@@ -48,7 +52,13 @@ export default function EditNewsPage() {
         }
 
         const data = await response.json();
+        console.log("🔍 Raw API Response:", data);
+        console.log("📰 News Data:", data.data);
+        console.log("🖼️ Featured Image from API:", data.data?.featuredImage);
+        console.log("🖼️ featured_image from API:", data.data?.featured_image);
+        console.log("📋 All available fields:", Object.keys(data.data || {}));
         setNewsData(data.data);
+        setHasFetchedNews(true); // Mark as fetched
       } catch (err) {
         console.error("Error fetching news:", err);
         setError("Gagal memuat data berita");
@@ -57,10 +67,8 @@ export default function EditNewsPage() {
       }
     };
 
-    if (session) {
-      fetchNewsData();
-    }
-  }, [newsId, session]);
+    fetchNewsData();
+  }, [newsId, session?.backendToken, hasFetchedNews]);
 
   if (!session) {
     return (
@@ -111,11 +119,16 @@ export default function EditNewsPage() {
     category: newsData.category_slug,
     status: newsData.status,
     publishDate: newsData.published_at,
-    image: newsData.featuredImage,
+    featured_image: newsData.featuredImage || newsData.featured_image || null,
     author: "",
     content: newsData.content,
     tags: newsData.tags.join(", "),
   };
+
+  console.log("📋 Initial Data being passed to AddEditNews:", initialData);
+  console.log("🖼️ Featured Image in initialData:", initialData.featured_image);
+  console.log("🔧 newsData.featuredImage:", newsData.featuredImage);
+  console.log("🔧 newsData.featured_image:", newsData.featured_image);
 
   const initialAuthors = newsData.authors.map((author) => ({
     name: author.author_name,

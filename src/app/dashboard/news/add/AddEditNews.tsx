@@ -119,7 +119,7 @@ interface AddEditNewsProps {
     category?: string;
     status?: string;
     publishDate?: Date | string;
-    image?: File | string | null;
+    featured_image?: File | string | null;
     author?: string;
     content?: string | null;
     tags?: string | null;
@@ -130,7 +130,7 @@ interface AddEditNewsProps {
     category: string;
     status: string;
     publishDate: Date | string;
-    image: File | string | null;
+    featured_image: File | string | null;
     author: string;
     content: string | null;
     tags: string | null;
@@ -154,14 +154,43 @@ export default function AddEditNews({
     initialData?.status || ""
   );
   const [newsPublishDate, setNewsPublishDate] = useState<Date | string>(
-    initialData?.publishDate || "15 Maret 2025, 15:20 WIB"
+    initialData?.publishDate ||
+      (() => {
+        const now = new Date();
+        return (
+          now.toLocaleDateString("id-ID", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          }) +
+          ", " +
+          now.toLocaleTimeString("id-ID", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }) +
+          " WIB"
+        );
+      })()
   );
   const [newsImage, setNewsImage] = useState<File | string | null>(
-    initialData?.image &&
-      typeof initialData.image === "string" &&
-      initialData.image.trim() !== ""
-      ? initialData.image
+    initialData?.featured_image &&
+      typeof initialData.featured_image === "string" &&
+      initialData.featured_image.trim() !== ""
+      ? initialData.featured_image
       : null
+  );
+  const [imageInputType, setImageInputType] = useState<"upload" | "url">(
+    initialData?.featured_image &&
+      typeof initialData.featured_image === "string" &&
+      initialData.featured_image.trim() !== ""
+      ? "url"
+      : "upload"
+  );
+  const [imageUrl, setImageUrl] = useState<string>(
+    initialData?.featured_image &&
+      typeof initialData.featured_image === "string"
+      ? initialData.featured_image
+      : ""
   );
   const [newsAuthors, setNewsAuthors] = useState<
     { name: string; location?: string }[]
@@ -181,6 +210,8 @@ export default function AddEditNews({
 
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState<boolean>(true);
+  const [hasFetchedCategories, setHasFetchedCategories] =
+    useState<boolean>(false);
 
   const { data: session } = useSession();
   const { promise, showToast } = useToast();
@@ -191,11 +222,65 @@ export default function AddEditNews({
 
   const [vibrantColor, setVibrantColor] = useState<string>("#bbc57b");
   const [currentImageUrl, setCurrentImageUrl] = useState<string>(
-    "https://placehold.co/400x200"
+    initialData?.featured_image &&
+      typeof initialData.featured_image === "string" &&
+      initialData.featured_image.trim() !== ""
+      ? initialData.featured_image
+      : "https://placehold.co/400x200"
   );
 
   const imgRef = useRef<HTMLImageElement>(null);
   const previousImageRef = useRef<File | string | null>(null);
+
+  // Helper function to determine if a string is a URL
+  const isValidImageUrl = (str: string): boolean => {
+    if (!str || typeof str !== "string") return false;
+    try {
+      const url = new URL(str);
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+      return false;
+    }
+  };
+
+  // Handle initial data updates (for edit mode)
+  useEffect(() => {
+    console.log("🔍 AddEditNews received initialData:", initialData);
+    console.log("🔍 All initialData keys:", Object.keys(initialData || {}));
+
+    if (initialData?.featured_image !== undefined) {
+      console.log("📸 featured_image found:", initialData.featured_image);
+      console.log("📸 featured_image type:", typeof initialData.featured_image);
+      console.log("📸 featured_image truthy?:", !!initialData.featured_image);
+
+      if (
+        typeof initialData.featured_image === "string" &&
+        initialData.featured_image.trim() !== ""
+      ) {
+        const imageStr = initialData.featured_image.trim();
+        console.log("🔗 Setting image URL:", imageStr);
+        setNewsImage(imageStr);
+        setImageUrl(imageStr);
+        // Auto-select URL tab for image URLs from database
+        const isValidUrl = isValidImageUrl(imageStr);
+        console.log("✅ Is valid URL:", isValidUrl);
+        setImageInputType(isValidUrl ? "url" : "upload");
+      } else if (initialData.featured_image instanceof File) {
+        console.log("📁 File object found:", initialData.featured_image.name);
+        setNewsImage(initialData.featured_image);
+        setImageUrl("");
+        setImageInputType("upload"); // Auto-select upload tab for file objects
+      } else {
+        console.log(
+          "🚫 featured_image is not a valid string or File:",
+          initialData.featured_image
+        );
+      }
+    } else {
+      console.log("❌ No featured_image found in initialData");
+      console.log("❌ featured_image value:", initialData?.featured_image);
+    }
+  }, [initialData]);
 
   useEffect(() => {
     let newImageUrl = "https://placehold.co/400x200";
@@ -242,9 +327,13 @@ export default function AddEditNews({
         URL.revokeObjectURL(newImageUrl);
       }
     };
-  }, [newsImage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newsImage]); // Removed currentImageUrl from dependencies to prevent infinite loop
 
   useEffect(() => {
+    // Only fetch if we haven't fetched yet (prevents re-fetching on profile updates)
+    if (hasFetchedCategories) return;
+
     const loadCategories = async () => {
       try {
         setCategoriesLoading(true);
@@ -263,6 +352,7 @@ export default function AddEditNews({
         );
 
         setCategories(categoryOptions);
+        setHasFetchedCategories(true); // Mark as fetched
       } catch (error) {
         console.error("Error fetching categories:", error);
         showToast("Gagal memuat kategori berita", "error");
@@ -272,7 +362,76 @@ export default function AddEditNews({
     };
 
     loadCategories();
-  }, [showToast]);
+  }, [hasFetchedCategories, showToast]);
+
+  // Add Quill content styling for preview
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = `
+      .quill-content {
+        line-height: 1.8;
+      }
+      .quill-content h1, .quill-content h2, .quill-content h3 {
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        font-weight: 700;
+      }
+      .quill-content h1 { font-size: 2rem; }
+      .quill-content h2 { font-size: 1.5rem; }
+      .quill-content h3 { font-size: 1.25rem; }
+      .quill-content p {
+        margin-bottom: 1rem;
+      }
+      .quill-content ul, .quill-content ol {
+        margin: 1rem 0;
+        padding-left: 2rem;
+      }
+      .quill-content ul {
+        list-style-type: disc;
+      }
+      .quill-content ol {
+        list-style-type: decimal;
+      }
+      .quill-content ul ul {
+        list-style-type: circle;
+      }
+      .quill-content ol ol {
+        list-style-type: lower-alpha;
+      }
+      .quill-content ul ol {
+        list-style-type: decimal;
+      }
+      .quill-content ol ul {
+        list-style-type: disc;
+      }
+      .quill-content li {
+        margin-bottom: 0.5rem;
+        display: list-item;
+      }
+      .quill-content blockquote {
+        border-left: 4px solid #3b82f6;
+        padding-left: 1rem;
+        margin: 1.5rem 0;
+        font-style: italic;
+        background: ${
+          isDark ? "rgba(59, 130, 246, 0.1)" : "rgba(59, 130, 246, 0.05)"
+        };
+        padding: 1rem;
+        border-radius: 0.5rem;
+      }
+      .quill-content strong {
+        font-weight: 600;
+      }
+      .quill-content em {
+        font-style: italic;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, [isDark]);
 
   const isEdit = mode === "edit";
 
@@ -610,7 +769,7 @@ export default function AddEditNews({
                     category: newsCategory,
                     status: newsStatus,
                     publishDate: newsPublishDate,
-                    image: newsImage,
+                    featured_image: newsImage,
                     author: formatAuthorsForSubmission(),
                     content: newsContent,
                     tags: newsTags.join(", "),
@@ -644,7 +803,7 @@ export default function AddEditNews({
                     category: newsCategory,
                     status: newsStatus,
                     publishDate: newsPublishDate,
-                    image: newsImage,
+                    featured_image: newsImage,
                     author: formatAuthorsForSubmission(),
                     content: newsContent,
                     tags: newsTags.join(", "),
@@ -732,10 +891,47 @@ export default function AddEditNews({
 
                 <div className="flex flex-col gap-2 w-full">
                   <p className="text-white text-xs md:text-sm">
-                    {typeof newsPublishDate === "string"
-                      ? newsPublishDate
-                      : newsPublishDate?.toLocaleString() ||
-                        "Tanggal Publikasi"}
+                    {newsAuthors.length > 0
+                      ? newsAuthors.map((author) => author.name).join(", ")
+                      : "Nama Penulis"}{" "}
+                    •{" "}
+                    {(() => {
+                      if (typeof newsPublishDate === "string") {
+                        // Try to parse ISO string
+                        const date = new Date(newsPublishDate);
+                        if (!isNaN(date.getTime())) {
+                          return (
+                            date.toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            }) +
+                            ", " +
+                            date.toLocaleTimeString("id-ID", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }) +
+                            " WIB"
+                          );
+                        }
+                        return newsPublishDate;
+                      } else if (newsPublishDate instanceof Date) {
+                        return (
+                          newsPublishDate.toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          }) +
+                          ", " +
+                          newsPublishDate.toLocaleTimeString("id-ID", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }) +
+                          " WIB"
+                        );
+                      }
+                      return "Tanggal Publikasi";
+                    })()}
                   </p>
                   <p className="text-white text-lg md:text-xl lg:text-2xl font-semibold line-clamp-2">
                     {newsTitle || "Judul Berita"}
@@ -744,13 +940,35 @@ export default function AddEditNews({
               </div>
             </div>
             <div
-              className={`news-preview w-full h-fit text-justify text-sm md:text-base ${
+              className={`quill-content news-preview w-full h-fit text-justify text-sm md:text-base ${
                 isDark ? "text-gray-200" : "text-gray-900"
               }`}
               dangerouslySetInnerHTML={{
                 __html: newsContent || "<p>Konten berita muncul di sini</p>",
               }}
             ></div>
+
+            {/* Tags Section */}
+            {newsTags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-4">
+                {newsTags.map((tag, index) => (
+                  <div
+                    key={index}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
+                      isDark
+                        ? "bg-blue-900/30 border border-blue-600/50 text-blue-200"
+                        : "bg-blue-50 border border-blue-300 text-blue-700"
+                    }`}
+                  >
+                    <Icon
+                      icon="tabler:tag-filled"
+                      className="w-3 h-3 flex-shrink-0"
+                    />
+                    <span>{tag}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Author Information */}
             {newsAuthors.length > 0 && (
@@ -768,119 +986,26 @@ export default function AddEditNews({
                 >
                   <Icon icon="oui:reporter" className="w-6 h-6 flex-shrink-0" />
                   <span className="leading-relaxed">
-                    {" "}
                     {newsAuthors && newsAuthors.length > 0 && (
                       <>
                         Pelaporan oleh{" "}
-                        {(() => {
-                          const reportersByLocation: {
-                            [key: string]: string[];
-                          } = {};
-
-                          newsAuthors.forEach((author) => {
-                            const location =
-                              author.location?.trim() || "no-location";
-                            if (!reportersByLocation[location]) {
-                              reportersByLocation[location] = [];
-                            }
-                            reportersByLocation[location].push(
-                              author.name.trim()
-                            );
-                          });
-
-                          const locationGroups =
-                            Object.keys(reportersByLocation);
-                          const formattedGroups: React.ReactNode[] = [];
-
-                          locationGroups.forEach((location, groupIndex) => {
-                            const names = reportersByLocation[location];
-
-                            if (groupIndex > 0) {
-                              formattedGroups.push(", ");
-                            }
-
-                            if (location === "no-location") {
-                              if (names.length === 1) {
-                                formattedGroups.push(
-                                  <span
-                                    key={`reporter-group-${groupIndex}`}
-                                    className="font-semibold"
-                                  >
-                                    {names[0]}
-                                  </span>
-                                );
-                              } else if (names.length === 2) {
-                                formattedGroups.push(
-                                  <span
-                                    key={`reporter-group-${groupIndex}`}
-                                    className="font-semibold"
-                                  >
-                                    {names[0]} dan {names[1]}
-                                  </span>
-                                );
-                              } else {
-                                const allButLast = names.slice(0, -1);
-                                const lastName = names[names.length - 1];
-                                formattedGroups.push(
-                                  <span
-                                    key={`reporter-group-${groupIndex}`}
-                                    className="font-semibold"
-                                  >
-                                    {allButLast.join(", ")} dan {lastName}
-                                  </span>
-                                );
-                              }
-                            } else {
-                              if (names.length === 1) {
-                                formattedGroups.push(
-                                  <React.Fragment
-                                    key={`reporter-group-${groupIndex}`}
-                                  >
-                                    <span className="font-semibold">
-                                      {names[0]}
-                                    </span>{" "}
-                                    di{" "}
-                                    <span className="font-semibold">
-                                      {location}
-                                    </span>
-                                  </React.Fragment>
-                                );
-                              } else if (names.length === 2) {
-                                formattedGroups.push(
-                                  <React.Fragment
-                                    key={`reporter-group-${groupIndex}`}
-                                  >
-                                    <span className="font-semibold">
-                                      {names[0]} dan {names[1]}
-                                    </span>{" "}
-                                    di{" "}
-                                    <span className="font-semibold">
-                                      {location}
-                                    </span>
-                                  </React.Fragment>
-                                );
-                              } else {
-                                const allButLast = names.slice(0, -1);
-                                const lastName = names[names.length - 1];
-                                formattedGroups.push(
-                                  <React.Fragment
-                                    key={`reporter-group-${groupIndex}`}
-                                  >
-                                    <span className="font-semibold">
-                                      {allButLast.join(", ")} dan {lastName}
-                                    </span>{" "}
-                                    di{" "}
-                                    <span className="font-semibold">
-                                      {location}
-                                    </span>
-                                  </React.Fragment>
-                                );
-                              }
-                            }
-                          });
-
-                          return formattedGroups;
-                        })()}
+                        {newsAuthors.length === 1 ? (
+                          <span className="font-semibold">
+                            {newsAuthors[0].name}
+                          </span>
+                        ) : newsAuthors.length === 2 ? (
+                          <span className="font-semibold">
+                            {newsAuthors[0].name} dan {newsAuthors[1].name}
+                          </span>
+                        ) : (
+                          <span className="font-semibold">
+                            {newsAuthors
+                              .slice(0, -1)
+                              .map((author) => author.name)
+                              .join(", ")}{" "}
+                            dan {newsAuthors[newsAuthors.length - 1].name}
+                          </span>
+                        )}
                       </>
                     )}
                   </span>
@@ -967,44 +1092,164 @@ export default function AddEditNews({
                 {isEdit && (
                   <Input
                     label="Tanggal Publikasi"
-                    placeholder="HH/BB/TTTT"
+                    placeholder="DD/MM/YYYY, HH:MM WIB"
                     type="text"
                     icon="lets-icons:date-today"
-                    value={newsPublishDate}
+                    value={(() => {
+                      if (typeof newsPublishDate === "string") {
+                        // Try to parse ISO string
+                        const date = new Date(newsPublishDate);
+                        if (!isNaN(date.getTime())) {
+                          return (
+                            date.toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            }) +
+                            ", " +
+                            date.toLocaleTimeString("id-ID", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }) +
+                            " WIB"
+                          );
+                        }
+                        return newsPublishDate;
+                      } else if (newsPublishDate instanceof Date) {
+                        return (
+                          newsPublishDate.toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          }) +
+                          ", " +
+                          newsPublishDate.toLocaleTimeString("id-ID", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }) +
+                          " WIB"
+                        );
+                      }
+                      return "Tanggal Publikasi";
+                    })()}
                     onChangeValue={(value) => {
                       setNewsPublishDate(value);
                     }}
                     disabled
                   />
                 )}
-                <Input
-                  label="Gambar Berita"
-                  placeholder="Pilih gambar berita..."
-                  type="file"
-                  accept="image/*"
-                  onFileChange={(files) => {
-                    if (files && files.length > 0) {
-                      const file = files[0];
-                      const maxSize = 5 * 1024 * 1024;
 
-                      if (file.size > maxSize) {
-                        showToast(
-                          "Ukuran file gambar tidak boleh lebih dari 5MB",
-                          "error"
-                        );
-                        return;
-                      }
+                {/* Image Input Section */}
+                <div className="flex flex-col gap-3 w-full">
+                  <label
+                    className={`font-medium ${
+                      isDark ? "text-gray-200" : "text-gray-900"
+                    }`}
+                  >
+                    Gambar Berita
+                  </label>
 
-                      setNewsImage(file);
-                    }
-                  }}
-                  required
-                />
-                <p
-                  className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"} mt-1`}
-                >
-                  Format yang didukung: JPG, PNG, GIF. Maksimal 5MB.
-                </p>
+                  {/* Toggle between Upload and URL */}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImageInputType("upload");
+                        setImageUrl("");
+                        if (typeof newsImage === "string") {
+                          setNewsImage(null);
+                        }
+                      }}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        imageInputType === "upload"
+                          ? isDark
+                            ? "bg-blue-600 text-white"
+                            : "bg-blue-500 text-white"
+                          : isDark
+                            ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                      }`}
+                    >
+                      Upload File
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImageInputType("url");
+                        setNewsImage(null);
+                      }}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        imageInputType === "url"
+                          ? isDark
+                            ? "bg-blue-600 text-white"
+                            : "bg-blue-500 text-white"
+                          : isDark
+                            ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                      }`}
+                    >
+                      URL Gambar
+                    </button>
+                  </div>
+
+                  {/* Conditional Input */}
+                  {imageInputType === "upload" ? (
+                    <Input
+                      placeholder="Pilih gambar berita..."
+                      type="file"
+                      accept="image/*"
+                      onFileChange={(files) => {
+                        if (files && files.length > 0) {
+                          const file = files[0];
+                          const maxSize = 5 * 1024 * 1024;
+
+                          if (file.size > maxSize) {
+                            showToast(
+                              "Ukuran file gambar tidak boleh lebih dari 5MB",
+                              "error"
+                            );
+                            return;
+                          }
+
+                          setNewsImage(file);
+                          setImageUrl("");
+                          // Ensure we're in upload mode when file is selected
+                          setImageInputType("upload");
+                        }
+                      }}
+                      required
+                    />
+                  ) : (
+                    <Input
+                      placeholder="https://example.com/image.jpg"
+                      type="text"
+                      icon="material-symbols:link"
+                      value={imageUrl}
+                      onChangeValue={(value) => {
+                        setImageUrl(value);
+                        if (value.trim()) {
+                          // Auto-switch to URL mode if valid URL is detected
+                          if (isValidImageUrl(value.trim())) {
+                            setImageInputType("url");
+                          }
+                          setNewsImage(value.trim());
+                        } else {
+                          setNewsImage(null);
+                        }
+                      }}
+                      required
+                    />
+                  )}
+
+                  <p
+                    className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                  >
+                    {imageInputType === "upload"
+                      ? "Format yang didukung: JPG, PNG, GIF. Maksimal 5MB."
+                      : "Masukkan URL gambar yang dapat diakses secara publik (contoh: https://images.unsplash.com/photo-xxx)"}
+                  </p>
+                </div>
+
                 <div className="flex flex-col gap-2 w-full">
                   <label
                     className={`font-medium ${

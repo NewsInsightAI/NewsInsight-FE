@@ -28,6 +28,6 @@ export const formatNumberAbbreviated = (num: number): string => {
  * @returns Formatted string ready for display
  */
 export const formatNewsCount = (count: number | undefined): string => {
-  if (!count) return "";
+  if (typeof count !== "number") return "0";
   return formatNumber(count);
 };

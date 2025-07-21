@@ -7,6 +7,7 @@ import { TranslatedText } from "@/components/TranslatedText";
 import { formatNewsCount } from "@/utils/formatters";
 import { useNavbarPadding } from "@/hooks/useNavbarHeight";
 import ArticleCard from "@/components/ArticleCard";
+import { generateNewsUrl } from "@/utils/newsUrlGenerator";
 
 interface Category {
   id: string;
@@ -14,6 +15,28 @@ interface Category {
   slug: string;
   description?: string;
   is_active?: boolean;
+}
+
+interface ApiNewsItem {
+  id: string | number;
+  title: string;
+  content?: string;
+  excerpt?: string;
+  slug?: string;
+  featured_image?: string;
+  status?: string;
+  published_at?: string;
+  created_at: string;
+  updated_at?: string;
+  category_id: string;
+  category_name?: string;
+  category_slug?: string;
+  view_count?: number;
+  hashed_id?: string;
+  created_by_email?: string;
+  created_by_name?: string;
+  authors?: Array<{ author_name: string; location?: string }>;
+  tags?: string[];
 }
 
 interface NewsItem {
@@ -36,6 +59,7 @@ interface NewsItem {
   created_by_name?: string;
   authors?: Array<{ author_name: string; location?: string }>;
   tags?: string[];
+  link?: string; // Add link field for proper navigation
 }
 
 interface CategoryPageProps {
@@ -57,6 +81,55 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   const [loadingMore, setLoadingMore] = useState(false);
 
   const { slug } = resolvedParams;
+
+  // Function to get the latest update date from news
+  const getLatestUpdateDate = (): string => {
+    if (news.length === 0) return "Belum ada pembaruan";
+
+    // Find the most recent date from published_at or created_at
+    const latestDate = news.reduce(
+      (latest, newsItem) => {
+        const newsDate = new Date(
+          newsItem.published_at || newsItem.created_at || ""
+        );
+        const latestDateObj = new Date(latest);
+        return newsDate > latestDateObj
+          ? newsItem.published_at || newsItem.created_at || ""
+          : latest;
+      },
+      news[0].published_at || news[0].created_at || ""
+    );
+
+    if (!latestDate) return "Belum ada pembaruan";
+
+    const newsDate = new Date(latestDate);
+    const now = new Date();
+
+    // Set both dates to start of day for accurate day comparison
+    const newsDateStart = new Date(
+      newsDate.getFullYear(),
+      newsDate.getMonth(),
+      newsDate.getDate()
+    );
+    const nowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const diffTime = nowStart.getTime() - newsDateStart.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return "Diperbarui hari ini";
+    } else if (diffDays === 1) {
+      return "Diperbarui kemarin";
+    } else if (diffDays <= 7) {
+      return `Diperbarui ${diffDays} hari lalu`;
+    } else {
+      return `Diperbarui ${newsDate.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })}`;
+    }
+  };
 
   // Fetch data kategori
   const fetchCategory = useCallback(async () => {
@@ -100,7 +173,15 @@ export default function CategoryPage({ params }: CategoryPageProps) {
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data && result.data.news) {
-            const newNews = result.data.news;
+            const newNews = result.data.news.map((newsItem: ApiNewsItem) => ({
+              ...newsItem,
+              link: generateNewsUrl(
+                newsItem.category_name || category?.name || slug,
+                newsItem.title,
+                newsItem.published_at || newsItem.created_at,
+                newsItem.hashed_id || newsItem.id.toString()
+              ),
+            }));
 
             if (append) {
               setNews((prev) => [...prev, ...newNews]);
@@ -122,19 +203,30 @@ export default function CategoryPage({ params }: CategoryPageProps) {
 
         // Fallback mock data
         if (pageNum === 1) {
+          const mockNews = {
+            id: "1",
+            title: `Berita ${category?.name || slug} Terbaru Hari Ini`,
+            content:
+              "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
+            excerpt: "Ringkasan berita terbaru dari kategori ini",
+            featured_image: "/images/main_news.png",
+            published_at: new Date().toISOString(),
+            category_id: category?.id || "1",
+            view_count: 150,
+            status: "published",
+            slug: "berita-terbaru",
+            hashed_id: "mock123",
+          };
+
           setNews([
             {
-              id: "1",
-              title: `Berita ${category?.name || slug} Terbaru Hari Ini`,
-              content:
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-              excerpt: "Ringkasan berita terbaru dari kategori ini",
-              featured_image: "/images/main_news.png",
-              published_at: new Date().toISOString(),
-              category_id: category?.id || "1",
-              view_count: 150,
-              status: "published",
-              slug: "berita-terbaru",
+              ...mockNews,
+              link: generateNewsUrl(
+                category?.name || slug,
+                mockNews.title,
+                mockNews.published_at,
+                mockNews.hashed_id
+              ),
             },
           ]);
           setHasMore(false);
@@ -280,7 +372,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                   }`}
                 >
                   <Icon icon="material-symbols:schedule" className="mr-2" />
-                  <TranslatedText>Diperbarui hari ini</TranslatedText>
+                  <TranslatedText>{getLatestUpdateDate()}</TranslatedText>
                 </span>
               </div>
             </div>

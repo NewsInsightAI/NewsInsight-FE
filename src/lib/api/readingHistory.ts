@@ -4,6 +4,7 @@ export interface ReadingHistoryData {
   read_duration: number;
   read_percentage: number;
   news_id: number;
+  hashed_id: string;
   title: string;
   image_url: string;
   published_at: string;
@@ -66,7 +67,11 @@ export const readingHistoryApi = {
     newsId: number,
     readDuration = 0,
     readPercentage = 0.0
-  ): Promise<{ success: boolean; message: string }> => {
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data: ReadingHistoryData;
+  }> => {
     const response = await fetch("/api/reading-history", {
       method: "POST",
       credentials: "include",
@@ -101,6 +106,27 @@ export const readingHistoryApi = {
 
     if (!response.ok) {
       throw new Error("Failed to clear reading history");
+    }
+
+    return response.json();
+  },
+
+  // New function to track news views (public, no auth required)
+  trackNewsView: async (
+    newsId: number
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await fetch("/api/news/track-view", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        news_id: newsId,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to track news view");
     }
 
     return response.json();

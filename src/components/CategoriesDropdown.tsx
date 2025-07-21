@@ -213,7 +213,7 @@ export const CategoriesDropdown: React.FC<CategoriesDropdownProps> = ({
                         >
                           {category.description}
                         </p>
-                        {category.newsCount && (
+                        {typeof category.newsCount === "number" && (
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-2 ${
                               isDark

@@ -14,6 +14,7 @@ interface Category {
   description?: string;
   is_active?: boolean;
   news_count?: number;
+  newsCount?: number; // Add alternative field name
 }
 
 export default function CategoriesPage() {
@@ -32,7 +33,17 @@ export default function CategoriesPage() {
         if (response.ok) {
           const result = await response.json();
           if (result.status === "success" && result.data) {
-            setCategories(result.data);
+            // Transform data to ensure newsCount is properly mapped
+            const transformedCategories = result.data.map(
+              (category: Category & { news_count?: number }) => ({
+                ...category,
+                newsCount: category.newsCount || category.news_count || 0,
+                description:
+                  category.description ||
+                  `Berita ${category.name.toLowerCase()} terkini dan terpercaya`,
+              })
+            );
+            setCategories(transformedCategories);
           } else {
             throw new Error(result.message || "Failed to fetch categories");
           }
@@ -49,29 +60,57 @@ export default function CategoriesPage() {
             id: "1",
             name: "Teknologi",
             slug: "teknologi",
-            description: "Berita teknologi terkini",
-            news_count: 5,
+            description: "Berita teknologi terkini dan inovasi",
+            newsCount: 156,
           },
           {
             id: "2",
             name: "Olahraga",
             slug: "olahraga",
-            description: "Berita olahraga terbaru",
-            news_count: 3,
+            description: "Berita olahraga dan kompetisi",
+            newsCount: 78,
           },
           {
             id: "3",
             name: "Politik",
             slug: "politik",
-            description: "Berita politik nasional",
-            news_count: 8,
+            description: "Berita politik dan pemerintahan",
+            newsCount: 125,
           },
           {
             id: "4",
             name: "Ekonomi",
             slug: "ekonomi",
             description: "Berita ekonomi dan bisnis",
-            news_count: 6,
+            newsCount: 89,
+          },
+          {
+            id: "5",
+            name: "Kesehatan",
+            slug: "kesehatan",
+            description: "Kesehatan dan medis",
+            newsCount: 64,
+          },
+          {
+            id: "6",
+            name: "Pendidikan",
+            slug: "pendidikan",
+            description: "Dunia pendidikan",
+            newsCount: 45,
+          },
+          {
+            id: "7",
+            name: "Hiburan",
+            slug: "hiburan",
+            description: "Entertainment dan selebriti",
+            newsCount: 92,
+          },
+          {
+            id: "8",
+            name: "Internasional",
+            slug: "internasional",
+            description: "Berita dunia",
+            newsCount: 134,
           },
         ]);
       } finally {
@@ -238,7 +277,7 @@ export default function CategoriesPage() {
                     : "border-gray-200 bg-white hover:border-blue-300 hover:shadow-lg"
                 }`}
               >
-                <div className="flex flex-col items-center text-center">
+                <div className="flex flex-col items-center text-center h-full">
                   <div
                     className={`inline-flex items-center justify-center w-12 h-12 rounded-lg mb-4 ${
                       isDark ? "bg-blue-500/10" : "bg-blue-100"
@@ -254,30 +293,45 @@ export default function CategoriesPage() {
                   </div>
 
                   <h3
-                    className={`text-lg font-semibold mb-2 ${
+                    className={`text-lg font-semibold mb-3 ${
                       isDark ? "text-white" : "text-gray-900"
                     } group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors`}
                   >
                     <TranslatedText>{category.name}</TranslatedText>
                   </h3>
 
-                  <p
-                    className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"} mb-4 line-clamp-2`}
-                  >
-                    {category.description || `Berita ${category.name} terkini`}
-                  </p>
-
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                        isDark
-                          ? "bg-gray-700 text-gray-300"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
+                  <div className="flex-grow flex flex-col justify-between w-full">
+                    <p
+                      className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"} mb-4 h-[2.5rem] flex items-center justify-center text-center line-clamp-2 overflow-hidden`}
+                      title={
+                        category.description ||
+                        `Berita ${category.name} terkini`
+                      }
                     >
-                      <Icon icon="material-symbols:article" className="mr-1" />
-                      {formatNewsCount(category.news_count || 0)}
-                    </span>
+                      {category.description ||
+                        `Berita ${category.name} terkini`}
+                    </p>
+
+                    <div className="flex items-center justify-center mt-auto">
+                      <span
+                        className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium ${
+                          isDark
+                            ? "bg-gray-700 text-gray-300"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        <Icon
+                          icon="material-symbols:article"
+                          className="mr-1.5"
+                        />
+                        {formatNewsCount(
+                          category.newsCount || category.news_count || 0
+                        )}{" "}
+                        <span className="ml-1">
+                          <TranslatedText>berita</TranslatedText>
+                        </span>
+                      </span>
+                    </div>
                   </div>
                 </div>
               </Link>

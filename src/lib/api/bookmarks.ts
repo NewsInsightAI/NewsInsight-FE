@@ -2,6 +2,7 @@ export interface BookmarkData {
   id: number;
   bookmarked_at: string;
   news_id: number;
+  hashed_id: string;
   title: string;
   image_url: string;
   published_at: string;

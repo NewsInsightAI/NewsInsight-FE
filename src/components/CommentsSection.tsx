@@ -199,14 +199,6 @@ export default function CommentsSection({ newsId }: CommentsSectionProps) {
     }
   };
 
-  // Debug logging
-  console.log(
-    "CommentsSection received newsId:",
-    newsId,
-    "Type:",
-    typeof newsId
-  );
-
   // Get user from session
   const user = session?.user
     ? {

@@ -27,6 +27,7 @@ interface NewsItem {
   created_by_name?: string;
   authors?: Array<{ author_name: string; location?: string }>;
   tags?: string[];
+  link?: string; // Add link field for proper navigation
 }
 
 interface ArticleCardProps {
@@ -52,7 +53,9 @@ export default function ArticleCard({ article }: ArticleCardProps) {
   };
 
   const handleClick = () => {
-    router.push(`/news/${article.slug || article.id}`);
+    // Use the generated link if available, otherwise fallback to old format
+    const navigationUrl = article.link || `/news/${article.slug || article.id}`;
+    router.push(navigationUrl);
   };
 
   const blurDataURL =
