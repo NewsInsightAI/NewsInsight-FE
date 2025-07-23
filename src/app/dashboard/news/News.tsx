@@ -1,6 +1,7 @@
 "use client";
 import NewsTable from "@/components/ui/NewsTable";
 import Pagination from "@/components/ui/Pagination";
+import BatchFactCheckButton from "@/components/ui/BatchFactCheckButton";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Image from "next/image";
 import Link from "next/link";
@@ -333,10 +334,24 @@ export default function News() {
           >
             <Icon icon="basil:add-solid" className="w-4 h-4 md:w-5 md:h-5" />
             <span className="hidden sm:inline">Tambah Berita</span>
-            <span className="sm:hidden">Tambah</span>{" "}
+            <span className="sm:hidden">Tambah</span>
           </Link>
+
+          {/* Batch Fact Check Button */}
+          <BatchFactCheckButton
+            selectedNewsIds={selectedNewsIds}
+            newsData={newsData.map((news) => ({
+              id: news.id,
+              title: news.title,
+              content: news.title, // You can add more content here if available
+            }))}
+            onFactCheckComplete={(results) => {
+              console.log("Batch fact check results:", results);
+              // You can add additional handling here
+            }}
+          />
         </div>
-      </div>{" "}
+      </div>
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto overflow-x-auto w-full">
         {loading ? (

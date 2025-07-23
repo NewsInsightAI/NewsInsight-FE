@@ -5,6 +5,7 @@ import { Icon } from "@iconify/react";
 import { useDarkMode } from "@/context/DarkModeContext";
 import { motion } from "framer-motion";
 import ConfirmationModal from "./ConfirmationModal";
+import FactCheckButton from "./FactCheckButton";
 
 interface NewsData {
   id: number;
@@ -66,7 +67,8 @@ export default function NewsTable({
     image: string;
   } | null>(null);
   const [hoveredAuthor, setHoveredAuthor] = useState<{
-    id: number;
+    newsId: number;
+    authorId: number;
     anchor: HTMLElement | null;
   } | null>(null);
   const [showAuthorsModal, setShowAuthorsModal] = useState<{
@@ -563,7 +565,8 @@ export default function NewsTable({
                             }`}
                             onMouseEnter={(e) =>
                               setHoveredAuthor({
-                                id: a.id,
+                                newsId: report.id,
+                                authorId: a.id,
                                 anchor: e.currentTarget,
                               })
                             }
@@ -592,7 +595,10 @@ export default function NewsTable({
                   </div>
                   {/* Compact Profile Tooltip */}
                   {hoveredAuthor &&
-                    report.author.some((a) => a.id === hoveredAuthor.id) && (
+                    hoveredAuthor.newsId === report.id &&
+                    report.author.some(
+                      (a) => a.id === hoveredAuthor.authorId
+                    ) && (
                       <div
                         style={{
                           position: "fixed",
@@ -610,7 +616,7 @@ export default function NewsTable({
                       >
                         {(() => {
                           const author = report.author.find(
-                            (a) => a.id === hoveredAuthor.id
+                            (a) => a.id === hoveredAuthor.authorId
                           );
                           if (!author) return null;
                           return (
@@ -728,6 +734,16 @@ export default function NewsTable({
                       />
                       <span className="hidden sm:inline">Edit</span>
                     </button>
+
+                    {/* Fact Check Button */}
+                    <div className="flex items-center">
+                      <FactCheckButton
+                        newsId={report.id}
+                        newsTitle={report.title}
+                        size="sm"
+                      />
+                    </div>
+
                     <button
                       className="border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm hover:opacity-80 hover:cursor-pointer flex items-center justify-center min-w-0"
                       onClick={() => handleDelete(report)}
@@ -941,6 +957,17 @@ export default function NewsTable({
                 <Icon icon="mage:edit-fill" width={12} height={12} />
                 <span>Edit</span>
               </button>
+
+              {/* Fact Check Button for Mobile */}
+              <div className="flex-1">
+                <FactCheckButton
+                  newsId={report.id}
+                  newsTitle={report.title}
+                  size="sm"
+                  fullWidth={true}
+                />
+              </div>
+
               <button
                 className="flex-1 border bg-[#EF4444]/15 border-[#EF4444] text-[#EF4444] rounded-full px-3 py-2 text-xs hover:opacity-80 hover:cursor-pointer flex items-center justify-center gap-1"
                 onClick={() => handleDelete(report)}
