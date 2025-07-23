@@ -6,6 +6,9 @@ import { useDarkMode } from "@/context/DarkModeContext";
 import { motion } from "framer-motion";
 import ConfirmationModal from "./ConfirmationModal";
 import FactCheckButton from "./FactCheckButton";
+import StatusChangeModal from "./StatusChangeModal";
+import { useSession } from "next-auth/react";
+import { useToast } from "@/context/ToastProvider";
 
 interface NewsData {
   id: number;
@@ -59,6 +62,8 @@ export default function NewsTable({
   pagination,
 }: NewsTableProps) {
   const { isDark } = useDarkMode();
+  const { data: session } = useSession();
+  const { showToast } = useToast();
   const [selectedItems, setSelectedItems] = useState<string[]>(
     externalSelectedItems || []
   );
@@ -81,12 +86,76 @@ export default function NewsTable({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
+  // Status change modal states
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [statusModalNews, setStatusModalNews] = useState<NewsData | null>(null);
+  const [newsFactCheckStatus, setNewsFactCheckStatus] = useState<{
+    [key: number]: boolean;
+  }>({});
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
   // Sync external selection with internal state
   useEffect(() => {
     if (externalSelectedItems) {
       setSelectedItems(externalSelectedItems);
     }
   }, [externalSelectedItems]);
+
+  // Check fact check status for all news items
+  useEffect(() => {
+    const checkFactCheckStatus = async () => {
+      if (!session?.backendToken || datas.length === 0) return;
+
+      const statusPromises = datas.map(async (news) => {
+        try {
+          const response = await fetch(`/api/fact-check/${news.id}/has-check`, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.backendToken}`,
+            },
+          });
+
+          if (response.ok) {
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+              const data = await response.json();
+              return {
+                newsId: news.id,
+                hasFactCheck: data.data?.hasFactCheck || false,
+              };
+            } else {
+              console.warn(
+                `Non-JSON response for news ${news.id}:`,
+                response.status
+              );
+              return { newsId: news.id, hasFactCheck: false };
+            }
+          } else {
+            console.warn(
+              `Failed to check fact check status for news ${news.id}:`,
+              response.status
+            );
+            return { newsId: news.id, hasFactCheck: false };
+          }
+        } catch (error) {
+          console.error(
+            `Error checking fact check status for news ${news.id}:`,
+            error
+          );
+          return { newsId: news.id, hasFactCheck: false };
+        }
+      });
+
+      const results = await Promise.all(statusPromises);
+      const statusMap: { [key: number]: boolean } = {};
+      results.forEach(({ newsId, hasFactCheck }) => {
+        statusMap[newsId] = hasFactCheck;
+      });
+      setNewsFactCheckStatus(statusMap);
+    };
+
+    checkFactCheckStatus();
+  }, [datas, session?.backendToken]);
 
   const toggleSelectItem = (id: string) => {
     const newSelectedItems = selectedItems.includes(id)
@@ -114,11 +183,20 @@ export default function NewsTable({
       onSelectionChange(newSelectedItems);
     }
   };
-  const getStatusBadge = (level: string) => {
+  const getStatusBadge = (level: string, news: NewsData) => {
+    const baseClasses =
+      "px-2 md:px-3 py-1 md:py-2 rounded-full flex items-center justify-center w-fit text-xs md:text-sm cursor-pointer hover:opacity-80 transition-opacity duration-200";
+
+    const handleClick = () => handleStatusClick(news);
+
     switch (level) {
       case "published":
         return (
-          <span className="bg-[#22C55E]/15 text-[#22C55E] border border-[#22C55E] px-2 md:px-3 py-1 md:py-2 rounded-full flex items-center justify-center w-fit text-xs md:text-sm">
+          <span
+            className={`bg-[#22C55E]/15 text-[#22C55E] border border-[#22C55E] ${baseClasses}`}
+            onClick={handleClick}
+            title="Klik untuk mengubah status"
+          >
             <Icon
               icon="ic:round-publish"
               className="w-3 h-3 md:w-4 md:h-4 mr-1"
@@ -128,7 +206,11 @@ export default function NewsTable({
         );
       case "draft":
         return (
-          <span className="bg-[#9CA3AF]/15 text-[#9CA3AF] border border-[#9CA3AF] px-2 md:px-3 py-1 md:py-2 rounded-full flex items-center justify-center w-fit text-xs md:text-sm">
+          <span
+            className={`bg-[#9CA3AF]/15 text-[#9CA3AF] border border-[#9CA3AF] ${baseClasses}`}
+            onClick={handleClick}
+            title="Klik untuk mengubah status"
+          >
             <Icon
               icon="material-symbols:draft"
               className="w-3 h-3 md:w-4 md:h-4 mr-1"
@@ -138,7 +220,11 @@ export default function NewsTable({
         );
       case "scheduled":
         return (
-          <span className="bg-[#3B82F6]/15 text-[#3B82F6] border border-[#3B82F6] px-2 md:px-3 py-1 md:py-2 rounded-full flex items-center justify-center w-fit text-xs md:text-sm">
+          <span
+            className={`bg-[#3B82F6]/15 text-[#3B82F6] border border-[#3B82F6] ${baseClasses}`}
+            onClick={handleClick}
+            title="Klik untuk mengubah status"
+          >
             <Icon
               icon="solar:danger-triangle-bold"
               className="w-3 h-3 md:w-4 md:h-4 mr-1"
@@ -148,7 +234,11 @@ export default function NewsTable({
         );
       case "archived":
         return (
-          <span className="bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444] px-2 md:px-3 py-1 md:py-2 rounded-full flex items-center justify-center w-fit text-xs md:text-sm">
+          <span
+            className={`bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444] ${baseClasses}`}
+            onClick={handleClick}
+            title="Klik untuk mengubah status"
+          >
             <Icon
               icon="material-symbols:archive-rounded"
               className="w-3 h-3 md:w-4 md:h-4 mr-1"
@@ -158,7 +248,11 @@ export default function NewsTable({
         );
       case "review":
         return (
-          <span className="bg-[#FACC15]/15 text-[#FACC15] border border-[#FACC15] px-2 md:px-3 py-1 md:py-2 rounded-full flex items-center justify-center w-fit text-xs md:text-sm">
+          <span
+            className={`bg-[#FACC15]/15 text-[#FACC15] border border-[#FACC15] ${baseClasses}`}
+            onClick={handleClick}
+            title="Klik untuk mengubah status"
+          >
             <Icon
               icon="material-symbols:review"
               className="w-3 h-3 md:w-4 md:h-4 mr-1"
@@ -250,6 +344,60 @@ export default function NewsTable({
       console.error("Error deleting news:", error);
     } finally {
       setIsBulkDeleting(false);
+    }
+  };
+
+  // Handle status change
+  const handleStatusClick = (news: NewsData) => {
+    setStatusModalNews(news);
+    setShowStatusModal(true);
+  };
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (!statusModalNews || !session?.backendToken) return;
+
+    setIsUpdatingStatus(true);
+    try {
+      const response = await fetch(`/api/news/${statusModalNews.id}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.backendToken}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.code === "FACT_CHECK_REQUIRED") {
+          showToast(
+            "Berita harus menjalankan fact check sebelum dapat dipublikasi",
+            "error"
+          );
+        } else {
+          showToast(data.error || "Gagal mengubah status berita", "error");
+        }
+        return;
+      }
+
+      showToast(
+        `Status berita berhasil diubah menjadi ${newStatus}`,
+        "success"
+      );
+      setShowStatusModal(false);
+      setStatusModalNews(null);
+
+      // Refresh data or update local state
+      // You might want to call a refresh function here
+      if (typeof window !== "undefined") {
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error("Error updating news status:", error);
+      showToast("Gagal mengubah status berita", "error");
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -718,7 +866,7 @@ export default function NewsTable({
                     isDark ? "text-gray-300" : "text-gray-900"
                   }`}
                 >
-                  {getStatusBadge(report.status)}
+                  {getStatusBadge(report.status, report)}
                 </td>
                 <td className="py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm">
                   <div className="flex flex-row gap-1 sm:gap-2 justify-start">
@@ -998,6 +1146,24 @@ export default function NewsTable({
           </div>
         </div>
       )}
+
+      {/* Status Change Modal */}
+      <StatusChangeModal
+        isOpen={showStatusModal}
+        onClose={() => {
+          setShowStatusModal(false);
+          setStatusModalNews(null);
+        }}
+        onConfirm={handleStatusChange}
+        currentStatus={statusModalNews?.status || ""}
+        newsTitle={statusModalNews?.title || ""}
+        hasFactCheck={
+          statusModalNews
+            ? newsFactCheckStatus[statusModalNews.id] || false
+            : false
+        }
+        isLoading={isUpdatingStatus}
+      />
     </>
   );
 }

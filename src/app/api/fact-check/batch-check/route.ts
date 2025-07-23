@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     // Forward request to backend
     const backendResponse = await fetch(
-      `${BACKEND_URL}/api/v1/fact-check/batch-check`,
+      `${BACKEND_URL}/fact-check/batch-check`,
       {
         method: "POST",
         headers: {
