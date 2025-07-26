@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Icon } from "@iconify/react";
 import { useDarkMode } from "@/context/DarkModeContext";
 import { TranslatedText } from "@/components/TranslatedText";
+import { generateNewsUrl } from "@/utils/newsUrlGenerator";
 
 interface SearchSidebarProps {
   isVisible: boolean;
@@ -30,6 +31,7 @@ interface PopularNewsItem {
   hashed_id?: string;
   featured_image?: string;
   category_name?: string;
+  published_at?: string;
   authors?: { author_name: string }[];
 }
 
@@ -65,6 +67,46 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
   const [popularNews, setPopularNews] = useState<PopularNewsItem[]>([]);
   const [popularTags, setPopularTags] = useState<string[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  // State untuk dynamic navbar height
+  const [navbarHeight, setNavbarHeight] = useState(140); // Default fallback
+
+  // Dynamic navbar height calculation
+  useEffect(() => {
+    const updateNavbarHeight = () => {
+      const navbar = document.getElementById("navbar");
+      if (navbar) {
+        const height = navbar.offsetHeight;
+        setNavbarHeight(height + 8); // Add small padding
+      }
+    };
+
+    // Initial calculation
+    updateNavbarHeight();
+
+    // Update on window resize
+    window.addEventListener("resize", updateNavbarHeight);
+
+    // Update when navbar might change (e.g., mobile menu toggle)
+    const observer = new ResizeObserver(updateNavbarHeight);
+    const navbar = document.getElementById("navbar");
+    if (navbar) {
+      observer.observe(navbar);
+    }
+
+    // Update on search focus/blur events that might affect navbar
+    window.addEventListener("search-expanded", updateNavbarHeight);
+    window.addEventListener("search-collapsed", updateNavbarHeight);
+
+    return () => {
+      window.removeEventListener("resize", updateNavbarHeight);
+      window.removeEventListener("search-expanded", updateNavbarHeight);
+      window.removeEventListener("search-collapsed", updateNavbarHeight);
+      if (navbar) {
+        observer.unobserve(navbar);
+      }
+    };
+  }, []);
 
   // Fetch data dari API
   useEffect(() => {
@@ -260,24 +302,24 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
 
   return (
     <div
-      className={`fixed right-0 w-96 ${isDark ? "bg-[#1A1A1A]" : "bg-white"} shadow-xl z-40 overflow-y-auto`}
+      className={`search-sidebar-mobile fixed inset-x-0 md:right-0 md:left-auto w-full md:w-96 ${isDark ? "bg-[#1A1A1A]" : "bg-white"} shadow-xl z-30 overflow-y-auto mobile-sidebar-scroll safe-area-sidebar`}
       style={{
-        top: "80px",
-        height: "calc(100vh - 80px)",
+        top: `${navbarHeight}px`,
+        height: `calc(100vh - ${navbarHeight}px)`,
       }}
     >
-      <div className="p-6 space-y-6">
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6 safe-area-sidebar">
         {/* Search Results Section - Show when searching or have results */}
         {(searchQuery || searchResults.length > 0 || isSearching) && (
           <div>
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-3 md:mb-4">
               <Icon
                 icon="material-symbols:search"
-                fontSize={20}
-                className={`${isDark ? "text-blue-400" : "text-blue-500"}`}
+                fontSize={18}
+                className={`${isDark ? "text-blue-400" : "text-blue-500"} md:text-xl`}
               />
               <h3
-                className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+                className={`font-semibold text-sm md:text-base ${isDark ? "text-white" : "text-gray-900"}`}
               >
                 {searchQuery ? (
                   <>
@@ -290,32 +332,38 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
               </h3>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2 md:space-y-3">
               {isSearching ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <div className="flex items-center justify-center py-6 md:py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-blue-500"></div>
                 </div>
               ) : searchResults.length > 0 ? (
                 searchResults.map((news) => (
                   <div
                     key={news.id}
-                    className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${isDark ? "bg-gray-800 hover:bg-gray-700" : "bg-gray-50 hover:bg-gray-100"}`}
+                    className={`p-2.5 md:p-3 rounded-lg cursor-pointer transition-all duration-200 ${isDark ? "bg-gray-800 hover:bg-gray-700" : "bg-gray-50 hover:bg-gray-100"}`}
                     onClick={() => {
-                      // Navigate to news article
-                      window.location.href = `/news/${news.hashed_id || news.id}`;
+                      // Generate SEO-friendly URL sama seperti di Home.tsx
+                      const newsUrl = generateNewsUrl(
+                        news.category_name || "berita",
+                        news.title,
+                        news.published_at,
+                        news.hashed_id || news.id
+                      );
+                      window.location.href = newsUrl;
                     }}
                   >
-                    <div className="flex gap-3">
+                    <div className="flex gap-2.5 md:gap-3">
                       <Image
                         src={news.featured_image || "/images/main_news.png"}
                         alt={news.title}
                         width={48}
                         height={48}
-                        className="w-12 h-12 object-cover rounded-lg flex-shrink-0"
+                        className="w-10 h-10 md:w-12 md:h-12 object-cover rounded-lg flex-shrink-0"
                       />
                       <div className="flex-1 min-w-0">
                         <h4
-                          className={`text-sm font-medium line-clamp-2 ${isDark ? "text-white" : "text-gray-900"}`}
+                          className={`text-xs md:text-sm font-medium line-clamp-2 ${isDark ? "text-white" : "text-gray-900"}`}
                         >
                           {news.title}
                         </h4>
@@ -330,14 +378,14 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                   </div>
                 ))
               ) : searchQuery ? (
-                <div className="text-center py-8">
+                <div className="text-center py-6 md:py-8">
                   <Icon
                     icon="material-symbols:search-off"
-                    fontSize={48}
-                    className={`mx-auto mb-2 ${isDark ? "text-gray-600" : "text-gray-400"}`}
+                    fontSize={40}
+                    className={`mx-auto mb-2 ${isDark ? "text-gray-600" : "text-gray-400"} md:text-5xl`}
                   />
                   <p
-                    className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                    className={`text-xs md:text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
                   >
                     <TranslatedText>Tidak ada hasil ditemukan</TranslatedText>
                   </p>
@@ -352,28 +400,28 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
           <>
             {/* Riwayat Pencarian / Pencarian Populer */}
             <div>
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-3 md:mb-4">
                 <Icon
                   icon={
                     isUserLoggedIn
                       ? "material-symbols:history"
                       : "material-symbols:trending-up"
                   }
-                  fontSize={20}
-                  className={`${isDark ? "text-blue-400" : "text-blue-500"}`}
+                  fontSize={18}
+                  className={`${isDark ? "text-blue-400" : "text-blue-500"} md:text-xl`}
                 />
                 <h3
-                  className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+                  className={`font-semibold text-sm md:text-base ${isDark ? "text-white" : "text-gray-900"}`}
                 >
                   <TranslatedText>
                     {isUserLoggedIn ? "Riwayat Pencarian" : "Pencarian Populer"}
                   </TranslatedText>
                 </h3>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5 md:space-y-2">
                 {isLoadingHistory ? (
-                  <div className="flex items-center justify-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                  <div className="flex items-center justify-center py-3 md:py-4">
+                    <div className="animate-spin rounded-full h-5 w-5 md:h-6 md:w-6 border-b-2 border-blue-500"></div>
                   </div>
                 ) : (isUserLoggedIn ? userSearchHistory : trendingSearches)
                     .length > 0 ? (
@@ -382,15 +430,17 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                       <button
                         key={index}
                         onClick={() => onSearchClick(search)}
-                        className={`flex items-center gap-3 w-full p-2 rounded-lg text-left transition-colors group ${isDark ? "hover:bg-gray-800 text-gray-300" : "hover:bg-gray-50 text-gray-700"}`}
+                        className={`flex items-center gap-2.5 md:gap-3 w-full p-1.5 md:p-2 rounded-lg text-left transition-colors group ${isDark ? "hover:bg-gray-800 text-gray-300" : "hover:bg-gray-50 text-gray-700"}`}
                       >
-                        <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
-                        <span className="text-sm flex-1">{search}</span>
+                        <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                        <span className="text-xs md:text-sm flex-1">
+                          {search}
+                        </span>
                         {isUserLoggedIn && (
                           <Icon
                             icon="material-symbols:close"
-                            fontSize={16}
-                            className={`opacity-0 group-hover:opacity-100 transition-opacity ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                            fontSize={14}
+                            className={`opacity-0 group-hover:opacity-100 transition-opacity ${isDark ? "text-gray-500" : "text-gray-400"} md:text-base`}
                             onClick={(e) => {
                               e.stopPropagation();
                               // TODO: Implement delete search history
@@ -402,18 +452,18 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                     )
                   )
                 ) : (
-                  <div className="text-center py-4">
+                  <div className="text-center py-3 md:py-4">
                     <Icon
                       icon={
                         isUserLoggedIn
                           ? "material-symbols:history"
                           : "material-symbols:trending-up"
                       }
-                      fontSize={32}
-                      className={`mx-auto mb-2 ${isDark ? "text-gray-600" : "text-gray-400"}`}
+                      fontSize={28}
+                      className={`mx-auto mb-2 ${isDark ? "text-gray-600" : "text-gray-400"} md:text-4xl`}
                     />
                     <p
-                      className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                      className={`text-xs md:text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
                     >
                       <TranslatedText>
                         {isUserLoggedIn
@@ -429,44 +479,46 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
             {/* Trending Searches - Hanya untuk user yang login */}
             {isUserLoggedIn && (
               <div>
-                <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-2 mb-3 md:mb-4">
                   <Icon
                     icon="material-symbols:trending-up"
-                    fontSize={20}
-                    className={`${isDark ? "text-blue-400" : "text-blue-500"}`}
+                    fontSize={18}
+                    className={`${isDark ? "text-blue-400" : "text-blue-500"} md:text-xl`}
                   />
                   <h3
-                    className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+                    className={`font-semibold text-sm md:text-base ${isDark ? "text-white" : "text-gray-900"}`}
                   >
                     <TranslatedText>Pencarian Trending</TranslatedText>
                   </h3>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5 md:space-y-2">
                   {trendingSearches.length > 0 ? (
                     trendingSearches.map((search, index) => (
                       <button
                         key={index}
                         onClick={() => onSearchClick(search)}
-                        className={`flex items-center gap-3 w-full p-2 rounded-lg text-left transition-colors ${isDark ? "hover:bg-gray-800 text-gray-300" : "hover:bg-gray-50 text-gray-700"}`}
+                        className={`flex items-center gap-2.5 md:gap-3 w-full p-1.5 md:p-2 rounded-lg text-left transition-colors ${isDark ? "hover:bg-gray-800 text-gray-300" : "hover:bg-gray-50 text-gray-700"}`}
                       >
                         <span
-                          className={`text-sm font-bold flex-shrink-0 ${index < 3 ? "text-red-500" : isDark ? "text-gray-500" : "text-gray-400"}`}
+                          className={`text-xs md:text-sm font-bold flex-shrink-0 ${index < 3 ? "text-red-500" : isDark ? "text-gray-500" : "text-gray-400"}`}
                         >
                           #{index + 1}
                         </span>
-                        <span className="text-sm flex-1">{search}</span>
-                        <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
+                        <span className="text-xs md:text-sm flex-1">
+                          {search}
+                        </span>
+                        <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-red-500 rounded-full flex-shrink-0"></div>
                       </button>
                     ))
                   ) : (
-                    <div className="text-center py-4">
+                    <div className="text-center py-3 md:py-4">
                       <Icon
                         icon="material-symbols:trending-up"
-                        fontSize={32}
-                        className={`mx-auto mb-2 ${isDark ? "text-gray-600" : "text-gray-400"}`}
+                        fontSize={28}
+                        className={`mx-auto mb-2 ${isDark ? "text-gray-600" : "text-gray-400"} md:text-4xl`}
                       />
                       <p
-                        className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                        className={`text-xs md:text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
                       >
                         <TranslatedText>
                           Belum ada pencarian trending
@@ -480,41 +532,48 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
 
             {/* Berita Terpopuler */}
             <div>
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-3 md:mb-4">
                 <Icon
                   icon="material-symbols:trending-up"
-                  fontSize={20}
-                  className={`${isDark ? "text-blue-400" : "text-blue-500"}`}
+                  fontSize={18}
+                  className={`${isDark ? "text-blue-400" : "text-blue-500"} md:text-xl`}
                 />
                 <h3
-                  className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+                  className={`font-semibold text-sm md:text-base ${isDark ? "text-white" : "text-gray-900"}`}
                 >
                   <TranslatedText>Berita Terpopuler</TranslatedText>
                 </h3>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2 md:space-y-3">
                 {popularNews.length > 0 ? (
                   popularNews.map((news, index) => (
                     <button
                       key={news.id}
                       onClick={() => {
                         if (news.hashed_id) {
-                          window.location.href = `/news/${news.hashed_id}`;
+                          // Generate SEO-friendly URL sama seperti di Home.tsx
+                          const newsUrl = generateNewsUrl(
+                            news.category_name || "berita",
+                            news.title,
+                            news.published_at || new Date().toISOString(),
+                            news.hashed_id
+                          );
+                          window.location.href = newsUrl;
                         } else {
                           onSearchClick(news.title);
                         }
                       }}
-                      className={`w-full text-left p-3 rounded-lg transition-colors ${isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"}`}
+                      className={`w-full text-left p-2 md:p-3 rounded-lg transition-colors ${isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"}`}
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-2.5 md:gap-3">
                         <span
-                          className={`text-lg font-bold flex-shrink-0 ${index < 3 ? "text-blue-500" : isDark ? "text-gray-500" : "text-gray-400"}`}
+                          className={`text-base md:text-lg font-bold flex-shrink-0 ${index < 3 ? "text-blue-500" : isDark ? "text-gray-500" : "text-gray-400"}`}
                         >
                           #{index + 1}
                         </span>
                         <div className="flex-1">
                           <p
-                            className={`text-sm line-clamp-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                            className={`text-xs md:text-sm line-clamp-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                           >
                             {news.title}
                           </p>
@@ -530,14 +589,14 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                     </button>
                   ))
                 ) : (
-                  <div className="text-center py-4">
+                  <div className="text-center py-3 md:py-4">
                     <Icon
                       icon="material-symbols:trending-up"
-                      fontSize={32}
-                      className={`mx-auto mb-2 ${isDark ? "text-gray-600" : "text-gray-400"}`}
+                      fontSize={28}
+                      className={`mx-auto mb-2 ${isDark ? "text-gray-600" : "text-gray-400"} md:text-4xl`}
                     />
                     <p
-                      className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                      className={`text-xs md:text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
                     >
                       <TranslatedText>Belum ada berita populer</TranslatedText>
                     </p>
@@ -548,46 +607,46 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
 
             {/* Tagar Popular */}
             <div>
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-3 md:mb-4">
                 <Icon
                   icon="material-symbols:tag"
-                  fontSize={20}
-                  className={`${isDark ? "text-blue-400" : "text-blue-500"}`}
+                  fontSize={18}
+                  className={`${isDark ? "text-blue-400" : "text-blue-500"} md:text-xl`}
                 />
                 <h3
-                  className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+                  className={`font-semibold text-sm md:text-base ${isDark ? "text-white" : "text-gray-900"}`}
                 >
                   <TranslatedText>Tagar Populer</TranslatedText>
                 </h3>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5 md:space-y-2">
                 {popularTags.length > 0 ? (
                   popularTags.map((tag, index) => (
                     <button
                       key={index}
                       onClick={() => onSearchClick(tag.replace("#", ""))}
-                      className={`flex items-center justify-between w-full p-2 rounded-lg text-left transition-colors ${isDark ? "hover:bg-gray-800 text-gray-300" : "hover:bg-gray-50 text-gray-700"}`}
+                      className={`flex items-center justify-between w-full p-1.5 md:p-2 rounded-lg text-left transition-colors ${isDark ? "hover:bg-gray-800 text-gray-300" : "hover:bg-gray-50 text-gray-700"}`}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2.5 md:gap-3">
                         <span
-                          className={`text-lg font-bold flex-shrink-0 ${index < 3 ? "text-blue-500" : isDark ? "text-gray-500" : "text-gray-400"}`}
+                          className={`text-base md:text-lg font-bold flex-shrink-0 ${index < 3 ? "text-blue-500" : isDark ? "text-gray-500" : "text-gray-400"}`}
                         >
                           #{index + 1}
                         </span>
-                        <span className="text-sm">{tag}</span>
+                        <span className="text-xs md:text-sm">{tag}</span>
                       </div>
-                      <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
+                      <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-red-500 rounded-full flex-shrink-0"></div>
                     </button>
                   ))
                 ) : (
-                  <div className="text-center py-4">
+                  <div className="text-center py-3 md:py-4">
                     <Icon
                       icon="material-symbols:tag"
-                      fontSize={32}
-                      className={`mx-auto mb-2 ${isDark ? "text-gray-600" : "text-gray-400"}`}
+                      fontSize={28}
+                      className={`mx-auto mb-2 ${isDark ? "text-gray-600" : "text-gray-400"} md:text-4xl`}
                     />
                     <p
-                      className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                      className={`text-xs md:text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
                     >
                       <TranslatedText>Belum ada tagar populer</TranslatedText>
                     </p>

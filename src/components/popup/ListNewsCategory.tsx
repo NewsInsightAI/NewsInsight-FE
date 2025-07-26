@@ -1,6 +1,6 @@
 "use client";
 import { Icon } from "@iconify/react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDarkMode } from "@/context/DarkModeContext";
 
@@ -9,21 +9,22 @@ interface Category {
   value: string;
 }
 
+interface ApiCategory {
+  id: number;
+  name: string;
+  description: string | null;
+  slug: string;
+  status: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  newsCount?: number;
+}
+
 interface ListNewsCategoryProps {
   onClose: () => void;
   onSave: (selectedCategories: Category[]) => void;
 }
-
-const categories: Category[] = [
-  { label: "Teknologi", value: "teknologi" },
-  { label: "Pendidikan", value: "pendidikan" },
-  { label: "Politik", value: "politik" },
-  { label: "Ekonomi & Bisnis", value: "ekonomi-bisnis" },
-  { label: "Sains & Kesehatan", value: "sains-kesehatan" },
-  { label: "Olahraga", value: "olahraga" },
-  { label: "Hiburan & Selebriti", value: "hiburan-selebriti" },
-  { label: "Gaya Hidup", value: "gaya-hidup" },
-];
 
 export default function ListNewsCategory({
   onClose,
@@ -32,8 +33,52 @@ export default function ListNewsCategory({
   const { isDark } = useDarkMode();
   const [findCategory, setFindCategory] = useState<string>("");
   const [selected, setSelected] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const maxSelect = 5;
+
+  // Fetch categories dari API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("/api/categories");
+        if (response.ok) {
+          const result = await response.json();
+          if (result.status === "success" && result.data) {
+            // Filter hanya kategori yang aktif dan transform ke format yang dibutuhkan
+            const activeCategories = result.data
+              .filter(
+                (category: ApiCategory) =>
+                  category.isActive && category.status === "active"
+              )
+              .map((category: ApiCategory) => ({
+                label: category.name,
+                value: category.slug,
+              }));
+            setCategories(activeCategories);
+          } else {
+            console.error("Failed to fetch categories:", result.message);
+            // Tidak ada fallback, biarkan kosong untuk menampilkan pesan "tidak ada kategori"
+            setCategories([]);
+          }
+        } else {
+          console.error("Failed to fetch categories");
+          // Tidak ada fallback, biarkan kosong untuk menampilkan pesan "tidak ada kategori"
+          setCategories([]);
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        // Tidak ada fallback, biarkan kosong untuk menampilkan pesan "tidak ada kategori"
+        setCategories([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleToggleCategory = (category: Category) => {
     if (selected.find((item) => item.value === category.value)) {
@@ -116,37 +161,65 @@ export default function ListNewsCategory({
         </div>
         {/* List of categories with animations */}
         <div className="space-y-2 mt-4 max-h-[400px] overflow-y-auto">
-          <AnimatePresence>
-            {filteredCategories.map((cat) => (
-              <motion.div
-                key={cat.value}
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.3 }}
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-8 space-y-3">
+              <Icon
+                icon="line-md:loading-loop"
+                className="text-3xl text-blue-500"
+              />
+              <p
+                className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
               >
-                {" "}
-                <button
-                  type="button"
-                  onClick={() => handleToggleCategory(cat)}
-                  disabled={selected.length >= maxSelect && !isSelected(cat)}
-                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm border transition cursor-pointer w-full ${
-                    isSelected(cat)
-                      ? "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white"
-                      : isDark
-                        ? "bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600"
-                        : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
-                  } ${
-                    selected.length >= maxSelect && !isSelected(cat)
-                      ? "opacity-50 cursor-not-allowed"
-                      : ""
-                  }`}
+                Memuat kategori...
+              </p>
+            </div>
+          ) : filteredCategories.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 space-y-3">
+              <Icon
+                icon="material-symbols:search-off"
+                className={`text-3xl ${isDark ? "text-gray-500" : "text-gray-400"}`}
+              />
+              <p
+                className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
+              >
+                {findCategory
+                  ? "Kategori tidak ditemukan"
+                  : "Tidak ada kategori yang tersedia"}
+              </p>
+            </div>
+          ) : (
+            <AnimatePresence>
+              {filteredCategories.map((cat) => (
+                <motion.div
+                  key={cat.value}
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  {cat.label}
-                </button>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                  {" "}
+                  <button
+                    type="button"
+                    onClick={() => handleToggleCategory(cat)}
+                    disabled={selected.length >= maxSelect && !isSelected(cat)}
+                    className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm border transition cursor-pointer w-full ${
+                      isSelected(cat)
+                        ? "bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white"
+                        : isDark
+                          ? "bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600"
+                          : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
+                    } ${
+                      selected.length >= maxSelect && !isSelected(cat)
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
         </div>{" "}
         <div className="flex flex-col items-center mt-4 gap-2.5 w-full">
           <div

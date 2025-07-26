@@ -1057,15 +1057,6 @@ export default function NewsDetailPage() {
                           className="w-5 h-5 mr-2 text-blue-500"
                         />
                         <TranslatedText>Ringkasan Berita</TranslatedText>
-                        <span
-                          className={`ml-2 px-2 py-1 text-xs rounded-full ${
-                            isDark
-                              ? "bg-green-800 text-green-100"
-                              : "bg-green-100 text-green-800"
-                          }`}
-                        >
-                          <TranslatedText>Tersimpan</TranslatedText>
-                        </span>
                       </h3>
                       <button
                         onClick={() => setShowSummary(false)}

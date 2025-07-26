@@ -1,5 +1,46 @@
 @import "tailwindcss";
 
+/* OpenDyslexic Font - Local Files */
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Regular.woff2') format('woff2'),
+       url('/fonts/OpenDyslexic-Regular.woff') format('woff'),
+       url('/fonts/OpenDyslexic-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Bold.woff2') format('woff2'),
+       url('/fonts/OpenDyslexic-Bold.woff') format('woff'),
+       url('/fonts/OpenDyslexic-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Italic.woff2') format('woff2'),
+       url('/fonts/OpenDyslexic-Italic.woff') format('woff'),
+       url('/fonts/OpenDyslexic-Italic.otf') format('opentype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Bold-Italic.woff2') format('woff2'),
+       url('/fonts/OpenDyslexic-Bold-Italic.woff') format('woff'),
+       url('/fonts/OpenDyslexic-Bold-Italic.otf') format('opentype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -19,10 +60,117 @@
   }
 }
 
+/* High Contrast Mode Styles */
+.high-contrast {
+  --background: #000000 !important;
+  --foreground: #ffffff !important;
+  color: #ffffff !important;
+  background-color: #000000 !important;
+}
+
+.high-contrast * {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+.high-contrast .bg-white,
+.high-contrast .bg-gray-50,
+.high-contrast .bg-gray-100,
+.high-contrast .bg-gray-200,
+.high-contrast .bg-blue-50,
+.high-contrast .bg-blue-100 {
+  background-color: #000000 !important;
+}
+
+.high-contrast .text-gray-600,
+.high-contrast .text-gray-700,
+.high-contrast .text-gray-800,
+.high-contrast .text-gray-900,
+.high-contrast .text-blue-600,
+.high-contrast .text-blue-700,
+.high-contrast .text-red-600,
+.high-contrast .text-green-600 {
+  color: #ffffff !important;
+}
+
+.high-contrast button,
+.high-contrast .button {
+  background-color: #333333 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+}
+
+.high-contrast button:hover,
+.high-contrast .button:hover {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+.high-contrast input,
+.high-contrast textarea,
+.high-contrast select {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+}
+
+.high-contrast a {
+  color: #ffff00 !important;
+  text-decoration: underline !important;
+}
+
+.high-contrast a:hover {
+  color: #ffffff !important;
+  background-color: #ffff00 !important;
+}
+
+.high-contrast .shadow-md,
+.high-contrast .shadow-lg,
+.high-contrast .shadow-xl {
+  box-shadow: 0 0 10px #ffffff !important;
+}
+
+.high-contrast .border,
+.high-contrast .border-gray-200,
+.high-contrast .border-gray-300 {
+  border-color: #ffffff !important;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  transition: font-family 0.3s ease;
+}
+
+/* OpenDyslexic Font Accessibility */
+.font-opendyslexic,
+.font-opendyslexic * {
+  font-family: 'OpenDyslexic', Arial, sans-serif !important;
+}
+
+/* Ensure OpenDyslexic applies to all text elements */
+html.font-opendyslexic body,
+html.font-opendyslexic h1,
+html.font-opendyslexic h2,
+html.font-opendyslexic h3,
+html.font-opendyslexic h4,
+html.font-opendyslexic h5,
+html.font-opendyslexic h6,
+html.font-opendyslexic p,
+html.font-opendyslexic span,
+html.font-opendyslexic div,
+html.font-opendyslexic a,
+html.font-opendyslexic button,
+html.font-opendyslexic input,
+html.font-opendyslexic textarea,
+html.font-opendyslexic select,
+html.font-opendyslexic label,
+html.font-opendyslexic li,
+html.font-opendyslexic td,
+html.font-opendyslexic th {
+  font-family: 'OpenDyslexic', Arial, sans-serif !important;
 }
 
 /* Fix untuk list styling dalam prose */

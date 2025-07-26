@@ -28,7 +28,7 @@ export async function POST(
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
 
     // Forward request to backend
-    const response = await fetch(`${BACKEND_URL}/fact-check/${newsId}`, {
+    const response = await fetch(`${BACKEND_URL}/fact-check/${newsId}/check`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -37,7 +37,30 @@ export async function POST(
       body: JSON.stringify(body),
     });
 
-    const data = await response.json();
+    // Check if response is JSON
+    const contentType = response.headers.get("content-type");
+    let data;
+
+    if (contentType && contentType.includes("application/json")) {
+      data = await response.json();
+    } else {
+      // Handle non-JSON response (likely HTML error page)
+      const text = await response.text();
+      console.error("Non-JSON response received:", text.substring(0, 200));
+
+      return NextResponse.json(
+        {
+          status: "error",
+          message: "Server mengalami masalah internal",
+          data: null,
+          error: {
+            code: "INVALID_RESPONSE",
+            details: `Expected JSON but received ${contentType || "unknown"} content`,
+          },
+        },
+        { status: 500 }
+      );
+    }
 
     if (!response.ok) {
       return NextResponse.json(data, { status: response.status });

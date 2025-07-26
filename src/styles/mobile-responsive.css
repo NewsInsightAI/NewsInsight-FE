@@ -1,0 +1,212 @@
+/* Mobile Responsive Styles for Navbar and Search Sidebar */
+
+/* Mobile breakpoints */
+@media (max-width: 768px) {
+  /* Navbar adjustments */
+  .navbar-container {
+    padding: 0.75rem 1rem !important;
+    min-height: 60px;
+  }
+
+  /* Search sidebar mobile adjustments */
+  .search-sidebar-mobile {
+    top: 140px !important;
+    height: calc(100vh - 140px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    border-radius: 0 !important;
+  }
+
+  /* Mobile menu improvements */
+  .mobile-menu-overlay {
+    top: 80px !important;
+  }
+
+  /* Modern hamburger menu styling */
+  .mobile-menu-item {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mobile-menu-item::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(59, 213, 255, 0.1),
+      rgba(54, 122, 242, 0.1)
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: 1rem;
+  }
+
+  .mobile-menu-item:active::before {
+    opacity: 1;
+  }
+
+  /* Backdrop blur support for older browsers */
+  @supports not (backdrop-filter: blur(24px)) {
+    .mobile-hamburger-menu {
+      background: rgba(26, 26, 26, 0.98) !important;
+    }
+
+    .mobile-hamburger-menu.light {
+      background: rgba(255, 255, 255, 0.98) !important;
+    }
+  }
+
+  /* Mobile profile dropdown positioning */
+  .mobile-profile-dropdown {
+    right: 1rem !important;
+    left: 1rem !important;
+    width: calc(100% - 2rem) !important;
+  }
+
+  /* Search input mobile adjustments */
+  .search-input-mobile {
+    font-size: 14px !important;
+    padding: 8px 16px !important;
+  }
+
+  /* Mobile buttons */
+  .mobile-btn {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    border-radius: 16px !important;
+  }
+
+  /* Mobile menu scrollbar styling */
+  .mobile-menu-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  }
+
+  .mobile-menu-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .mobile-menu-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .mobile-menu-scroll::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.5);
+    border-radius: 2px;
+  }
+
+  .mobile-menu-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.7);
+  }
+
+  /* Mobile text sizing */
+  .mobile-text-xs {
+    font-size: 11px !important;
+  }
+
+  .mobile-text-sm {
+    font-size: 13px !important;
+  }
+
+  /* Ensure search sidebar covers full width on mobile */
+  [class*="search-sidebar"] {
+    width: 100vw !important;
+    left: 0 !important;
+    right: 0 !important;
+  }
+}
+
+/* Very small mobile devices */
+@media (max-width: 480px) {
+  .navbar-container {
+    padding: 0.5rem 0.75rem !important;
+  }
+
+  .search-sidebar-mobile {
+    top: 130px !important;
+    height: calc(100vh - 130px) !important;
+  }
+
+  /* Ultra compact mode for very small screens */
+  .ultra-compact {
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+  }
+}
+
+/* Landscape mobile adjustments */
+@media (max-width: 768px) and (orientation: landscape) {
+  .search-sidebar-mobile {
+    top: 110px !important;
+    height: calc(100vh - 110px) !important;
+  }
+
+  .navbar-container {
+    min-height: 50px;
+  }
+}
+
+/* Smooth transitions for responsive changes */
+.responsive-transition {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Hide scrollbar on mobile sidebar */
+.mobile-sidebar-scroll {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.mobile-sidebar-scroll::-webkit-scrollbar {
+  display: none; /* WebKit */
+}
+
+/* Mobile touch improvements */
+@media (hover: none) and (pointer: coarse) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-tap-highlight {
+    -webkit-tap-highlight-color: rgba(59, 213, 255, 0.2);
+    tap-highlight-color: rgba(59, 213, 255, 0.2);
+  }
+}
+
+/* Safe area adjustments for iOS */
+@supports (padding: max(0px)) {
+  .safe-area-navbar {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  .safe-area-sidebar {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Fix z-index issues on mobile */
+@media (max-width: 768px) {
+  .navbar-container {
+    z-index: 9999 !important;
+  }
+
+  .search-sidebar-mobile {
+    z-index: 30 !important;
+  }
+
+  .mobile-menu-overlay {
+    z-index: 9997 !important;
+  }
+}

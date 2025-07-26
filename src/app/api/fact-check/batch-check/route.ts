@@ -36,7 +36,29 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    const data = await backendResponse.json();
+    // Check if response is JSON
+    const contentType = backendResponse.headers.get("content-type");
+    let data;
+
+    if (contentType && contentType.includes("application/json")) {
+      data = await backendResponse.json();
+    } else {
+      // Handle non-JSON response (likely HTML error page)
+      const text = await backendResponse.text();
+      console.error("Non-JSON response received:", text.substring(0, 200));
+
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Server mengalami masalah internal",
+          error: {
+            code: "INVALID_RESPONSE",
+            details: `Expected JSON but received ${contentType || "unknown"} content`,
+          },
+        },
+        { status: 500 }
+      );
+    }
 
     if (!backendResponse.ok) {
       return NextResponse.json(

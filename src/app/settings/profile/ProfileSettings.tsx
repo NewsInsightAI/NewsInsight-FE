@@ -8,6 +8,20 @@ import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { getAvatarUrl } from "@/utils/avatarUtils";
 import { useDarkMode } from "@/context/DarkModeContext";
+import OpenDyslexicToggle from "@/components/ui/OpenDyslexicToggle";
+
+// Interface untuk kategori dari API
+interface Category {
+  id: number;
+  name: string;
+  description: string | null;
+  slug: string;
+  status: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  newsCount?: number;
+}
 
 export default function Profile() {
   const { status } = useSession();
@@ -30,26 +44,56 @@ export default function Profile() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isGoogleUser, setIsGoogleUser] = useState<boolean>(false);
 
-  const convertValueToCategory = (value: string) => {
-    const categoryMap: { [key: string]: { label: string } } = {
-      teknologi: { label: "Teknologi" },
-      pendidikan: { label: "Pendidikan" },
-      politik: { label: "Politik" },
-      "ekonomi-bisnis": { label: "Ekonomi & Bisnis" },
-      "sains-kesehatan": { label: "Sains & Kesehatan" },
-      olahraga: { label: "Olahraga" },
-      "hiburan-selebriti": { label: "Hiburan & Selebriti" },
-      "gaya-hidup": { label: "Gaya Hidup" },
+  // State untuk data kategori dari API
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  // Fetch categories dari API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        const response = await fetch("/api/categories");
+        if (response.ok) {
+          const result = await response.json();
+          if (result.status === "success" && result.data) {
+            // Filter hanya kategori yang aktif
+            const activeCategories = result.data.filter(
+              (category: Category) =>
+                category.isActive && category.status === "active"
+            );
+            setCategories(activeCategories);
+          } else {
+            console.error("Failed to fetch categories:", result.message);
+          }
+        } else {
+          console.error("Failed to fetch categories");
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      } finally {
+        setCategoriesLoading(false);
+      }
     };
 
-    const category = categoryMap[value];
-    return {
-      value: value,
-      label: category
-        ? category.label
-        : value.charAt(0).toUpperCase() + value.slice(1),
-    };
-  };
+    fetchCategories();
+  }, []);
+
+  // Fungsi untuk convert value ke category menggunakan data dari API
+  const convertValueToCategory = React.useCallback(
+    (value: string) => {
+      // Cari kategori berdasarkan slug
+      const category = categories.find((cat) => cat.slug === value);
+
+      return {
+        value: value,
+        label: category
+          ? category.name
+          : value.charAt(0).toUpperCase() + value.slice(1),
+      };
+    },
+    [categories]
+  );
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -78,7 +122,7 @@ export default function Profile() {
     );
   };
   const fetchProfile = React.useCallback(async () => {
-    if (status !== "authenticated") return;
+    if (status !== "authenticated" || categoriesLoading) return;
 
     try {
       setLoading(true);
@@ -175,7 +219,7 @@ export default function Profile() {
     } finally {
       setLoading(false);
     }
-  }, [status]);
+  }, [status, categoriesLoading, convertValueToCategory]);
 
   const handleSubmit = async () => {
     if (status !== "authenticated") return;
@@ -530,6 +574,24 @@ export default function Profile() {
                   onChangeValue={setAbout}
                   required
                 />
+                {/* Accessibility Settings */}
+                <div className="flex flex-col gap-2.5 w-full">
+                  <div className="flex items-center gap-2">
+                    <p
+                      className={`font-medium ${isDark ? "text-gray-200" : "text-gray-800"}`}
+                    >
+                      Pengaturan Aksesibilitas
+                    </p>
+                    <div className="font-medium bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] px-2 py-1 rounded-full text-xs text-white">
+                      Baru
+                    </div>
+                  </div>
+                  <div
+                    className={`p-4 rounded-xl border ${isDark ? "border-gray-600 bg-gray-800/50" : "border-gray-200 bg-gray-50"} transition-colors duration-300`}
+                  >
+                    <OpenDyslexicToggle />
+                  </div>
+                </div>
               </div>
             </div>
             <button

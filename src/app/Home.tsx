@@ -289,7 +289,15 @@ export default function Home() {
   useEffect(() => {
     const updateSidebarSpacing = () => {
       const isDesktop = window.innerWidth >= 768;
-      const basePadding = isDesktop ? 48 : 24; // md:px-12 vs px-6
+
+      if (!isDesktop) {
+        // Mobile: tidak ada padding kanan sama sekali
+        setSidebarSpacing("0px");
+        return;
+      }
+
+      // Desktop: gunakan logic yang sudah ada
+      const basePadding = 48; // md:px-12
       const sidebarWidth = 384; // w-96 = 384px
 
       setSidebarSpacing(
@@ -407,7 +415,7 @@ export default function Home() {
   };
   return (
     <motion.div
-      className={`${isDark ? "bg-[#1A1A1A] text-white" : "bg-white text-black"} min-h-screen w-full pl-6`}
+      className={`${isDark ? "bg-[#1A1A1A] text-white" : "bg-white text-black"} min-h-screen w-full pl-4 md:pl-6`}
       style={{
         paddingTop: navbarHeight + 24,
       }}
@@ -421,7 +429,7 @@ export default function Home() {
         duration: 0.4,
       }}
     >
-      <div className="w-full mx-auto">
+      <div className="w-full mx-auto pr-4 md:pr-0">
         {" "}
         {/* Hero Section */}
         {loadingMainNews ? (

@@ -384,39 +384,45 @@ export const Navbar = () => {
     <nav
       id="navbar"
       data-navbar="true"
-      className={`navbar-container flex flex-col md:flex-row justify-start gap-2 md:gap-4 items-center p-4 fixed top-0 w-full px-4 md:px-8 z-50 ${isDark ? "bg-[#1A1A1A] text-white shadow-2xl shadow-blue-500/10" : "bg-white text-black"} transition-all duration-300`}
+      className={`navbar-container safe-area-navbar flex flex-col md:flex-row md:justify-between items-center p-3 md:p-4 fixed top-0 w-full z-50 ${isDark ? "bg-[#1A1A1A] text-white shadow-2xl shadow-blue-500/10" : "bg-white text-black"} transition-all duration-300 responsive-transition`}
     >
       <div className="flex w-full justify-between items-center">
-        <div className="flex items-center gap-4 md:gap-10">
-          {/* Logo + Hamburger (mobile) dalam satu div */}
-          <div className="flex items-center gap-2 md:gap-0">
-            {/* Hamburger menu for mobile, posisinya di samping logo */}
-            <button
-              className="md:hidden flex items-center px-2 py-1 ml-1"
-              aria-label="Menu"
-              onClick={() => setShowMobileMenu((v) => !v)}
-            >
-              <Icon icon="mingcute:menu-fill" className="text-2xl" />
-            </button>
-            <Link
-              href="/"
-              className={`text-lg font-bold md:px-6 py-2 rounded-full ${
-                pathname === "/profile" ? "bg-white" : ""
-              }`}
-            >
-              <Image
-                src="/images/newsinsight-icon.png"
-                alt="Logo"
-                width={36}
-                height={36}
-                className="inline-block mr-2"
-              />
-              <span className="text-transparent bg-clip-text bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]">
-                NewsInsight
-              </span>
-            </Link>
-          </div>
-          {/* Desktop menu */}{" "}
+        <div className="flex items-center gap-2 md:gap-4">
+          {/* Mobile hamburger menu */}
+          <button
+            className="md:hidden p-1 hover:text-gray-400 transition-colors touch-target mobile-tap-highlight"
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+          >
+            <Icon
+              icon={
+                showMobileMenu
+                  ? "material-symbols:close"
+                  : "material-symbols:menu"
+              }
+              className="text-2xl"
+            />
+          </button>
+
+          {/* Logo */}
+          <Link
+            href="/"
+            className={`text-base md:text-lg font-bold md:px-6 py-2 rounded-full ${
+              pathname === "/profile" ? "bg-white" : ""
+            }`}
+          >
+            <Image
+              src="/images/newsinsight-icon.png"
+              alt="Logo"
+              width={28}
+              height={28}
+              className="inline-block mr-1 md:mr-2 md:w-9 md:h-9"
+            />
+            <span className="text-transparent bg-clip-text bg-gradient-to-br from-[#3BD5FF] to-[#367AF2]">
+              NewsInsight
+            </span>
+          </Link>
+
+          {/* Desktop menu */}
           <ul className="hidden md:flex space-x-10">
             <li>
               <CategoriesDropdown />
@@ -427,8 +433,9 @@ export const Navbar = () => {
               </Link>
             </li>
           </ul>
-        </div>{" "}
-        <div className="flex items-center gap-4 md:gap-10">
+        </div>
+
+        <div className="flex items-center gap-2 md:gap-4">
           {/* Hide language and dark mode on mobile */}
           <LanguageSelector className="hidden md:flex" />
           <button
@@ -444,18 +451,19 @@ export const Navbar = () => {
               className="text-2xl"
             />
           </button>
+
           {isUserAuthenticated() && session ? (
             <>
               {session.user?.role === "user" ? (
                 <div className="relative" ref={dropdownRef}>
                   <div
-                    className="flex items-center gap-2 cursor-pointer"
+                    className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
                     onClick={() => setShowDropdown(!showDropdown)}
                   >
                     <img
                       src={getAvatarSource()}
                       alt="Profile"
-                      className="w-10 h-10 rounded-full object-cover"
+                      className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.src = "/images/default_profile.png";
@@ -474,12 +482,12 @@ export const Navbar = () => {
                     </div>
                     <Icon
                       icon="majesticons:chevron-down-line"
-                      fontSize={16}
-                      className={
+                      fontSize={14}
+                      className={`${
                         showDropdown
                           ? "-rotate-180 transition-transform"
                           : "transition-transform"
-                      }
+                      } md:text-base`}
                     />
                   </div>
 
@@ -545,21 +553,24 @@ export const Navbar = () => {
                 <div className="flex items-center gap-3">
                   <Link
                     href="/dashboard"
-                    className="flex items-center gap-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white rounded-3xl px-4 md:px-5 py-2 md:py-2.5 hover:opacity-80 transition duration-300 ease-in-out cursor-pointer text-sm md:text-base"
+                    className="mobile-btn flex items-center gap-1.5 md:gap-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white rounded-2xl md:rounded-3xl px-3 md:px-5 py-1.5 md:py-2.5 hover:opacity-80 transition duration-300 ease-in-out cursor-pointer text-xs md:text-base touch-target mobile-tap-highlight"
                   >
-                    {" "}
-                    <Icon icon="mynaui:home-solid" fontSize={20} />
+                    <Icon
+                      icon="mynaui:home-solid"
+                      fontSize={16}
+                      className="md:text-xl"
+                    />
                     <TranslatedText>Dasbor</TranslatedText>
                   </Link>
                   <div className="relative" ref={dropdownRef}>
                     <div
-                      className="flex items-center gap-2 cursor-pointer"
+                      className="flex items-center gap-1.5 md:gap-2 cursor-pointer"
                       onClick={() => setShowDropdown(!showDropdown)}
                     >
                       <img
                         src={getAvatarSource()}
                         alt="Profile"
-                        className="w-10 h-10 rounded-full object-cover"
+                        className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = "/images/default_profile.png";
@@ -578,12 +589,12 @@ export const Navbar = () => {
                       </div>
                       <Icon
                         icon="majesticons:chevron-down-line"
-                        fontSize={16}
-                        className={
+                        fontSize={14}
+                        className={`${
                           showDropdown
                             ? "-rotate-180 transition-transform"
                             : "transition-transform"
-                        }
+                        } md:text-base`}
                       />
                     </div>
 
@@ -653,24 +664,44 @@ export const Navbar = () => {
           ) : (
             <div className="flex items-center">
               {isCheckingBackend ? (
-                <div className="flex items-center justify-center w-20 h-10">
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-blue-500"></div>
+                <div className="flex items-center justify-center w-16 md:w-20 h-8 md:h-10">
+                  <div className="animate-spin rounded-full h-4 w-4 md:h-5 md:w-5 border-2 border-gray-300 border-t-blue-500"></div>
                 </div>
               ) : (
                 <Link
                   href="/login"
-                  className="flex items-center gap-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white rounded-3xl px-4 md:px-5 py-2 md:py-2.5 hover:opacity-80 transition duration-300 ease-in-out cursor-pointer text-sm md:text-base"
+                  className="mobile-btn flex items-center gap-1.5 md:gap-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white rounded-2xl md:rounded-3xl px-3 md:px-5 py-1.5 md:py-2.5 hover:opacity-80 transition duration-300 ease-in-out cursor-pointer text-xs md:text-base touch-target mobile-tap-highlight"
                 >
                   <TranslatedText>Masuk</TranslatedText>
                   <Icon
                     icon="majesticons:login"
-                    fontSize={20}
-                    className="inline-block"
+                    fontSize={16}
+                    className="inline-block md:text-xl"
                   />
                 </Link>
               )}
             </div>
           )}
+
+          {/* Desktop Search Bar */}
+          <div className="hidden md:block w-[280px]">
+            <div className="relative w-full">
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onFocus={handleSearchFocus}
+                onBlur={handleSearchBlur}
+                placeholder={searchPlaceholder}
+                className={`w-full px-6 py-3 border ${isDark ? "border-gray-600 bg-[#1A1A1A] text-white placeholder:text-gray-400 shadow-lg shadow-blue-500/10" : "border-[#E2E2E2] bg-white text-black placeholder:text-[#818181]"} rounded-full focus:outline-[#367AF2] text-base transition-all duration-300 ${isSearchExpanded ? "z-50" : ""}`}
+              />
+              <Icon
+                icon="material-symbols:search"
+                className={`absolute right-4 top-1/2 transform -translate-y-1/2 ${isDark ? "text-gray-300" : "text-black"} text-xl`}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -682,68 +713,239 @@ export const Navbar = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 top-[64px] z-40 bg-black/40 md:hidden"
+            className="mobile-menu-overlay fixed inset-0 top-[100px] z-40 bg-black/40 md:hidden"
             onClick={() => setShowMobileMenu(false)}
           >
-            {" "}
             <motion.div
               initial={{ y: -30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -30, opacity: 0 }}
               transition={{ duration: 0.25, type: "spring", bounce: 0.2 }}
-              className={`absolute left-0 right-0 top-0 ${isDark ? "bg-[#1A1A1A] text-white" : "bg-white text-black"} shadow-lg rounded-b-2xl flex flex-col gap-2 py-4 px-6`}
+              className={`absolute left-4 right-4 top-4 bottom-4 ${isDark ? "bg-[#1A1A1A]/95 text-white" : "bg-white/95 text-black"} shadow-xl rounded-2xl flex flex-col overflow-hidden mobile-menu-scroll`}
               onClick={(e) => e.stopPropagation()}
             >
-              {" "}
-              <Link
-                href="/"
-                className="py-2"
-                onClick={() => setShowMobileMenu(false)}
-              >
-                <TranslatedText>Beranda</TranslatedText>
-              </Link>
-              <Link
-                href="/about-us"
-                className="py-2"
-                onClick={() => setShowMobileMenu(false)}
-              >
-                <TranslatedText>Tentang Kami</TranslatedText>
-              </Link>{" "}
-              <CategoriesDropdown
-                isMobile={true}
-                onCategoryClick={() => setShowMobileMenu(false)}
-              />
-              {/* Language selector for mobile */}{" "}
-              <div className="py-2 border-t border-gray-200 dark:border-gray-700 mt-2 pt-4">
-                <div className="mb-2 text-sm font-medium opacity-75">
-                  <TranslatedText>Bahasa</TranslatedText>
+              <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-1">
+                {/* Main Navigation */}
+                <Link
+                  href="/"
+                  className={`flex items-center gap-3 px-3 py-2.5 ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"} rounded-lg transition-colors`}
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  <Icon
+                    icon="material-symbols:home-rounded"
+                    fontSize={20}
+                    className={isDark ? "text-gray-300" : "text-gray-600"}
+                  />
+                  <span className="font-medium">
+                    <TranslatedText>Beranda</TranslatedText>
+                  </span>
+                </Link>
+
+                <Link
+                  href="/about-us"
+                  className={`flex items-center gap-3 px-3 py-2.5 ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"} rounded-lg transition-colors`}
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  <Icon
+                    icon="material-symbols:info-rounded"
+                    fontSize={20}
+                    className={isDark ? "text-gray-300" : "text-gray-600"}
+                  />
+                  <span className="font-medium">
+                    <TranslatedText>Tentang Kami</TranslatedText>
+                  </span>
+                </Link>
+
+                {/* Categories */}
+                <div
+                  className={`mt-4 pt-3 border-t ${isDark ? "border-gray-700" : "border-gray-200"}`}
+                >
+                  <div className="px-3 mb-2">
+                    <Link
+                      href="/categories"
+                      className={`text-xs ${isDark ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-500"} font-medium`}
+                      onClick={() => setShowMobileMenu(false)}
+                    >
+                      <TranslatedText>Lihat Semua Kategori</TranslatedText>
+                    </Link>
+                  </div>
+                  <div className="px-3">
+                    <CategoriesDropdown
+                      isMobile={true}
+                      onCategoryClick={() => setShowMobileMenu(false)}
+                    />
+                  </div>
                 </div>
-                <LanguageSelector showFullName />
+
+                {/* Settings */}
+                <div
+                  className={`mt-4 pt-3 border-t ${isDark ? "border-gray-700" : "border-gray-200"}`}
+                >
+                  <div
+                    className={`flex items-center gap-3 px-3 py-2.5 ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"} rounded-lg`}
+                  >
+                    <Icon
+                      icon="material-symbols:language"
+                      fontSize={20}
+                      className={isDark ? "text-gray-300" : "text-gray-600"}
+                    />
+                    <div className="flex-1">
+                      <span className="font-medium text-sm">
+                        <TranslatedText>Bahasa</TranslatedText>
+                      </span>
+                      <div className="mt-1">
+                        <LanguageSelector showFullName />
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      toggleDark();
+                      setShowMobileMenu(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"} rounded-lg transition-colors`}
+                  >
+                    <Icon
+                      icon={
+                        isDark
+                          ? "material-symbols:light-mode-rounded"
+                          : "material-symbols:dark-mode-rounded"
+                      }
+                      fontSize={20}
+                      className={isDark ? "text-gray-300" : "text-gray-600"}
+                    />
+                    <span className="font-medium">
+                      <TranslatedText>
+                        {isDark ? "Mode Terang" : "Mode Gelap"}
+                      </TranslatedText>
+                    </span>
+                  </button>
+                </div>
+
+                {/* User Section */}
+                {isUserAuthenticated() && session && (
+                  <div
+                    className={`mt-4 pt-3 border-t ${isDark ? "border-gray-700" : "border-gray-200"}`}
+                  >
+                    <div
+                      className={`flex items-center gap-3 px-3 py-2.5 ${isDark ? "bg-gray-800" : "bg-gray-50"} rounded-lg mb-2`}
+                    >
+                      <img
+                        src={getAvatarSource()}
+                        alt="Profile"
+                        className="w-8 h-8 rounded-lg object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "/images/default_profile.png";
+                        }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">
+                          {shortenName(
+                            profileData?.full_name ||
+                              profileData?.username ||
+                              session?.user?.name ||
+                              session?.user?.email ||
+                              "User"
+                          )}
+                        </p>
+                        <p
+                          className={`text-xs truncate ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                        >
+                          {session?.user?.email}
+                        </p>
+                      </div>
+                    </div>
+
+                    {session?.user?.role === "admin" && (
+                      <Link
+                        href="/dashboard"
+                        className={`flex items-center gap-3 px-3 py-2.5 ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"} rounded-lg transition-colors`}
+                        onClick={() => setShowMobileMenu(false)}
+                      >
+                        <Icon
+                          icon="material-symbols:dashboard-rounded"
+                          fontSize={20}
+                          className={isDark ? "text-gray-300" : "text-gray-600"}
+                        />
+                        <span className="font-medium">
+                          <TranslatedText>Dashboard</TranslatedText>
+                        </span>
+                      </Link>
+                    )}
+
+                    <Link
+                      href="/profile"
+                      className={`flex items-center gap-3 px-3 py-2.5 ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"} rounded-lg transition-colors`}
+                      onClick={() => setShowMobileMenu(false)}
+                    >
+                      <Icon
+                        icon="material-symbols:person-rounded"
+                        fontSize={20}
+                        className={isDark ? "text-gray-300" : "text-gray-600"}
+                      />
+                      <span className="font-medium">
+                        <TranslatedText>Profil</TranslatedText>
+                      </span>
+                    </Link>
+
+                    <Link
+                      href="/settings"
+                      className={`flex items-center gap-3 px-3 py-2.5 ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"} rounded-lg transition-colors`}
+                      onClick={() => setShowMobileMenu(false)}
+                    >
+                      <Icon
+                        icon="material-symbols:settings-rounded"
+                        fontSize={20}
+                        className={isDark ? "text-gray-300" : "text-gray-600"}
+                      />
+                      <span className="font-medium">
+                        <TranslatedText>Pengaturan</TranslatedText>
+                      </span>
+                    </Link>
+
+                    <button
+                      onClick={handleLogout}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 text-red-500 ${isDark ? "hover:bg-red-900/20" : "hover:bg-red-50"} rounded-lg transition-colors`}
+                    >
+                      <Icon
+                        icon="material-symbols:logout-rounded"
+                        fontSize={20}
+                      />
+                      <span className="font-medium">
+                        <TranslatedText>Keluar</TranslatedText>
+                      </span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Login Button for Non-authenticated Users */}
+                {!isUserAuthenticated() && (
+                  <div
+                    className={`mt-4 pt-3 border-t ${isDark ? "border-gray-700" : "border-gray-200"}`}
+                  >
+                    <Link
+                      href="/login"
+                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-br from-[#3BD5FF] to-[#367AF2] text-white py-2.5 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                      onClick={() => setShowMobileMenu(false)}
+                    >
+                      <Icon
+                        icon="material-symbols:login-rounded"
+                        fontSize={18}
+                      />
+                      <TranslatedText>Masuk ke Akun</TranslatedText>
+                    </Link>
+                  </div>
+                )}
               </div>
-              {/* Dark mode toggle for mobile */}
-              <button
-                onClick={toggleDark}
-                className="py-2 flex items-center gap-2 w-full text-left"
-              >
-                <Icon
-                  icon={
-                    isDark
-                      ? "material-symbols:light-mode-rounded"
-                      : "ic:round-dark-mode"
-                  }
-                  fontSize={18}
-                />
-                <TranslatedText>
-                  {isDark ? "Mode Terang" : "Mode Gelap"}
-                </TranslatedText>
-              </button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Search bar: mobile di bawah, desktop di tengah */}
-      <div className="w-full md:w-[280px] mx-auto mt-2 md:mt-0 order-2 md:order-none">
+      {/* Mobile Search Bar */}
+      <div className="w-full md:hidden px-4 mt-2">
         <div className="relative w-full">
           <input
             ref={searchInputRef}
@@ -753,12 +955,11 @@ export const Navbar = () => {
             onFocus={handleSearchFocus}
             onBlur={handleSearchBlur}
             placeholder={searchPlaceholder}
-            className={`w-full px-5 md:px-6 py-2.5 md:py-3 border ${isDark ? "border-gray-600 bg-[#1A1A1A] text-white placeholder:text-gray-400 shadow-lg shadow-blue-500/10" : "border-[#E2E2E2] bg-white text-black placeholder:text-[#818181]"} rounded-full focus:outline-[#367AF2] text-sm md:text-base transition-all duration-300 ${isSearchExpanded ? "z-50" : ""}`}
+            className={`search-input-mobile w-full px-4 py-2 border ${isDark ? "border-gray-600 bg-[#1A1A1A] text-white placeholder:text-gray-400 shadow-lg shadow-blue-500/10" : "border-[#E2E2E2] bg-white text-black placeholder:text-[#818181]"} rounded-full focus:outline-[#367AF2] text-sm transition-all duration-300 ${isSearchExpanded ? "z-50" : ""} responsive-transition`}
           />
           <Icon
-            icon="material-symbols:search-rounded"
-            fontSize={22}
-            className={`absolute right-4 top-1/2 transform -translate-y-1/2 ${isDark ? "text-gray-300" : "text-black"}`}
+            icon="material-symbols:search"
+            className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${isDark ? "text-gray-300" : "text-black"}`}
           />
         </div>
       </div>

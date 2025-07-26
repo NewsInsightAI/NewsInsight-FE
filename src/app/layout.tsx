@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "../styles/mobile-responsive.css";
 import { Navbar } from "../components/Navbar";
 import { Inter } from "next/font/google";
 import Footer from "../components/Footer";
 import { ToastProvider } from "@/context/ToastProvider";
 import NextAuthSessionProvider from "@/components/SessionProvider";
 import { DarkModeProvider } from "@/context/DarkModeContext";
+import { FontAccessibilityProvider } from "@/context/FontAccessibilityContext";
 import { DarkModeWrapper } from "@/components/DarkModeWrapper";
 import { LanguageProvider } from "@/context/LanguageContext";
 import ScrollbarStyles from "@/components/ScrollbarStyles";
+import AccessibilityFloatingButton from "@/components/ui/AccessibilityFloatingButton";
 
 const interFont = Inter({
   subsets: ["latin"],
@@ -33,16 +36,19 @@ export default function RootLayout({
         {" "}
         <NextAuthSessionProvider>
           <DarkModeProvider>
-            <DarkModeWrapper>
-              <LanguageProvider>
-                <ToastProvider>
-                  <Navbar />
-                  <main className="flex-1 w-full">{children}</main>
-                  <Footer />
-                  <ScrollbarStyles />
-                </ToastProvider>
-              </LanguageProvider>
-            </DarkModeWrapper>
+            <FontAccessibilityProvider>
+              <DarkModeWrapper>
+                <LanguageProvider>
+                  <ToastProvider>
+                    <Navbar />
+                    <main className="flex-1 w-full">{children}</main>
+                    <Footer />
+                    <AccessibilityFloatingButton />
+                    <ScrollbarStyles />
+                  </ToastProvider>
+                </LanguageProvider>
+              </DarkModeWrapper>
+            </FontAccessibilityProvider>
           </DarkModeProvider>
         </NextAuthSessionProvider>
       </body>
