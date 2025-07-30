@@ -30,7 +30,7 @@ export async function DELETE(
     }
 
     // Build backend URL
-    const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/ccomments/${commentId}/delete`;
+    const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/comments/${commentId}/delete`;
     console.log("Calling backend URL:", backendUrl);
 
     // Forward request to backend
