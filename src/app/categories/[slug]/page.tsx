@@ -6,7 +6,7 @@ import { useDarkMode } from "@/context/DarkModeContext";
 import { TranslatedText } from "@/components/TranslatedText";
 import { formatNewsCount } from "@/utils/formatters";
 import { useNavbarPadding } from "@/hooks/useNavbarHeight";
-import ArticleCard from "@/components/ArticleCard";
+import NewsCard from "@/components/NewsCard";
 import { generateNewsUrl } from "@/utils/newsUrlGenerator";
 
 interface Category {
@@ -37,6 +37,8 @@ interface ApiNewsItem {
   created_by_name?: string;
   authors?: Array<{ author_name: string; location?: string }>;
   tags?: string[];
+  shareCount?: number;
+  commentCount?: number;
 }
 
 interface NewsItem {
@@ -60,6 +62,8 @@ interface NewsItem {
   authors?: Array<{ author_name: string; location?: string }>;
   tags?: string[];
   link?: string; // Add link field for proper navigation
+  shareCount?: number;
+  commentCount?: number;
 }
 
 interface CategoryPageProps {
@@ -161,6 +165,13 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   // Fetch berita berdasarkan kategori
   const fetchNews = useCallback(
     async (pageNum: number = 1, append: boolean = false) => {
+      console.log("🚀 fetchNews called with:", {
+        pageNum,
+        append,
+        slug,
+        categoryName: category?.name,
+      });
+
       try {
         if (pageNum === 1) setLoading(true);
         else setLoadingMore(true);
@@ -170,65 +181,148 @@ export default function CategoryPage({ params }: CategoryPageProps) {
         const response = await fetch(
           `/api/news/category/${slug}?page=${pageNum}&limit=12`
         );
+        console.log("📡 Fetch response status:", response.status, response.ok);
+
         if (response.ok) {
           const result = await response.json();
+          console.log("📋 API Response:", result);
+
           if (result.success && result.data && result.data.news) {
-            const newNews = result.data.news.map((newsItem: ApiNewsItem) => ({
-              ...newsItem,
-              link: generateNewsUrl(
-                newsItem.category_name || category?.name || slug,
-                newsItem.title,
-                newsItem.published_at || newsItem.created_at,
-                newsItem.hashed_id || newsItem.id.toString()
-              ),
-            }));
+            console.log("📰 Raw news data:", result.data.news);
+            console.log("📊 News count:", result.data.news.length);
+
+            const newNews = await Promise.all(
+              result.data.news.map(async (newsItem: ApiNewsItem) => {
+                // Fetch comment count for each news item
+                let commentCount = 0;
+
+                try {
+                  const commentResponse = await fetch(
+                    `/api/comments?newsId=${newsItem.hashed_id || newsItem.id}`
+                  );
+                  if (commentResponse.ok) {
+                    const commentData = await commentResponse.json();
+                    // Use the total field which represents the count of main comments
+                    commentCount = commentData.data?.total || 0;
+                    console.log(
+                      `💬 Comments for news ${newsItem.id}:`,
+                      commentCount,
+                      "Raw data:",
+                      commentData
+                    );
+                  } else {
+                    console.log(
+                      `❌ Comment API failed with status:`,
+                      commentResponse.status
+                    );
+                  }
+                } catch (error) {
+                  console.warn("Failed to fetch comment count:", error);
+                  commentCount = 0;
+                }
+
+                return {
+                  ...newsItem,
+                  shareCount: 0, // Set to 0 until API is available
+                  commentCount, // Use real comment count
+                  link: generateNewsUrl(
+                    newsItem.category_name || category?.name || slug,
+                    newsItem.title,
+                    newsItem.published_at || newsItem.created_at,
+                    newsItem.hashed_id || newsItem.id.toString()
+                  ),
+                };
+              })
+            );
+
+            // Fetch engagement metrics for all news items to get consistent view counts
+            if (newNews.length > 0) {
+              try {
+                const newsIds = newNews.map((news) => news.id);
+                const engagementResponse = await fetch(
+                  "/api/news-interactions/bulk-engagement",
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ newsIds }),
+                  }
+                );
+
+                if (engagementResponse.ok) {
+                  const engagementData = await engagementResponse.json();
+                  if (engagementData.success && engagementData.data) {
+                    // Update news data with real engagement metrics (same as dashboard)
+                    newNews.forEach((news) => {
+                      const metrics = engagementData.data[news.id];
+                      if (metrics) {
+                        // Use engagement API view count instead of news.view_count for consistency
+                        news.view_count = metrics.views || 0;
+                        // Also update other metrics for consistency
+                        news.shareCount = metrics.shares || 0;
+                        // Keep commentCount as is since we already fetched it above
+                      }
+                    });
+                    console.log(
+                      "📊 Updated view counts with engagement metrics:",
+                      newNews
+                    );
+                  }
+                } else {
+                  console.warn(
+                    "Failed to fetch engagement metrics, using original view_count"
+                  );
+                }
+              } catch (engagementError) {
+                console.warn(
+                  "Error fetching engagement metrics:",
+                  engagementError
+                );
+                // Keep original view_count if engagement fetch fails
+              }
+            }
+
+            console.log("🔗 Processed news with links:", newNews);
 
             if (append) {
-              setNews((prev) => [...prev, ...newNews]);
+              setNews((prev) => {
+                console.log(
+                  "📌 Appending news. Previous count:",
+                  prev.length,
+                  "New count:",
+                  newNews.length
+                );
+                return [...prev, ...newNews];
+              });
             } else {
+              console.log("🔄 Setting fresh news data:", newNews);
               setNews(newNews);
             }
 
             // Check if there are more pages
             setHasMore(result.data.pagination?.hasNextPage || false);
+            console.log("📄 Pagination info:", result.data.pagination);
+            console.log(
+              "🔄 Has more pages:",
+              result.data.pagination?.hasNextPage || false
+            );
           } else {
+            console.error("❌ API response invalid:", result);
             throw new Error(result.message || "Failed to fetch news");
           }
         } else {
+          console.error("❌ Fetch failed with status:", response.status);
           throw new Error("Failed to fetch news");
         }
       } catch (error) {
-        console.error("Error fetching news:", error);
+        console.error("💥 Error fetching news:", error);
         setError(error instanceof Error ? error.message : "Unknown error");
 
-        // Fallback mock data
+        // No fallback mock data - show error state instead
         if (pageNum === 1) {
-          const mockNews = {
-            id: "1",
-            title: `Berita ${category?.name || slug} Terbaru Hari Ini`,
-            content:
-              "Lorem ipsum dolor sit amet, consectetur adipiscing elit...",
-            excerpt: "Ringkasan berita terbaru dari kategori ini",
-            featured_image: "/images/main_news.png",
-            published_at: new Date().toISOString(),
-            category_id: category?.id || "1",
-            view_count: 150,
-            status: "published",
-            slug: "berita-terbaru",
-            hashed_id: "mock123",
-          };
-
-          setNews([
-            {
-              ...mockNews,
-              link: generateNewsUrl(
-                category?.name || slug,
-                mockNews.title,
-                mockNews.published_at,
-                mockNews.hashed_id
-              ),
-            },
-          ]);
+          console.log("🚫 Setting empty news array due to error");
+          setNews([]);
           setHasMore(false);
         }
       } finally {
@@ -236,7 +330,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
         setLoadingMore(false);
       }
     },
-    [slug, category?.name, category?.id]
+    [slug, category?.name]
   );
 
   // Load more news
@@ -457,7 +551,25 @@ export default function CategoryPage({ params }: CategoryPageProps) {
             {/* News Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
               {news.map((article) => (
-                <ArticleCard key={article.id} article={article} />
+                <NewsCard
+                  key={article.id}
+                  id={article.id}
+                  source={article.created_by_name || "NewsInsight"}
+                  title={article.title}
+                  imageUrl={article.featured_image || "/images/main_news.png"}
+                  timestamp={article.published_at || article.created_at || ""}
+                  category={
+                    article.authors?.[0]?.author_name ||
+                    article.created_by_name ||
+                    article.category_name ||
+                    "Berita"
+                  }
+                  link={article.link || "#"}
+                  viewCount={article.view_count || 0}
+                  shareCount={article.shareCount || 0}
+                  commentCount={article.commentCount || 0}
+                  showMetrics={true} // Show metrics on category pages
+                />
               ))}
             </div>
 

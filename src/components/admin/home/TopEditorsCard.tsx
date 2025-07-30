@@ -67,9 +67,13 @@ export default function TopEditorsCard({ editors }: Props) {
             >
               <div className="flex items-center gap-3 h-full">
                 <img
-                  src={editor.profile}
+                  src={editor.profile || "/images/default_profile.png"}
                   alt="Editor"
                   className="rounded-full object-cover h-12 w-12"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "/images/default_profile.png";
+                  }}
                 />
                 <div className="flex flex-col justify-center items-start">
                   <p

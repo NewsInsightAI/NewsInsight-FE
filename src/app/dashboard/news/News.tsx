@@ -35,6 +35,10 @@ interface NewsData {
   author: AuthorProps[];
   publishedAt: string;
   status: string;
+  views?: number;
+  comments?: number;
+  shares?: number;
+  bookmarks?: number;
 }
 
 export default function News() {
@@ -177,9 +181,54 @@ export default function News() {
               publishedAt: news.published_at || news.created_at,
               imageUrl: news.featured_image || "/images/main_news.png",
               author: authors,
+              // Initialize with zero values, will be updated with real data
+              views: 0,
+              comments: 0,
+              shares: 0,
+              bookmarks: 0,
             };
           }
         );
+
+        // Fetch engagement metrics for all news items
+        if (transformedData.length > 0) {
+          try {
+            const newsIds = transformedData.map((news) => news.id);
+            const engagementResponse = await fetch(
+              "/api/news-interactions/bulk-engagement",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ newsIds }),
+              }
+            );
+
+            if (engagementResponse.ok) {
+              const engagementData = await engagementResponse.json();
+              if (engagementData.success && engagementData.data) {
+                // Update news data with real engagement metrics
+                transformedData.forEach((news) => {
+                  const metrics = engagementData.data[news.id];
+                  if (metrics) {
+                    news.views = metrics.views || 0;
+                    news.comments = metrics.comments || 0;
+                    news.shares = metrics.shares || 0;
+                    news.bookmarks = metrics.bookmarks || 0;
+                  }
+                });
+              }
+            } else {
+              console.warn(
+                "Failed to fetch engagement metrics, using default values"
+              );
+            }
+          } catch (engagementError) {
+            console.warn("Error fetching engagement metrics:", engagementError);
+            // Keep default values if engagement fetch fails
+          }
+        }
 
         setNewsData(transformedData);
       } catch (error) {

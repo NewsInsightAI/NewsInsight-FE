@@ -1,7 +1,7 @@
 "use client";
 import { useLanguage } from "@/context/LanguageContext";
 import { useDarkMode } from "@/context/DarkModeContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Icon } from "@iconify/react";
 import { TranslatedText } from "@/components/TranslatedText";
 import { Toast } from "@/components/Toast";
@@ -116,99 +116,106 @@ export function TranslatedContent({
     return <div>{elements}</div>;
   };
 
-  const translateHtmlContent = async (
-    html: string,
-    targetLang: string
-  ): Promise<string> => {
-    try {
-      console.log("Original HTML:", html);
+  const translateHtmlContent = useCallback(
+    async (html: string, targetLang: string): Promise<string> => {
+      try {
+        console.log("Original HTML:", html);
 
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(`<div>${html}</div>`, "text/html");
-      const container = doc.body.firstChild as HTMLElement;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(`<div>${html}</div>`, "text/html");
+        const container = doc.body.firstChild as HTMLElement;
 
-      if (!container) {
-        return html;
-      }
+        if (!container) {
+          return html;
+        }
 
-      const textNodesToTranslate: { node: Text; originalText: string }[] = [];
+        const textNodesToTranslate: { node: Text; originalText: string }[] = [];
 
-      function collectTextNodes(node: Node) {
-        if (node.nodeType === Node.TEXT_NODE) {
-          const text = node.textContent?.trim();
-          if (text && text.length > 0) {
-            textNodesToTranslate.push({
-              node: node as Text,
-              originalText: text,
-            });
+        function collectTextNodes(node: Node) {
+          if (node.nodeType === Node.TEXT_NODE) {
+            const text = node.textContent?.trim();
+            if (text && text.length > 0) {
+              textNodesToTranslate.push({
+                node: node as Text,
+                originalText: text,
+              });
+            }
+          } else {
+            for (const child of Array.from(node.childNodes)) {
+              collectTextNodes(child);
+            }
           }
+        }
+
+        collectTextNodes(container);
+
+        if (textNodesToTranslate.length === 0) {
+          return html;
+        }
+
+        console.log(
+          "Text nodes to translate:",
+          textNodesToTranslate.map((t) => t.originalText)
+        );
+
+        const textsToTranslate = textNodesToTranslate.map(
+          (t) => t.originalText
+        );
+        const separator = "|||";
+        const combinedText = textsToTranslate.join(` ${separator} `);
+        const translatedCombined = await translateText(
+          combinedText,
+          targetLang
+        );
+
+        let translatedTexts = translatedCombined.split(` ${separator} `);
+        if (translatedTexts.length !== textsToTranslate.length) {
+          translatedTexts = [];
+          for (const t of textsToTranslate) {
+            const translated = await translateText(t, targetLang);
+            translatedTexts.push(translated);
+          }
+        }
+
+        console.log("Translated texts:", translatedTexts);
+        textNodesToTranslate.forEach((textNodeInfo, index) => {
+          if (translatedTexts[index]) {
+            const originalFullText = textNodeInfo.node.textContent || "";
+            let translatedText = translatedTexts[index];
+
+            translatedText = translatedText.replaceAll(separator, "");
+
+            const leadingWhitespace = originalFullText.match(/^\s*/)?.[0] || "";
+            const trailingWhitespace =
+              originalFullText.match(/\s*$/)?.[0] || "";
+
+            textNodeInfo.node.textContent =
+              leadingWhitespace + translatedText + trailingWhitespace;
+          }
+        });
+        if (isDark) {
+          const blockquotes = container.querySelectorAll("blockquote");
+          blockquotes.forEach((blockquote) => {
+            blockquote.classList.add("dark");
+          });
         } else {
-          for (const child of Array.from(node.childNodes)) {
-            collectTextNodes(child);
-          }
+          const blockquotes = container.querySelectorAll("blockquote");
+          blockquotes.forEach((blockquote) => {
+            blockquote.classList.remove("dark");
+          });
         }
-      }
 
-      collectTextNodes(container);
-
-      if (textNodesToTranslate.length === 0) {
+        const translatedHtml = container.innerHTML;
+        console.log("Final translated HTML:", translatedHtml);
+        return translatedHtml;
+      } catch (error) {
+        console.error("Error in translateHtmlContent:", error);
         return html;
       }
-
-      console.log(
-        "Text nodes to translate:",
-        textNodesToTranslate.map((t) => t.originalText)
-      );
-
-      const textsToTranslate = textNodesToTranslate.map((t) => t.originalText);
-      const separator = "|||";
-      const combinedText = textsToTranslate.join(` ${separator} `);
-      const translatedCombined = await translateText(combinedText, targetLang);
-
-      let translatedTexts = translatedCombined.split(` ${separator} `);
-      if (translatedTexts.length !== textsToTranslate.length) {
-        translatedTexts = [];
-        for (const t of textsToTranslate) {
-          const translated = await translateText(t, targetLang);
-          translatedTexts.push(translated);
-        }
-      }
-
-      console.log("Translated texts:", translatedTexts);
-      textNodesToTranslate.forEach((textNodeInfo, index) => {
-        if (translatedTexts[index]) {
-          const originalFullText = textNodeInfo.node.textContent || "";
-          let translatedText = translatedTexts[index];
-
-          translatedText = translatedText.replaceAll(separator, "");
-
-          const leadingWhitespace = originalFullText.match(/^\s*/)?.[0] || "";
-          const trailingWhitespace = originalFullText.match(/\s*$/)?.[0] || "";
-
-          textNodeInfo.node.textContent =
-            leadingWhitespace + translatedText + trailingWhitespace;
-        }
-      });
-      if (isDark) {
-        const blockquotes = container.querySelectorAll("blockquote");
-        blockquotes.forEach((blockquote) => {
-          blockquote.classList.add("dark");
-        });
-      } else {
-        const blockquotes = container.querySelectorAll("blockquote");
-        blockquotes.forEach((blockquote) => {
-          blockquote.classList.remove("dark");
-        });
-      }
-
-      const translatedHtml = container.innerHTML;
-      console.log("Final translated HTML:", translatedHtml);
-      return translatedHtml;
-    } catch (error) {
-      console.error("Error in translateHtmlContent:", error);
-      return html;
-    }
-  };
+    },
+    [translateText, isDark]
+  );
+  
   useEffect(() => {
     if (lastLanguage === currentLanguage.code) {
       return;
@@ -289,7 +296,15 @@ export function TranslatedContent({
       }
     };
     translateContent();
-  }, [currentLanguage.code, htmlContent, plainTextContent]);
+  }, [
+    currentLanguage.code,
+    htmlContent,
+    plainTextContent,
+    lastLanguage,
+    onTranslatedTextChange,
+    translateHtmlContent,
+    translateText,
+  ]);
 
   if (htmlContent) {
     let contentToShow =

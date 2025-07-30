@@ -11,7 +11,8 @@ export async function POST(
     console.log("Report comment API route called with ID:", id);
     console.log("Request body:", body);
 
-    const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:3000";
+    const API_BASE_URL =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
 
     const response = await fetch(`${API_BASE_URL}/comments/${id}/report`, {
       method: "POST",

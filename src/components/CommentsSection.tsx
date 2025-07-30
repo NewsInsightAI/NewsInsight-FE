@@ -826,7 +826,7 @@ export default function CommentsSection({ newsId }: CommentsSectionProps) {
   }
 
   return (
-    <div className={`p-6 rounded-lg ${isDark ? "bg-gray-800" : "bg-gray-50"}`}>
+    <div>
       <h3
         className={`text-xl font-bold mb-6 ${isDark ? "text-white" : "text-gray-900"}`}
       >
@@ -1006,94 +1006,143 @@ export default function CommentsSection({ newsId }: CommentsSectionProps) {
 
               {/* Comment Actions */}
               <div className="flex items-center gap-4 ml-13">
-                <button
-                  onClick={() =>
-                    setReplyingTo(replyingTo === comment.id ? null : comment.id)
-                  }
-                  className={`flex items-center gap-1 text-sm ${isDark ? "text-gray-400 hover:text-gray-300" : "text-gray-600 hover:text-gray-700"} transition-colors`}
-                >
-                  <Icon icon="material-symbols:reply" className="w-4 h-4" />
-                  <TranslatedText>Balas</TranslatedText>
-                </button>
-                <button
-                  onClick={() => handleLike(comment.id, "like")}
-                  className={`flex items-center gap-1 text-sm transition-colors ${
-                    comment.user_like_type === "like"
-                      ? "text-blue-600"
-                      : isDark
-                        ? "text-gray-400 hover:text-gray-300"
-                        : "text-gray-600 hover:text-gray-700"
-                  }`}
-                >
-                  <Icon
-                    icon={
-                      comment.user_like_type === "like"
-                        ? "material-symbols:thumb-up"
-                        : "material-symbols:thumb-up-outline"
-                    }
-                    className="w-4 h-4"
-                  />
-                  <span>{comment.likes}</span>
-                </button>
-                <button
-                  onClick={() => handleLike(comment.id, "dislike")}
-                  className={`flex items-center gap-1 text-sm transition-colors ${
-                    comment.user_like_type === "dislike"
-                      ? "text-red-600"
-                      : isDark
-                        ? "text-gray-400 hover:text-gray-300"
-                        : "text-gray-600 hover:text-gray-700"
-                  }`}
-                >
-                  <Icon
-                    icon={
-                      comment.user_like_type === "dislike"
-                        ? "material-symbols:thumb-down"
-                        : "material-symbols:thumb-down-outline"
-                    }
-                    className="w-4 h-4"
-                  />
-                </button>
-                {user && (
-                  <button
-                    onClick={() => handleReportComment(comment.id)}
-                    disabled={reportingComment === comment.id}
-                    className={`flex items-center gap-1 text-sm transition-colors ${
-                      reportingComment === comment.id
-                        ? isDark
-                          ? "text-gray-600 cursor-not-allowed"
-                          : "text-gray-400 cursor-not-allowed"
-                        : isDark
-                          ? "text-gray-400 hover:text-red-400"
-                          : "text-gray-600 hover:text-red-600"
-                    }`}
-                  >
-                    <Icon
-                      icon={
-                        reportingComment === comment.id
-                          ? "eos-icons:loading"
-                          : "material-symbols:flag-outline"
+                {user ? (
+                  <>
+                    <button
+                      onClick={() =>
+                        setReplyingTo(
+                          replyingTo === comment.id ? null : comment.id
+                        )
                       }
-                      className="w-4 h-4"
-                    />
-                    <TranslatedText>Laporkan</TranslatedText>
-                  </button>
+                      className={`flex items-center gap-1 text-sm ${isDark ? "text-gray-400 hover:text-gray-300" : "text-gray-600 hover:text-gray-700"} transition-colors`}
+                    >
+                      <Icon icon="material-symbols:reply" className="w-4 h-4" />
+                      <TranslatedText>Balas</TranslatedText>
+                    </button>
+                    <button
+                      onClick={() => handleLike(comment.id, "like")}
+                      className={`flex items-center gap-1 text-sm transition-colors ${
+                        comment.user_like_type === "like"
+                          ? "text-blue-600"
+                          : isDark
+                            ? "text-gray-400 hover:text-gray-300"
+                            : "text-gray-600 hover:text-gray-700"
+                      }`}
+                    >
+                      <Icon
+                        icon={
+                          comment.user_like_type === "like"
+                            ? "material-symbols:thumb-up"
+                            : "material-symbols:thumb-up-outline"
+                        }
+                        className="w-4 h-4"
+                      />
+                      <span>{comment.likes}</span>
+                    </button>
+                    <button
+                      onClick={() => handleLike(comment.id, "dislike")}
+                      className={`flex items-center gap-1 text-sm transition-colors ${
+                        comment.user_like_type === "dislike"
+                          ? "text-red-600"
+                          : isDark
+                            ? "text-gray-400 hover:text-gray-300"
+                            : "text-gray-600 hover:text-gray-700"
+                      }`}
+                    >
+                      <Icon
+                        icon={
+                          comment.user_like_type === "dislike"
+                            ? "material-symbols:thumb-down"
+                            : "material-symbols:thumb-down-outline"
+                        }
+                        className="w-4 h-4"
+                      />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() =>
+                        showToast(
+                          "Silakan masuk untuk membalas komentar",
+                          "info"
+                        )
+                      }
+                      className={`flex items-center gap-1 text-sm ${isDark ? "text-gray-500" : "text-gray-400"} cursor-not-allowed`}
+                    >
+                      <Icon icon="material-symbols:reply" className="w-4 h-4" />
+                      <TranslatedText>Balas</TranslatedText>
+                    </button>
+                    <button
+                      onClick={() =>
+                        showToast("Silakan masuk untuk memberikan like", "info")
+                      }
+                      className={`flex items-center gap-1 text-sm ${isDark ? "text-gray-500" : "text-gray-400"} cursor-not-allowed`}
+                    >
+                      <Icon
+                        icon="material-symbols:thumb-up-outline"
+                        className="w-4 h-4"
+                      />
+                      <span>{comment.likes}</span>
+                    </button>
+                    <button
+                      onClick={() =>
+                        showToast(
+                          "Silakan masuk untuk memberikan dislike",
+                          "info"
+                        )
+                      }
+                      className={`flex items-center gap-1 text-sm ${isDark ? "text-gray-500" : "text-gray-400"} cursor-not-allowed`}
+                    >
+                      <Icon
+                        icon="material-symbols:thumb-down-outline"
+                        className="w-4 h-4"
+                      />
+                    </button>
+                  </>
                 )}
-                {user && isOwner(comment) && (
-                  <button
-                    onClick={() => handleDeleteComment(comment.id)}
-                    className={`flex items-center gap-1 text-sm transition-colors ${
-                      isDark
-                        ? "text-gray-400 hover:text-red-400"
-                        : "text-gray-600 hover:text-red-600"
-                    }`}
-                  >
-                    <Icon
-                      icon="material-symbols:delete-outline"
-                      className="w-4 h-4"
-                    />
-                    <TranslatedText>Hapus</TranslatedText>
-                  </button>
+                {user && (
+                  <>
+                    <button
+                      onClick={() => handleReportComment(comment.id)}
+                      disabled={reportingComment === comment.id}
+                      className={`flex items-center gap-1 text-sm transition-colors ${
+                        reportingComment === comment.id
+                          ? isDark
+                            ? "text-gray-600 cursor-not-allowed"
+                            : "text-gray-400 cursor-not-allowed"
+                          : isDark
+                            ? "text-gray-400 hover:text-red-400"
+                            : "text-gray-600 hover:text-red-600"
+                      }`}
+                    >
+                      <Icon
+                        icon={
+                          reportingComment === comment.id
+                            ? "eos-icons:loading"
+                            : "material-symbols:flag-outline"
+                        }
+                        className="w-4 h-4"
+                      />
+                      <TranslatedText>Laporkan</TranslatedText>
+                    </button>
+                    {isOwner(comment) && (
+                      <button
+                        onClick={() => handleDeleteComment(comment.id)}
+                        className={`flex items-center gap-1 text-sm transition-colors ${
+                          isDark
+                            ? "text-gray-400 hover:text-red-400"
+                            : "text-gray-600 hover:text-red-600"
+                        }`}
+                      >
+                        <Icon
+                          icon="material-symbols:delete-outline"
+                          className="w-4 h-4"
+                        />
+                        <TranslatedText>Hapus</TranslatedText>
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -1246,85 +1295,123 @@ export default function CommentsSection({ newsId }: CommentsSectionProps) {
 
                           {/* Reply Actions */}
                           <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => handleLike(reply.id, "like")}
-                              className={`flex items-center gap-1 text-xs transition-colors ${
-                                reply.user_like_type === "like"
-                                  ? "text-blue-600"
-                                  : isDark
-                                    ? "text-gray-400 hover:text-gray-300"
-                                    : "text-gray-600 hover:text-gray-700"
-                              }`}
-                            >
-                              <Icon
-                                icon={
-                                  reply.user_like_type === "like"
-                                    ? "material-symbols:thumb-up"
-                                    : "material-symbols:thumb-up-outline"
-                                }
-                                className="w-3 h-3"
-                              />
-                              <span>{reply.likes}</span>
-                            </button>
-                            <button
-                              onClick={() => handleLike(reply.id, "dislike")}
-                              className={`flex items-center gap-1 text-xs transition-colors ${
-                                reply.user_like_type === "dislike"
-                                  ? "text-red-600"
-                                  : isDark
-                                    ? "text-gray-400 hover:text-gray-300"
-                                    : "text-gray-600 hover:text-gray-700"
-                              }`}
-                            >
-                              <Icon
-                                icon={
-                                  reply.user_like_type === "dislike"
-                                    ? "material-symbols:thumb-down"
-                                    : "material-symbols:thumb-down-outline"
-                                }
-                                className="w-3 h-3"
-                              />
-                            </button>
-                            {user && (
-                              <button
-                                onClick={() => handleReportComment(reply.id)}
-                                disabled={reportingComment === reply.id}
-                                className={`flex items-center gap-1 text-xs transition-colors ${
-                                  reportingComment === reply.id
-                                    ? isDark
-                                      ? "text-gray-600 cursor-not-allowed"
-                                      : "text-gray-400 cursor-not-allowed"
-                                    : isDark
-                                      ? "text-gray-400 hover:text-red-400"
-                                      : "text-gray-600 hover:text-red-600"
-                                }`}
-                              >
-                                <Icon
-                                  icon={
-                                    reportingComment === reply.id
-                                      ? "eos-icons:loading"
-                                      : "material-symbols:flag-outline"
+                            {user ? (
+                              <>
+                                <button
+                                  onClick={() => handleLike(reply.id, "like")}
+                                  className={`flex items-center gap-1 text-xs transition-colors ${
+                                    reply.user_like_type === "like"
+                                      ? "text-blue-600"
+                                      : isDark
+                                        ? "text-gray-400 hover:text-gray-300"
+                                        : "text-gray-600 hover:text-gray-700"
+                                  }`}
+                                >
+                                  <Icon
+                                    icon={
+                                      reply.user_like_type === "like"
+                                        ? "material-symbols:thumb-up"
+                                        : "material-symbols:thumb-up-outline"
+                                    }
+                                    className="w-3 h-3"
+                                  />
+                                  <span>{reply.likes}</span>
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleLike(reply.id, "dislike")
                                   }
-                                  className="w-3 h-3"
-                                />
-                                <TranslatedText>Laporkan</TranslatedText>
-                              </button>
-                            )}
-                            {user && isOwner(reply) && (
-                              <button
-                                onClick={() => handleDeleteComment(reply.id)}
-                                className={`flex items-center gap-1 text-xs transition-colors ${
-                                  isDark
-                                    ? "text-gray-400 hover:text-red-400"
-                                    : "text-gray-600 hover:text-red-600"
-                                }`}
-                              >
-                                <Icon
-                                  icon="material-symbols:delete-outline"
-                                  className="w-3 h-3"
-                                />
-                                <TranslatedText>Hapus</TranslatedText>
-                              </button>
+                                  className={`flex items-center gap-1 text-xs transition-colors ${
+                                    reply.user_like_type === "dislike"
+                                      ? "text-red-600"
+                                      : isDark
+                                        ? "text-gray-400 hover:text-gray-300"
+                                        : "text-gray-600 hover:text-gray-700"
+                                  }`}
+                                >
+                                  <Icon
+                                    icon={
+                                      reply.user_like_type === "dislike"
+                                        ? "material-symbols:thumb-down"
+                                        : "material-symbols:thumb-down-outline"
+                                    }
+                                    className="w-3 h-3"
+                                  />
+                                </button>
+                                <button
+                                  onClick={() => handleReportComment(reply.id)}
+                                  disabled={reportingComment === reply.id}
+                                  className={`flex items-center gap-1 text-xs transition-colors ${
+                                    reportingComment === reply.id
+                                      ? isDark
+                                        ? "text-gray-600 cursor-not-allowed"
+                                        : "text-gray-400 cursor-not-allowed"
+                                      : isDark
+                                        ? "text-gray-400 hover:text-red-400"
+                                        : "text-gray-600 hover:text-red-600"
+                                  }`}
+                                >
+                                  <Icon
+                                    icon={
+                                      reportingComment === reply.id
+                                        ? "eos-icons:loading"
+                                        : "material-symbols:flag-outline"
+                                    }
+                                    className="w-3 h-3"
+                                  />
+                                  <TranslatedText>Laporkan</TranslatedText>
+                                </button>
+                                {isOwner(reply) && (
+                                  <button
+                                    onClick={() =>
+                                      handleDeleteComment(reply.id)
+                                    }
+                                    className={`flex items-center gap-1 text-xs transition-colors ${
+                                      isDark
+                                        ? "text-gray-400 hover:text-red-400"
+                                        : "text-gray-600 hover:text-red-600"
+                                    }`}
+                                  >
+                                    <Icon
+                                      icon="material-symbols:delete-outline"
+                                      className="w-3 h-3"
+                                    />
+                                    <TranslatedText>Hapus</TranslatedText>
+                                  </button>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() =>
+                                    showToast(
+                                      "Silakan masuk untuk memberikan like",
+                                      "info"
+                                    )
+                                  }
+                                  className={`flex items-center gap-1 text-xs ${isDark ? "text-gray-500" : "text-gray-400"} cursor-not-allowed`}
+                                >
+                                  <Icon
+                                    icon="material-symbols:thumb-up-outline"
+                                    className="w-3 h-3"
+                                  />
+                                  <span>{reply.likes}</span>
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    showToast(
+                                      "Silakan masuk untuk memberikan dislike",
+                                      "info"
+                                    )
+                                  }
+                                  className={`flex items-center gap-1 text-xs ${isDark ? "text-gray-500" : "text-gray-400"} cursor-not-allowed`}
+                                >
+                                  <Icon
+                                    icon="material-symbols:thumb-down-outline"
+                                    className="w-3 h-3"
+                                  />
+                                </button>
+                              </>
                             )}
                           </div>
                         </div>

@@ -5,7 +5,6 @@ import PopularNewsCard from "@/components/admin/home/PopularNewsCard";
 import TopEditorsCard from "@/components/admin/home/TopEditorsCard";
 import QuickInfoCard from "@/components/admin/home/QuickInfoCard";
 import VisitChartCard from "@/components/admin/home/VisitChartCard";
-import { PageAnalyticsCard } from "@/components/dashboard/PageAnalyticsCard";
 import { useDarkMode } from "@/context/DarkModeContext";
 import { useSession } from "next-auth/react";
 
@@ -222,11 +221,6 @@ export default function Home() {
               }
             />
           </div>
-        </div>
-
-        {/* Third Row - Page Analytics */}
-        <div className="w-full">
-          <PageAnalyticsCard />
         </div>
       </div>
     </div>

@@ -145,7 +145,7 @@ export const CategoriesDropdown: React.FC<CategoriesDropdownProps> = ({
             } rounded-xl p-6 z-50`}
           >
             {/* Header */}
-            <div className="mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+            <div className="mb-4">
               <h3
                 className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
               >
@@ -235,7 +235,7 @@ export const CategoriesDropdown: React.FC<CategoriesDropdownProps> = ({
             )}
 
             {/* Footer */}
-            <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <div className="mt-4">
               <Link
                 href="/categories"
                 onClick={handleCategoryClick}

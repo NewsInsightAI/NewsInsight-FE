@@ -20,6 +20,10 @@ interface NewsData {
   author: AuthorProps[];
   publishedAt: string;
   status: string;
+  views?: number;
+  comments?: number;
+  shares?: number;
+  bookmarks?: number;
 }
 
 interface AuthorProps {
@@ -296,6 +300,53 @@ export default function NewsTable({
     if (months > 0) result.push(`${months} bulan`);
     return result.join(" ");
   }
+
+  const getEngagementStats = (news: NewsData) => {
+    return (
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-3 text-xs">
+          <div className="flex items-center gap-1">
+            <Icon
+              icon="material-symbols:visibility"
+              className="w-3 h-3 text-blue-500"
+            />
+            <span className={isDark ? "text-gray-300" : "text-gray-600"}>
+              {news.views || 0}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Icon
+              icon="material-symbols:comment"
+              className="w-3 h-3 text-purple-500"
+            />
+            <span className={isDark ? "text-gray-300" : "text-gray-600"}>
+              {news.comments || 0}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Icon
+              icon="material-symbols:share"
+              className="w-3 h-3 text-orange-500"
+            />
+            <span className={isDark ? "text-gray-300" : "text-gray-600"}>
+              {news.shares || 0}
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 text-xs">
+          <div className="flex items-center gap-1">
+            <Icon
+              icon="material-symbols:bookmark"
+              className="w-3 h-3 text-pink-500"
+            />
+            <span className={isDark ? "text-gray-300" : "text-gray-600"}>
+              {news.bookmarks || 0}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const handleEdit = (news: NewsData) => {
     if (onEdit) {
@@ -605,6 +656,13 @@ export default function NewsTable({
                 Status
               </th>
               <th
+                className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[140px] ${
+                  isDark ? "text-gray-300" : "text-black"
+                }`}
+              >
+                Engagement
+              </th>
+              <th
                 className={`py-2 md:py-3 px-2 md:px-4 text-left text-xs font-medium uppercase tracking-wider min-w-[160px] md:min-w-[180px] ${
                   isDark ? "text-gray-300" : "text-black"
                 }`}
@@ -868,6 +926,13 @@ export default function NewsTable({
                 >
                   {getStatusBadge(report.status, report)}
                 </td>
+                <td
+                  className={`py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm ${
+                    isDark ? "text-gray-300" : "text-gray-900"
+                  }`}
+                >
+                  {getEngagementStats(report)}
+                </td>
                 <td className="py-2 md:py-4 px-2 md:px-4 text-xs md:text-sm">
                   <div className="flex flex-row gap-1 sm:gap-2 justify-start">
                     <button
@@ -1094,6 +1159,38 @@ export default function NewsTable({
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Status and Engagement */}
+            <div className="space-y-2 mt-3">
+              <div className="flex justify-between items-center">
+                <span
+                  className={`text-xs font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                >
+                  Status:
+                </span>
+                <div>{getStatusBadge(report.status, report)}</div>
+              </div>
+              <div className="flex justify-between items-start">
+                <span
+                  className={`text-xs font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                >
+                  Engagement:
+                </span>
+                <div>{getEngagementStats(report)}</div>
+              </div>
+              <div className="flex justify-between items-center">
+                <span
+                  className={`text-xs font-medium ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                >
+                  Publikasi:
+                </span>
+                <span
+                  className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                >
+                  {getDateTimeWithTimezone(report.publishedAt)}
+                </span>
+              </div>
             </div>
 
             {/* Card Actions */}

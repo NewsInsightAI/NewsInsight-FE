@@ -14,7 +14,11 @@ import {
 import { useDarkMode } from "@/context/DarkModeContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { TranslatedText } from "@/components/TranslatedText";
-import { TranslatedContent } from "@/components/TranslatedContent";
+import { TranslatedNewsContent } from "@/components/TranslatedNewsContent";
+import {
+  useNewsTranslation,
+  TRANSLATION_LANGUAGES,
+} from "@/hooks/useNewsTranslation";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CommentsSection from "@/components/CommentsSection";
 import NewsReportModal from "@/components/NewsReportModal";
@@ -33,9 +37,20 @@ import { useSession } from "next-auth/react";
 
 export default function NewsDetailPage() {
   const { isDark } = useDarkMode();
-  const { currentLanguage } = useLanguage();
+  const { currentLanguage } = useLanguage(); // Only for UI translations
   const { data: session } = useSession();
   const params = useParams();
+
+  // News translation hook - separate from UI language
+  const {
+    currentLanguage: newsLanguage,
+    translatedContent,
+    isTranslating,
+    isTranslated,
+    translateNews,
+    resetTranslation,
+  } = useNewsTranslation();
+
   const [news, setNews] = useState<NewsItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [navbarHeight, setNavbarHeight] = useState(0);
@@ -53,9 +68,15 @@ export default function NewsDetailPage() {
   const [trendingNews, setTrendingNews] = useState<NewsItem[]>([]);
   const [loadingRelated, setLoadingRelated] = useState(true);
   const [loadingTrending, setLoadingTrending] = useState(true);
+  const [showTranslationMenu, setShowTranslationMenu] = useState(false);
+  const translationButtonRef = useRef<HTMLButtonElement>(null);
 
-  const [translatedContentForTTS, setTranslatedContentForTTS] =
-    useState<string>("");
+  // Debug useEffect for showTranslationMenu state changes
+  useEffect(() => {
+    console.log("=== TRANSLATION MENU STATE CHANGED ===");
+    console.log("showTranslationMenu is now:", showTranslationMenu);
+  }, [showTranslationMenu]);
+
   const trackingRef = useRef<boolean>(false);
   const lastTrackedNewsId = useRef<number | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -151,8 +172,16 @@ export default function NewsDetailPage() {
     if (isSpeaking) {
       stopSpeech();
     } else {
-      const contentToSpeak = translatedContentForTTS || getPlainTextContent();
-      const textToSpeak = `${news?.title}. ${contentToSpeak}`;
+      // Use translated content if available, otherwise use original
+      const contentToSpeak =
+        isTranslated && translatedContent?.content
+          ? translatedContent.content
+          : getPlainTextContent();
+      const titleToSpeak =
+        isTranslated && translatedContent?.title
+          ? translatedContent.title
+          : news?.title;
+      const textToSpeak = `${titleToSpeak}. ${contentToSpeak}`;
       speakText(textToSpeak);
     }
   };
@@ -294,6 +323,67 @@ export default function NewsDetailPage() {
     }
   };
 
+  const handleTranslationClick = () => {
+    console.log("=== TRANSLATION BUTTON CLICKED ===");
+    console.log("Current showTranslationMenu:", showTranslationMenu);
+    console.log("Current isTranslating:", isTranslating);
+    console.log("About to toggle translation menu...");
+    setShowTranslationMenu(!showTranslationMenu);
+    console.log("Translation menu toggle completed");
+  };
+
+  const handleLanguageSelect = async (language: {
+    code: string;
+    name: string;
+    flag: string;
+  }) => {
+    if (language.code === newsLanguage.code) {
+      setShowTranslationMenu(false);
+      return;
+    }
+
+    try {
+      const newsTitle = news?.title || "";
+      const newsContent = news?.content || getPlainTextContent();
+
+      await translateNews(newsTitle, newsContent, language);
+      setShowTranslationMenu(false);
+      showToast(`Berita diterjemahkan ke ${language.name}`, "success");
+    } catch (error) {
+      console.error("Error translating news:", error);
+      showToast("Gagal menerjemahkan berita", "error");
+    }
+  };
+
+  // Close translation menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      const translationContainer = target.closest("[data-translation-menu]");
+      const translationMenu = target.closest(".translation-menu");
+
+      if (!translationContainer && !translationMenu && showTranslationMenu) {
+        console.log("Clicking outside translation menu, closing it");
+        setShowTranslationMenu(false);
+      }
+    };
+
+    if (showTranslationMenu) {
+      // Add delay to prevent immediate closing when opening
+      const timeoutId = setTimeout(() => {
+        document.addEventListener("mousedown", handleClickOutside);
+      }, 100);
+
+      return () => {
+        clearTimeout(timeoutId);
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showTranslationMenu]);
   useEffect(() => {
     const navbar = document.querySelector("#navbar");
     if (navbar) {
@@ -842,15 +932,19 @@ export default function NewsDetailPage() {
                   </span>
                 </p>
                 <p className="text-white text-lg sm:text-2xl lg:text-[32px] font-semibold w-full sm:w-3/4 lg:w-1/2 leading-tight">
-                  <TranslatedText>
-                    {news.title || "Judul Berita"}
-                  </TranslatedText>
+                  {isTranslated && translatedContent?.title ? (
+                    translatedContent.title
+                  ) : (
+                    <TranslatedText>
+                      {news.title || "Judul Berita"}
+                    </TranslatedText>
+                  )}
                 </p>
               </div>{" "}
             </div>{" "}
           </div>{" "}
           {/* Action Buttons */}
-          <div className="pb-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="pb-6 border-b border-gray-200 dark:border-gray-700 relative">
             <div className="flex gap-3 overflow-x-auto no-scrollbar">
               {/* Ringkas Berita - Expandable */}
               {!showSummary ? (
@@ -937,19 +1031,52 @@ export default function NewsDetailPage() {
                 </TranslatedText>
               </button>
               {/* Terjemahan */}
-              <button
-                className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
-                  isDark
-                    ? "bg-gray-800 text-white hover:bg-gray-700"
-                    : "bg-gray-100 text-gray-900 hover:bg-gray-200"
-                }`}
-              >
-                <Icon
-                  icon="material-symbols:translate"
-                  className="w-4 h-4 mr-2"
-                />
-                <TranslatedText>Terjemahan</TranslatedText>
-              </button>
+              <div className="relative" data-translation-menu>
+                <button
+                  ref={translationButtonRef}
+                  onClick={handleTranslationClick}
+                  disabled={isTranslating}
+                  className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                    newsLanguage.code !== "id"
+                      ? isDark
+                        ? "bg-blue-800 text-blue-100 hover:bg-blue-700"
+                        : "bg-blue-100 text-blue-800 hover:bg-blue-200"
+                      : isDark
+                        ? "bg-gray-800 text-white hover:bg-gray-700"
+                        : "bg-gray-100 text-gray-900 hover:bg-gray-200"
+                  } ${isTranslating ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  {isTranslating ? (
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                  ) : (
+                    <Icon
+                      icon="material-symbols:translate"
+                      className="w-4 h-4 mr-2"
+                    />
+                  )}
+                  <TranslatedText>
+                    {isTranslating ? "Menerjemahkan..." : "Terjemahan"}
+                  </TranslatedText>
+                  {newsLanguage.code !== "id" && (
+                    <span className="ml-2 text-xs">({newsLanguage.flag})</span>
+                  )}
+                </button>
+
+                {/* Reset Translation Button - only show when translated */}
+                {isTranslated && (
+                  <button
+                    onClick={resetTranslation}
+                    className={`ml-2 inline-flex items-center px-3 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                      isDark
+                        ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                    title="Reset ke bahasa asli"
+                  >
+                    <Icon icon="material-symbols:refresh" className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
               {/* Ubah Font */}
               <button
                 onClick={() => {
@@ -1033,6 +1160,70 @@ export default function NewsDetailPage() {
               </button>
             </div>
 
+            {/* Translation Menu - Outside scroll container */}
+            {showTranslationMenu && (
+              <div
+                className={`fixed w-64 rounded-lg border shadow-xl z-[9999] translation-menu ${
+                  isDark
+                    ? "bg-gray-800 border-gray-700"
+                    : "bg-white border-gray-200"
+                }`}
+                style={{
+                  position: "fixed",
+                  top: translationButtonRef.current
+                    ? translationButtonRef.current.getBoundingClientRect()
+                        .bottom +
+                      window.scrollY +
+                      8
+                    : "auto",
+                  left: translationButtonRef.current
+                    ? translationButtonRef.current.getBoundingClientRect()
+                        .left + window.scrollX
+                    : "auto",
+                  zIndex: 9999,
+                  boxShadow:
+                    "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                }}
+              >
+                <div className="p-2 max-h-80 overflow-y-auto">
+                  <div
+                    className={`px-3 py-2 text-sm font-medium ${
+                      isDark ? "text-gray-300" : "text-gray-700"
+                    }`}
+                  >
+                    <TranslatedText>Pilih Bahasa:</TranslatedText>
+                  </div>
+                  {TRANSLATION_LANGUAGES.map((language) => (
+                    <button
+                      key={language.code}
+                      onClick={() => handleLanguageSelect(language)}
+                      disabled={isTranslating}
+                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center justify-between ${
+                        language.code === newsLanguage.code
+                          ? isDark
+                            ? "bg-blue-900 text-blue-100"
+                            : "bg-blue-100 text-blue-900"
+                          : isDark
+                            ? "hover:bg-gray-700 text-gray-200"
+                            : "hover:bg-gray-100 text-gray-900"
+                      } ${isTranslating ? "opacity-50 cursor-not-allowed" : ""}`}
+                    >
+                      <span className="flex items-center">
+                        <span className="mr-2">{language.flag}</span>
+                        {language.name}
+                      </span>
+                      {language.code === newsLanguage.code && (
+                        <Icon
+                          icon="material-symbols:check"
+                          className="w-4 h-4"
+                        />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Summary Expandable Section */}
             <AnimatePresence>
               {showSummary && summary && (
@@ -1113,12 +1304,14 @@ export default function NewsDetailPage() {
           {/* Konten Artikel */}
           <div className="py-4">
             {" "}
-            <TranslatedContent
-              htmlContent={news.content}
-              plainTextContent={getPlainTextContent()}
+            <TranslatedNewsContent
+              originalTitle={news.title || ""}
+              originalContent={news.content || ""}
+              translatedTitle={translatedContent?.title}
+              translatedContent={translatedContent?.content}
+              isTranslated={isTranslated}
               fontSize={fontSize}
-              newsTitle={news.title}
-              onTranslatedTextChange={setTranslatedContentForTTS}
+              isDark={isDark}
             />{" "}
             {/* Tags Section */}
             {news.tags && news.tags.length > 0 && (

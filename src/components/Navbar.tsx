@@ -44,7 +44,9 @@ export const Navbar = () => {
   const pathname = usePathname();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [navbarHeight, setNavbarHeight] = useState(0); // Add navbar height state
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navbarRef = useRef<HTMLElement>(null); // Add navbar ref
   const { data: session, status } = useSession();
   const [profileAvatar, setProfileAvatar] = useState<string>("");
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
@@ -147,6 +149,8 @@ export const Navbar = () => {
   const handleSearchFocus = () => {
     console.log("Search focus - dispatching search-expanded event");
     setIsSearchExpanded(true);
+    // Close mobile menu when search is focused to avoid overlap
+    setShowMobileMenu(false);
     window.dispatchEvent(new CustomEvent("search-expanded"));
   };
 
@@ -325,6 +329,29 @@ export const Navbar = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Track navbar height for mobile menu positioning
+  useEffect(() => {
+    const updateNavbarHeight = () => {
+      if (navbarRef.current) {
+        const rect = navbarRef.current.getBoundingClientRect();
+        // Add extra offset to account for search box and padding
+        setNavbarHeight(rect.bottom + 8); // Add 8px buffer
+      }
+    };
+
+    updateNavbarHeight();
+    window.addEventListener("resize", updateNavbarHeight);
+
+    // Also update when menu opens to get accurate height
+    if (showMobileMenu) {
+      setTimeout(updateNavbarHeight, 100);
+    }
+
+    return () => {
+      window.removeEventListener("resize", updateNavbarHeight);
+    };
+  }, [showMobileMenu]); // Update when mobile menu state changes
   const handleLogout = async () => {
     setIsBackendConnected(false);
     setProfileData(null);
@@ -382,6 +409,7 @@ export const Navbar = () => {
 
   return (
     <nav
+      ref={navbarRef}
       id="navbar"
       data-navbar="true"
       className={`navbar-container safe-area-navbar flex flex-col md:flex-row md:justify-between items-center p-3 md:p-4 fixed top-0 w-full z-50 ${isDark ? "bg-[#1A1A1A] text-white shadow-2xl shadow-blue-500/10" : "bg-white text-black"} transition-all duration-300 responsive-transition`}
@@ -713,7 +741,10 @@ export const Navbar = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="mobile-menu-overlay fixed inset-0 top-[100px] z-40 bg-black/40 md:hidden"
+            className="mobile-menu-overlay fixed inset-0 z-30 bg-black/40 md:hidden"
+            style={{
+              top: `${navbarHeight}px`,
+            }}
             onClick={() => setShowMobileMenu(false)}
           >
             <motion.div
@@ -721,7 +752,7 @@ export const Navbar = () => {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -30, opacity: 0 }}
               transition={{ duration: 0.25, type: "spring", bounce: 0.2 }}
-              className={`absolute left-4 right-4 top-4 bottom-4 ${isDark ? "bg-[#1A1A1A]/95 text-white" : "bg-white/95 text-black"} shadow-xl rounded-2xl flex flex-col overflow-hidden mobile-menu-scroll`}
+              className={`absolute left-4 right-4 top-4 bottom-4 ${isDark ? "bg-[#1A1A1A]/95 text-white" : "bg-white/95 text-black"} shadow-xl rounded-2xl flex flex-col overflow-hidden mobile-menu-scroll z-35`}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-1">

@@ -18,11 +18,6 @@
     border-radius: 0 !important;
   }
 
-  /* Mobile menu improvements */
-  .mobile-menu-overlay {
-    top: 80px !important;
-  }
-
   /* Modern hamburger menu styling */
   .mobile-menu-item {
     position: relative;

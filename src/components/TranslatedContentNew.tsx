@@ -1,6 +1,6 @@
 "use client";
 import { useLanguage } from "@/context/LanguageContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 interface TranslatedContentProps {
   htmlContent?: string;
@@ -27,68 +27,68 @@ export function TranslatedContent({
     currentLanguage.code
   );
 
-  const translateHtmlContent = async (
-    html: string,
-    targetLang: string
-  ): Promise<string> => {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
+  const translateHtmlContent = useCallback(
+    async (html: string, targetLang: string): Promise<string> => {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
 
-    const textNodes: {
-      element: Element;
-      originalText: string;
-      textContent: string;
-    }[] = [];
+      const textNodes: {
+        element: Element;
+        originalText: string;
+        textContent: string;
+      }[] = [];
 
-    function walkTextNodes(node: Node) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        const text = node.textContent?.trim();
-        if (text && text.length > 0 && node.parentElement) {
-          textNodes.push({
-            element: node.parentElement,
-            originalText: text,
-            textContent: text,
-          });
-        }
-      } else {
-        for (const child of Array.from(node.childNodes)) {
-          walkTextNodes(child);
+      function walkTextNodes(node: Node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          const text = node.textContent?.trim();
+          if (text && text.length > 0 && node.parentElement) {
+            textNodes.push({
+              element: node.parentElement,
+              originalText: text,
+              textContent: text,
+            });
+          }
+        } else {
+          for (const child of Array.from(node.childNodes)) {
+            walkTextNodes(child);
+          }
         }
       }
-    }
 
-    if (doc.body) {
-      walkTextNodes(doc.body);
-    }
-
-    const textsToTranslate = [
-      ...new Set(textNodes.map((node) => node.textContent)),
-    ];
-
-    if (textsToTranslate.length === 0) {
-      return html;
-    }
-
-    const combinedText = textsToTranslate.join(" ||| ");
-    const translatedCombined = await translateText(combinedText, targetLang);
-    const translatedTexts = translatedCombined.split(" ||| ");
-
-    const translationMap = new Map<string, string>();
-    textsToTranslate.forEach((text, index) => {
-      if (translatedTexts[index]) {
-        translationMap.set(text, translatedTexts[index]);
+      if (doc.body) {
+        walkTextNodes(doc.body);
       }
-    });
 
-    let translatedHtml = html;
-    translationMap.forEach((translated, original) => {
-      const escapedOriginal = original.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const regex = new RegExp(`>${escapedOriginal}<`, "g");
-      translatedHtml = translatedHtml.replace(regex, `>${translated}<`);
-    });
+      const textsToTranslate = [
+        ...new Set(textNodes.map((node) => node.textContent)),
+      ];
 
-    return translatedHtml;
-  };
+      if (textsToTranslate.length === 0) {
+        return html;
+      }
+
+      const combinedText = textsToTranslate.join(" ||| ");
+      const translatedCombined = await translateText(combinedText, targetLang);
+      const translatedTexts = translatedCombined.split(" ||| ");
+
+      const translationMap = new Map<string, string>();
+      textsToTranslate.forEach((text, index) => {
+        if (translatedTexts[index]) {
+          translationMap.set(text, translatedTexts[index]);
+        }
+      });
+
+      let translatedHtml = html;
+      translationMap.forEach((translated, original) => {
+        const escapedOriginal = original.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp(`>${escapedOriginal}<`, "g");
+        translatedHtml = translatedHtml.replace(regex, `>${translated}<`);
+      });
+
+      return translatedHtml;
+    },
+    [translateText]
+  );
 
   useEffect(() => {
     if (lastLanguage === currentLanguage.code) {
@@ -139,7 +139,15 @@ export function TranslatedContent({
     };
 
     translateContent();
-  }, [currentLanguage.code, lastLanguage]);
+  }, [
+    currentLanguage.code,
+    lastLanguage,
+    htmlContent,
+    onTranslatedTextChange,
+    plainTextContent,
+    translateHtmlContent,
+    translateText,
+  ]);
 
   const isLoading = isTranslating || isTranslatingContent;
 

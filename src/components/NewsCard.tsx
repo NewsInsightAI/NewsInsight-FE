@@ -18,6 +18,7 @@ interface NewsCard {
   viewCount?: number;
   shareCount?: number;
   commentCount?: number;
+  showMetrics?: boolean; // Add prop to control metrics visibility
 }
 
 export default function NewsCard({
@@ -33,6 +34,7 @@ export default function NewsCard({
   viewCount = 0,
   shareCount = 0,
   commentCount = 0,
+  showMetrics = false, // Default to false (hide metrics)
 }: NewsCard) {
   const { isDark } = useDarkMode();
   const router = useRouter();
@@ -119,53 +121,52 @@ export default function NewsCard({
             </p>
           </div>
 
-          {/* Metrics Row - Only show if there are metrics to display */}
-          {(viewCount > 0 || shareCount > 0 || commentCount > 0) && (
+          {/* Metrics Row - Only show if showMetrics is true */}
+          {showMetrics && (
             <div className="flex items-center gap-3 mt-1">
-              {viewCount > 0 && (
-                <div className="flex items-center gap-1">
-                  <Icon
-                    icon={getMetricIcon("views")}
-                    className={`w-3 h-3 ${isDark ? "text-gray-500" : "text-gray-400"}`}
-                  />
-                  <span
-                    className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
-                  >
-                    {formatMetricNumber(viewCount)}
-                  </span>
-                </div>
-              )}
-              {shareCount > 0 && (
-                <div className="flex items-center gap-1">
-                  <Icon
-                    icon={getMetricIcon("shares")}
-                    className={`w-3 h-3 ${isDark ? "text-gray-500" : "text-gray-400"}`}
-                  />
-                  <span
-                    className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
-                  >
-                    {formatMetricNumber(shareCount)}
-                  </span>
-                </div>
-              )}
-              {commentCount > 0 && (
-                <div className="hidden sm:flex items-center gap-1">
-                  <Icon
-                    icon={getMetricIcon("comments")}
-                    className={`w-3 h-3 ${isDark ? "text-gray-500" : "text-gray-400"}`}
-                  />
-                  <span
-                    className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
-                  >
-                    {formatMetricNumber(commentCount)}
-                  </span>
-                </div>
-              )}
+              {/* View Count */}
+              <div className="flex items-center gap-1">
+                <Icon
+                  icon={getMetricIcon("views")}
+                  className={`w-3 h-3 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                />
+                <span
+                  className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                >
+                  {formatMetricNumber(viewCount)}
+                </span>
+              </div>
+
+              {/* Share Count */}
+              <div className="flex items-center gap-1">
+                <Icon
+                  icon={getMetricIcon("shares")}
+                  className={`w-3 h-3 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                />
+                <span
+                  className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                >
+                  {formatMetricNumber(shareCount)}
+                </span>
+              </div>
+
+              {/* Comment Count */}
+              <div className="hidden sm:flex items-center gap-1">
+                <Icon
+                  icon={getMetricIcon("comments")}
+                  className={`w-3 h-3 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                />
+                <span
+                  className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                >
+                  {formatMetricNumber(commentCount)}
+                </span>
+              </div>
             </div>
           )}
 
           <p
-            className={`${isDark ? "text-white" : "text-black"} font-medium text-sm sm:text-base leading-tight ${viewCount > 0 || shareCount > 0 || commentCount > 0 ? "mt-2" : "mt-1"}`}
+            className={`${isDark ? "text-white" : "text-black"} font-medium text-sm sm:text-base leading-tight mt-2`}
           >
             <TranslatedText>{title}</TranslatedText>
           </p>
